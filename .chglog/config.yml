@@ -1,0 +1,44 @@
+---
+style: github
+template: CHANGELOG.tpl.md
+info:
+  title: CHANGELOG
+  repository_url: https://gitlab.sas.com/convoy/sas-ddk
+options:
+  commits:
+    filters:
+      Type:
+        - feat
+        - fix
+        - test
+        - docs
+        - chore
+        - build
+        - ci
+  commit_groups:
+    sort_by: Custom
+    title_order:
+      - feat
+      - fix
+      - test
+      - docs
+      - chore
+      - build
+      - ci
+    title_maps:
+      feat: Features
+      fix: Bug Fixes
+      test: Testware Changes
+      docs: Documentation
+      chore: Chores
+      build: Build Changes
+      ci: Continuous Integration
+  header:
+    pattern: "^(\\w*)(?:\\(([\\w\\$\\.\\-\\*\\s]*)\\))?\\:\\s(.*)$"
+    pattern_maps:
+      - Type
+      - Scope
+      - Subject
+  notes:
+    keywords:
+      - BREAKING CHANGE
