@@ -1,0 +1,19 @@
+---
+name: release
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release:
+    name: Tag a merged release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Tag release
+        run: make -f Makefile-ci.mk release-tag
