@@ -1,0 +1,88 @@
+---
+name: test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    name: Test on go ${{ matrix.go_version }} and ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        go_version: [stable, oldstable]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Configure Ubuntu
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo touch /usr/bin/vi && sudo chmod a+x /usr/bin/vi
+
+      - name: Set up Go ${{ matrix.go_version }}
+        uses: actions/setup-go@v7.0.0
+        with:
+          go-version: ${{ matrix.go_version }}
+
+      - name: Get go dependencies
+        run: go mod download
+
+      - name: Test
+        run: make test-with-coverage
+
+      - name: Comment coverage report on PR
+        if: matrix.os == 'ubuntu-latest' && matrix.go_version == 'stable' && github.event_name == 'pull_request'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- wbctl-coverage-report -->';
+            const report = fs.readFileSync('build/reports/package-coverage.txt', 'utf8');
+            const body = marker + '\nGo test coverage by package\n```diff\n' + report + '\n```';
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+
+            const existing = comments.find(
+              (comment) =>
+                comment.user.type === 'Bot' && comment.body && comment.body.includes(marker)
+            );
+            
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
+
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report.${{matrix.go_version}}.${{matrix.os}}
+          path: |
+            build/reports/go-test.txt
+            build/reports/coverage.out
+            build/reports/coverage.html
+            build/reports/package-coverage.txt

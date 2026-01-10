@@ -1,0 +1,37 @@
+<pre>
+SAS Workbench Control
+
+Usage:
+  wbctl [command]
+
+Available Commands:
+  <a href='wbctl cancel.md'>cancel</a>      Cancel running Workbench resources
+  <a href='wbctl completion.md'>completion</a>  Generate the autocompletion script for the specified shell
+  <a href='wbctl create.md'>create</a>      Create Workbench resources
+  <a href='wbctl delete.md'>delete</a>      Delete Workbench resources
+  <a href='wbctl describe.md'>describe</a>    Describe Workbench resources in detail
+  <a href='wbctl edit.md'>edit</a>        Edit Workbench resources
+  <a href='wbctl get.md'>get</a>         Display Workbench resources
+  help        Help about any command
+  <a href='wbctl login.md'>login</a>       Authenticate and cache an access token
+  <a href='wbctl logs.md'>logs</a>        Fetch the logs of Workbench resources
+  <a href='wbctl rebuild.md'>rebuild</a>     Rebuild Workbench image
+  <a href='wbctl settings.md'>settings</a>    Manage user settings
+  <a href='wbctl start.md'>start</a>       Start stopped Workbench resources
+  <a href='wbctl stop.md'>stop</a>        Stop running Workbench resources
+  <a href='wbctl update.md'>update</a>      Update Workbench resources
+
+Flags:
+  -m, --auth-mode string       Authentication mode. One of: auto, pkce, client-credentials, password, device. (default "auto")
+      --client-id string       The client-id to authenticate with the Workbench API ($WBCLIENTID).
+      --client-secret string   The client-secret to authenticate with the Workbench API ($WBCLIENTSECRET).
+  -e, --endpoint string        The Workbench API endpoint URL.
+  -h, --help                   help for wbctl
+      --ignore-token-cache     Ignore token cache.
+      --no-listen              Do not open a local port to listen for PKCE authentication.
+      --organization string    The organization to authenticate with the Workbench API.
+  -p, --password string        The password to authenticate with the Workbench API ($WBPASSWORD).
+  -u, --username string        The username to authenticate with the Workbench API ($WBUSERNAME).
+
+Use "wbctl [command] --help" for more information about a command.
+</pre>
