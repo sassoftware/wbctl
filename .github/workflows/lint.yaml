@@ -1,0 +1,49 @@
+---
+name: lint
+
+on:
+  push:
+    branches: [main, release-*]
+  pull_request:
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go stable
+        uses: actions/setup-go@v7.0.0
+        with:
+          go-version: stable
+
+      - name: Check out code
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Lint with golangci-lint
+        run: make lint
+
+      - name: Ensure usage is up to date
+        run: |
+          make usage
+          git diff --exit-code || {
+            echo "Usage is not up to date. Please run 'make usage' and commit the changes."
+            exit 1
+          }
+
+      - name: Ensure licenses are up to date
+        run: |
+          make licenses
+          git diff --exit-code || {
+            echo "Licenses are not up to date. Please run 'make licenses' and commit the changes."
+            exit 1
+          }
+
+      - name: Ensure files have copyright headers
+        run: |
+          make copyright
+          git diff --exit-code || {
+            echo "Copyright headers are not up to date. Please run 'make copyright' and commit the changes."
+            exit 1
+          }
