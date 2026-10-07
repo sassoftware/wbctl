@@ -398,7 +398,6 @@ func TestCreateWorkspace(t *testing.T) {
 			},
 			mockEndpoints: getWorkspaceCreateEndpoints(
 				stubs.AsString(
-					t,
 					paramPayload[types.Workspace]{Param: types.Workspace{Name: "workspace-1"}},
 				),
 				http.StatusOK,
@@ -420,7 +419,6 @@ func TestCreateWorkspace(t *testing.T) {
 			},
 			mockEndpoints: getWorkspaceCreateEndpoints(
 				stubs.AsString(
-					t,
 					paramPayload[types.Workspace]{Param: types.Workspace{Name: "workspace-1"}},
 				),
 				http.StatusUnauthorized,

@@ -423,7 +423,6 @@ func TestCreateWorkbench(t *testing.T) {
 			},
 			mockEndpoints: getWorkbenchesCreateEndpoints(
 				stubs.AsString(
-					t,
 					paramPayload[types.Workbench]{Param: types.Workbench{Name: "wb-one"}},
 				),
 				http.StatusOK,
@@ -445,7 +444,6 @@ func TestCreateWorkbench(t *testing.T) {
 			},
 			mockEndpoints: getWorkbenchesCreateEndpoints(
 				stubs.AsString(
-					t,
 					paramPayload[types.Workbench]{Param: types.Workbench{Name: "wb-one"}},
 				),
 				http.StatusUnauthorized,

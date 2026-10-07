@@ -8,7 +8,6 @@ import (
 
 	"github.com/sas-institute-rnd-saas/wbctl/internal/stubs"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestAsStringSuccess(t *testing.T) {
@@ -16,6 +15,7 @@ func TestAsStringSuccess(t *testing.T) {
 		name     string
 		val      any
 		expected string
+		err      bool
 	}{
 		{
 			name:     "string",
@@ -48,26 +48,22 @@ func TestAsStringSuccess(t *testing.T) {
 			val:      map[string]int{"x": 1},
 			expected: `{"x":1}`,
 		},
+		{
+			name:     "channel",
+			val:      make(chan int),
+			expected: `FAILED TO MARSHAL: `,
+			err:      true,
+		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			actual := stubs.AsString(t, tc.val)
-			require.Equal(t, tc.expected, actual)
+			actual := stubs.AsString(tc.val)
+			if tc.err {
+				assert.Contains(t, actual, tc.expected)
+			} else {
+				assert.Equal(t, tc.expected, actual)
+			}
 		})
 	}
-}
-
-func TestAsStringError(_ *testing.T) {
-	// Exercise the error branch without failing the package tests.
-	// Use a separate, uninitialized testing.T instance and call AsString in
-	// its own goroutine so t.Fatalf exits only that goroutine.
-	var fake testing.T
-	ready := make(chan int)
-	go func() {
-		close(ready)
-		stubs.AsString(&fake, make(chan int))
-	}()
-	<-ready
-	assert.True(&fake, fake.Failed())
 }
