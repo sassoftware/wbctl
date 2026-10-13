@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/sas-institute-rnd-saas/wbctl/internal/httputil"
 	"github.com/sas-institute-rnd-saas/wbctl/internal/i18n"
 	"github.com/sas-institute-rnd-saas/wbctl/internal/postgrest"
+	"github.com/sas-institute-rnd-saas/wbctl/internal/sliceutil"
 	"github.com/sas-institute-rnd-saas/wbctl/internal/ui"
 	"github.com/sassoftware/sas-ggdk/pkg/errors"
 	"github.com/sassoftware/sas-ggdk/pkg/httputils"
@@ -25,9 +27,16 @@ import (
 )
 
 type wellKnownConfigResponse struct {
-	TokenEndpoint               string `json:"token_endpoint"`
-	DeviceAuthorizationEndpoint string `json:"device_authorization_endpoint"`
-	AuthorizationEndpoint       string `json:"authorization_endpoint"`
+	TokenEndpoint               string                   `json:"token_endpoint"`
+	DeviceAuthorizationEndpoint string                   `json:"device_authorization_endpoint"`
+	AuthorizationEndpoint       string                   `json:"authorization_endpoint"`
+	Workbench                   wellKnownWorkbenchConfig `json:"workbench"`
+}
+
+type wellKnownWorkbenchConfig struct {
+	SPAAudience    string `json:"spa_audience"`
+	SPAClientID    string `json:"spa_client_id"`
+	NativeClientID string `json:"native_client_id"`
 }
 
 type tokenResponse struct {
@@ -100,9 +109,6 @@ func GetAccessToken(
 	if params.ControlPlaneEndpoint == "" {
 		return "", errors.New(i18n.Format(i18n.EndpointMustBeSpecified))
 	}
-	if params.ClientID == "" {
-		return "", errors.New(i18n.Format(i18n.ClientIDMustBeSpecified))
-	}
 	authMode := params.NormalizedAuthMode()
 	switch authMode {
 	case constants.AuthModeDevice:
@@ -165,6 +171,7 @@ func getCachedOrRefreshedToken(
 			cfg.TokenEndpoint,
 			ct.RefreshToken,
 			ingressHost,
+			cfg.Workbench.SPAAudience,
 		)
 		if err == nil {
 			var accessToken string
@@ -230,15 +237,16 @@ func performRefreshForToken(
 	tokenEndpoint string,
 	refreshToken string,
 	ingressHost string,
+	audience string,
 ) (tokenResponse, error) {
 	if refreshToken == "" {
 		return tokenResponse{}, errors.New(i18n.Format(i18n.ProvidedRefreshTokenIsEmpty))
 	}
 	data := url.Values{}
-	data.Set("grant_type", constants.OAuthRefreshGrantType)
-	data.Set("audience", constants.OAuthAudience)
-	data.Set("client_id", clientID)
-	data.Set("refresh_token", refreshToken)
+	data.Set(constants.QueryParameterGrantType, constants.OAuthRefreshGrantType)
+	data.Set(constants.QueryParameterAudience, sliceutil.Coalesce(audience, constants.OAuthAudience))
+	data.Set(constants.QueryParameterClientID, clientID)
+	data.Set(constants.QueryParameterRefreshToken, refreshToken)
 	if ingressHost != "" {
 		data.Set("ingressHost", ingressHost)
 	}
@@ -275,12 +283,7 @@ func IsRole(
 	if err != nil {
 		return false
 	}
-	for _, r := range jwtPayload.Sas.Roles {
-		if r == role {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(jwtPayload.Sas.Roles, role)
 }
 
 type workbenchlaims struct {

@@ -77,7 +77,7 @@ func promptForMissing(
 	if params.AuthMode == "" {
 		params.AuthMode = _ui.Ask(i18n.Format(i18n.LoginAuthModePrompt))
 	}
-	if params.ClientID == "" {
+	if params.AuthMode == constants.AuthModeClientCredentials && params.ClientID == "" {
 		params.ClientID = _ui.Ask(i18n.Format(i18n.LoginClientIDPrompt))
 	}
 	if params.ControlPlaneEndpoint == "" {

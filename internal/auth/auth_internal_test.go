@@ -7,6 +7,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
 	"github.com/stretchr/testify/require"
 )
 
@@ -55,6 +56,7 @@ func TestPerformRefreshForToken(t *testing.T) {
 				"https://example.test/token",
 				tt.refreshToken,
 				"http://ingress.example.com/",
+				constants.OAuthAudience,
 			)
 			require.EqualError(t, err, tt.expectedErr)
 		})

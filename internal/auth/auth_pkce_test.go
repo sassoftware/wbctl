@@ -476,6 +476,44 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 					"\t* pkce authorization timeout",
 			},
 		},
+		{
+			name: "pkce discovered audience and client id",
+			input: authInput{
+				authMode:                  constants.AuthModePKCE,
+				organization:              "org-1",
+				pkceStateValidator:        func(string, string) bool { return true },
+				pkceAuthorizationResponse: "code=abc",
+			},
+			mockEndpoints: getPasswordEndpoints(passwordConfig{
+				discoveryConfig: successfulPKCEAuthDiscoveryWithClientID,
+				tokenConfig: stubs.StubHTTPPartialPostConfig{
+					ExpectedRequestBody: `client_id=discovered_client_id` +
+						`&code=abc` +
+						`{SANITIZE:&code_verifier=.*?&:&code_verifier=SANITIZED&}` +
+						`grant_type=authorization_code` +
+						`&redirect_uri=` + url.QueryEscape(constants.PKCECallbackURL),
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   `{"access_token":"pkce-token"}`,
+				},
+			}),
+			expected: authExpected{
+				displays: []string{
+					"Open this URL in your browser and complete the authorization:\n" +
+						"${URL}/authorization?" +
+						"audience=discovered_audience" +
+						"&client_id=discovered_client_id" +
+						"{SANITIZE:&code_challenge=.*?&:&code_challenge=SANITIZED&}" +
+						"code_challenge_method=S256" +
+						"&ingressHost=${HOST}%3A${PORT}" +
+						"&organization=org-1" +
+						"&redirect_uri=http%3A%2F%2Flocalhost%3A20000%2F" +
+						"&response_type=code" +
+						"&scope=openid+profile+offline_access" +
+						"{SANITIZE:&state=.*:&state=SANITIZED}",
+				},
+				token: "pkce-token",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, makeAuthTestFunc(tt))

@@ -12,6 +12,7 @@ import (
 
 	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
 	"github.com/sas-institute-rnd-saas/wbctl/internal/i18n"
+	"github.com/sas-institute-rnd-saas/wbctl/internal/sliceutil"
 	"github.com/sas-institute-rnd-saas/wbctl/internal/ui"
 	"github.com/sassoftware/sas-ggdk/pkg/errors"
 	"github.com/sassoftware/sas-ggdk/pkg/httputils"
@@ -35,6 +36,7 @@ func getAccessTokenByDeviceGrant(
 	if err != nil {
 		return "", errors.Wrap(err, i18n.Format(i18n.FailedToGetDeviceToken))
 	}
+	params.ClientID = sliceutil.Coalesce(params.ClientID, cfg.Workbench.NativeClientID)
 
 	// Check for a cached access token.
 	if !params.IgnoreTokenCache {
@@ -73,7 +75,7 @@ func startDeviceAuthorizationAtEndpoint(
 	clientID string,
 	cfg wellKnownConfigResponse,
 ) (deviceAuthorizationResponse, error) {
-	data := buildDeviceGrantValues(clientID)
+	data := buildDeviceGrantValues(clientID, cfg.Workbench.SPAAudience)
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodPost,
@@ -97,7 +99,13 @@ func pollForDeviceTokenAuthorization(
 	deadline := time.Now().Add(time.Duration(device.ExpiresIn) * time.Second)
 	for time.Now().Before(deadline) {
 		// Check if the user has completed authorization and we have a token
-		tokenResult, err := checkForAuthorizedDeviceToken(ctx, clientID, cfg.TokenEndpoint, device.DeviceCode)
+		tokenResult, err := checkForAuthorizedDeviceToken(
+			ctx,
+			clientID,
+			cfg.TokenEndpoint,
+			device.DeviceCode,
+			cfg.Workbench.SPAAudience,
+		)
 		if err == nil || isDeviceGrantErrorType(err, []string{
 			"access_denied",
 			"expired_token",
@@ -149,8 +157,9 @@ func checkForAuthorizedDeviceToken(
 	clientID string,
 	tokenEndpoint string,
 	deviceCode string,
+	audience string,
 ) (tokenResponse, error) {
-	data := buildDeviceCodeValues(clientID, deviceCode)
+	data := buildDeviceCodeValues(clientID, deviceCode, audience)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, tokenEndpoint, strings.NewReader(data.Encode()))
 	if err != nil {
 		return tokenResponse{}, err
@@ -186,19 +195,26 @@ func authorizationPolling(
 	return pollForDeviceTokenAuthorization(ctx, clientID, deviceAuthResponse, cfg)
 }
 
-func buildDeviceGrantValues(clientID string) url.Values {
+func buildDeviceGrantValues(
+	clientID string,
+	audience string,
+) url.Values {
 	data := url.Values{}
-	data.Set("audience", constants.OAuthAudience)
-	data.Set("client_id", clientID)
-	data.Set("scope", constants.OAuthScope)
+	data.Set(constants.QueryParameterAudience, sliceutil.Coalesce(audience, constants.OAuthAudience))
+	data.Set(constants.QueryParameterClientID, clientID)
+	data.Set(constants.QueryParameterScope, constants.OAuthScope)
 	return data
 }
 
-func buildDeviceCodeValues(clientID, deviceCode string) url.Values {
+func buildDeviceCodeValues(
+	clientID string,
+	deviceCode string,
+	audience string,
+) url.Values {
 	data := url.Values{}
-	data.Set("grant_type", constants.OAuthDeviceGrantType)
-	data.Set("audience", constants.OAuthAudience)
-	data.Set("client_id", clientID)
-	data.Set("device_code", deviceCode)
+	data.Set(constants.QueryParameterGrantType, constants.OAuthDeviceGrantType)
+	data.Set(constants.QueryParameterAudience, sliceutil.Coalesce(audience, constants.OAuthAudience))
+	data.Set(constants.QueryParameterClientID, clientID)
+	data.Set(constants.QueryParameterDeviceCode, deviceCode)
 	return data
 }

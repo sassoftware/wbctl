@@ -315,6 +315,30 @@ func TestGetAccessTokenPassword(t *testing.T) {
 				errFormat: authTestPasswordModeInvalidTokenURLErr,
 			},
 		},
+		// This is a fake token so not a security issue.
+		//nolint:gosec
+		{
+			name: "password mode discovered audience and client id",
+			input: authInput{
+				authMode: constants.AuthModePassword,
+				username: "user",
+				password: "pass",
+			},
+			mockEndpoints: getPasswordEndpoints(passwordConfig{
+				discoveryConfig: successfulPasswordAuthDiscoveryWithClientID,
+				tokenConfig: stubs.StubHTTPPartialPostConfig{
+					ExpectedRequestBody: `audience=discovered_audience` +
+						`&client_id=discovered_client_id` +
+						`&grant_type=password&password=pass&scope=` + url.QueryEscape(constants.OAuthScope) +
+						`&username=user`,
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   `{"access_token":"pw-device-test-token"}`,
+				},
+			}),
+			expected: authExpected{
+				token: "pw-device-test-token",
+			},
+		},
 	}
 
 	for _, tt := range tests {
