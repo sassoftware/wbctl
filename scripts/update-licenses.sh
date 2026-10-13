@@ -15,7 +15,10 @@ licenses() {
   workspace_root="$(git rev-parse --show-toplevel)"
   cd "${workspace_root}" || die "unable to cd to root: ${workspace_root}"
   mkdir -p "${workspace_root}/licenses" || die "unable to create ${workspace_root}/licenses"
-
+  index="${workspace_root}/licenses/licenses.md"
+  echo "# Third-party licenses for this project" > "${index}"
+  echo "Name | Version | License " >> "${index}"
+  echo "--- | --- | --- " >> "${index}"
   modules="$(go list -m -f '{{if not (or .Indirect .Main)}}{{.Path}}@{{.Version}}{{end}}' all)"
 
   echo "$modules" | while read -r module; do
@@ -38,6 +41,8 @@ licenses() {
               # Copy file content to the licenses folder
               echo "    ...Copying licenses/${dst_name}"
               cp "${src_path}" "licenses/${dst_name}"
+              # Append module information to the index file
+              echo "[${module%@v*}](https://${module%@v*}) | ${module#*@} | [${dst_name}](${dst_name}) " >> "${index}"
           fi
       done
   done

@@ -682,3 +682,15 @@ Pod sas-wbj-1nnlkcd6ioyamys10picgz3ok-wxfbg:
 > ./wbctl create volume --name restore --snapshot f7b75b0f-6bad-4f76-a142-1c6d2fcd5a38
 6a51cb99-5ed0-4e91-80f5-d981e11a3b59
 ```
+
+## Contributing
+
+Maintainers are not currently accepting patches and contributions to this
+project.
+
+## License
+
+This project is licensed under the Apache License 2.0. See [LICENSE](LICENSE).
+
+The dependencies of this project include third-party software, each under their
+own license. They are listed in [licenses/licenses.md](./licenses/licenses.md).
