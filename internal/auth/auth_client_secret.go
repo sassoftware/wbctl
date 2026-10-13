@@ -11,6 +11,7 @@ import (
 
 	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
 	"github.com/sas-institute-rnd-saas/wbctl/internal/i18n"
+	"github.com/sas-institute-rnd-saas/wbctl/internal/sliceutil"
 	"github.com/sas-institute-rnd-saas/wbctl/internal/ui"
 	"github.com/sassoftware/sas-ggdk/pkg/errors"
 	"github.com/sassoftware/sas-ggdk/pkg/httputils"
@@ -25,6 +26,9 @@ func getAccessTokenByClientSecret(
 	fsys afero.Fs,
 	params GetAccessTokenParams,
 ) (string, error) {
+	if params.ClientID == "" {
+		return "", errors.New(i18n.Format(i18n.ClientIDMustBeSpecified))
+	}
 	var tokenResp tokenResponse
 	var err error
 	defer deferSaveTokenToCache(_ui, fsys, params.ControlPlaneEndpoint, &tokenResp, &err)
@@ -49,7 +53,7 @@ func getAccessTokenForClientIDAndSecret(
 	secret string,
 	cfg wellKnownConfigResponse,
 ) (tokenResponse, error) {
-	data := buildClientSecretGrantValues(clientID, secret)
+	data := buildClientSecretGrantValues(clientID, secret, cfg.Workbench.SPAAudience)
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodPost,
@@ -66,11 +70,12 @@ func getAccessTokenForClientIDAndSecret(
 func buildClientSecretGrantValues(
 	clientID string,
 	secret string,
+	audience string,
 ) url.Values {
 	data := url.Values{}
-	data.Set("grant_type", "client_credentials")
-	data.Set("audience", constants.OAuthAudience)
-	data.Set("client_id", clientID)
-	data.Set("client_secret", secret)
+	data.Set(constants.QueryParameterGrantType, constants.OAuthClientCredentialsGrantType)
+	data.Set(constants.QueryParameterAudience, sliceutil.Coalesce(audience, constants.OAuthAudience))
+	data.Set(constants.QueryParameterClientID, clientID)
+	data.Set(constants.QueryParameterClientSecret, secret)
 	return data
 }

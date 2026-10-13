@@ -128,13 +128,51 @@ var (
 		ResponseStatus: http.StatusOK,
 		ResponseBody:   `{"token_endpoint":"http://${HOST}/token"}`,
 	}
+	successfulPasswordAuthDiscoveryWithClientID = stubs.StubHTTPPartialGetConfig{
+		ResponseStatus: http.StatusOK,
+		ResponseBody: `
+{
+  "token_endpoint": "http://${HOST}/token",
+  "workbench": {
+    "spa_audience": "discovered_audience",
+    "native_client_id": "discovered_client_id"
+  }
+}
+`,
+	}
 	successfulDeviceAuthDiscovery = stubs.StubHTTPPartialGetConfig{
 		ResponseStatus: http.StatusOK,
 		ResponseBody:   `{"token_endpoint":"http://${HOST}/token", "device_authorization_endpoint":"http://${HOST}/device"}`,
 	}
+	successfulDeviceAuthDiscoveryWithClientID = stubs.StubHTTPPartialGetConfig{
+		ResponseStatus: http.StatusOK,
+		ResponseBody: `
+{
+  "token_endpoint": "http://${HOST}/token",
+  "device_authorization_endpoint": "http://${HOST}/device",
+  "workbench": {
+    "spa_audience": "discovered_audience",
+    "native_client_id": "discovered_client_id"
+  }
+}
+`,
+	}
 	successfulPKCEAuthDiscovery = stubs.StubHTTPPartialGetConfig{
 		ResponseStatus: http.StatusOK,
 		ResponseBody:   `{"token_endpoint":"http://${HOST}/token", "authorization_endpoint":"http://${HOST}/authorization"}`,
+	}
+	successfulPKCEAuthDiscoveryWithClientID = stubs.StubHTTPPartialGetConfig{
+		ResponseStatus: http.StatusOK,
+		ResponseBody: `
+{
+  "token_endpoint": "http://${HOST}/token",
+  "authorization_endpoint": "http://${HOST}/authorization",
+  "workbench": {
+    "spa_audience": "discovered_audience",
+    "spa_client_id": "discovered_client_id"
+  }
+}
+`,
 	}
 	successfulDevice = stubs.StubHTTPPartialPostConfig{
 		ExpectedRequestBody: `audience=` + url.QueryEscape(constants.OAuthAudience) +

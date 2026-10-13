@@ -133,6 +133,26 @@ func TestGetAccessTokenClientCredentials(t *testing.T) {
 				errFormat: authTestClientCredentialsModeInvalidTokenEndpointURLErr,
 			},
 		},
+		{
+			name: "client credentials discovered audience",
+			input: authInput{
+				authMode:     constants.AuthModeClientCredentials,
+				clientID:     "cid",
+				clientSecret: "secret",
+			},
+			mockEndpoints: getPasswordEndpoints(passwordConfig{
+				discoveryConfig: successfulPasswordAuthDiscoveryWithClientID,
+				tokenConfig: stubs.StubHTTPPartialPostConfig{
+					ExpectedRequestBody: `audience=discovered_audience` +
+						`&client_id=cid&client_secret=secret&grant_type=client_credentials`,
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   `{"access_token":"cc-token"}`,
+				},
+			}),
+			expected: authExpected{
+				token: "cc-token",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, makeAuthTestFunc(tt))

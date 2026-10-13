@@ -18,6 +18,7 @@ import (
 
 	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
 	"github.com/sas-institute-rnd-saas/wbctl/internal/i18n"
+	"github.com/sas-institute-rnd-saas/wbctl/internal/sliceutil"
 	"github.com/sas-institute-rnd-saas/wbctl/internal/ui"
 	"github.com/sassoftware/sas-ggdk/pkg/errors"
 	"github.com/sassoftware/sas-ggdk/pkg/httputils"
@@ -27,6 +28,7 @@ import (
 )
 
 type pkceAuthState struct {
+	audience             string
 	callbackURL          string
 	challenge            string
 	clientID             string
@@ -67,6 +69,8 @@ func getAccessTokenByPKCE(
 	if err != nil {
 		return "", errors.Wrap(err, i18n.Format(i18n.FailedToGetPKCEToken))
 	}
+	authState.clientID = sliceutil.Coalesce(authState.clientID, cfg.Workbench.SPAClientID)
+	authState.audience = cfg.Workbench.SPAAudience
 
 	// Check for a cached access token.
 	if !params.IgnoreTokenCache {
@@ -266,7 +270,7 @@ func buildPKCELoopbackValues(
 	authState *pkceAuthState,
 ) url.Values {
 	return url.Values{
-		constants.QueryParameterAudience:            {constants.OAuthAudience},
+		constants.QueryParameterAudience:            {sliceutil.Coalesce(authState.audience, constants.OAuthAudience)},
 		constants.QueryParameterClientID:            {authState.clientID},
 		constants.QueryParameterCodeChallenge:       {authState.challenge},
 		constants.QueryParameterCodeChallengeMethod: {constants.PKCEChallengeMethod},

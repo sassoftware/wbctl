@@ -61,7 +61,6 @@ func TestLoginCommand(t *testing.T) {
 				err: loginEndpointRequiredErr,
 				asks: []string{
 					"Authentication mode: pkce, client_id, password, or device (default \"pkce\")",
-					"Client ID",
 					"Endpoint URL",
 				},
 			},

@@ -515,6 +515,36 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				errFormat: authTestDeviceModeInvalidRefreshURLErr,
 			},
 		},
+		{
+			name: "device discovered audience and client id",
+			input: authInput{
+				authMode: constants.AuthModeDevice,
+			},
+			mockEndpoints: getDeviceEndpoints(deviceConfig{
+				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
+				deviceConfig: stubs.StubHTTPPartialPostConfig{
+					ExpectedRequestBody: `audience=discovered_audience` +
+						`&client_id=discovered_client_id` +
+						`&scope=` + url.QueryEscape(constants.OAuthScope),
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   authTestDeviceAuthorizationBody,
+				},
+				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
+					ExpectedRequestBody: `audience=discovered_audience` +
+						`&client_id=discovered_client_id` +
+						`&device_code=dc&grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code`,
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   `{"access_token":"device"}`,
+				}},
+			}),
+			expected: authExpected{
+				token:    "device",
+				displays: []string{"Open https://verify and enter code: uc"},
+				cachedToken: &expectedTokenCache{
+					accessToken: "device",
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

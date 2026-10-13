@@ -11,6 +11,7 @@ import (
 
 	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
 	"github.com/sas-institute-rnd-saas/wbctl/internal/i18n"
+	"github.com/sas-institute-rnd-saas/wbctl/internal/sliceutil"
 	"github.com/sas-institute-rnd-saas/wbctl/internal/ui"
 	"github.com/sassoftware/sas-ggdk/pkg/errors"
 	"github.com/sassoftware/sas-ggdk/pkg/httputils"
@@ -35,6 +36,7 @@ func getAccessTokenByPassword(
 	if err != nil {
 		return "", errors.Wrap(err, i18n.Format(i18n.FailedToGetUsernamePasswordToken))
 	}
+	params.ClientID = sliceutil.Coalesce(params.ClientID, cfg.Workbench.NativeClientID)
 	tokenResp, err = getAccessTokenForUsernameAndPassword(ctx, params.ClientID, params.Username, params.Password, cfg)
 	if err != nil {
 		return "", errors.Wrap(err, i18n.Format(i18n.FailedToGetUsernamePasswordToken))
@@ -53,7 +55,7 @@ func getAccessTokenForUsernameAndPassword(
 	password string,
 	cfg wellKnownConfigResponse,
 ) (tokenResponse, error) {
-	data := buildPasswordGrantValues(clientID, username, password)
+	data := buildPasswordGrantValues(clientID, username, password, cfg.Workbench.SPAAudience)
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodPost,
@@ -71,13 +73,14 @@ func buildPasswordGrantValues(
 	clientID string,
 	username string,
 	password string,
+	audience string,
 ) url.Values {
 	data := url.Values{}
-	data.Set("grant_type", "password")
-	data.Set("audience", constants.OAuthAudience)
-	data.Set("client_id", clientID)
-	data.Set("username", username)
-	data.Set("password", password)
-	data.Set("scope", constants.OAuthScope)
+	data.Set(constants.QueryParameterGrantType, constants.OAuthPasswordGrantType)
+	data.Set(constants.QueryParameterAudience, sliceutil.Coalesce(audience, constants.OAuthAudience))
+	data.Set(constants.QueryParameterClientID, clientID)
+	data.Set(constants.QueryParameterUsername, username)
+	data.Set(constants.QueryParameterPassword, password)
+	data.Set(constants.QueryParameterScope, constants.OAuthScope)
 	return data
 }
