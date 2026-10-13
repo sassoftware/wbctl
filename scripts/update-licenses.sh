@@ -42,7 +42,7 @@ licenses() {
               echo "    ...Copying licenses/${dst_name}"
               cp "${src_path}" "licenses/${dst_name}"
               # Append module information to the index file
-              echo "[${module%@v*}](${module%@v*}) | ${module#*@} | [${dst_name}](${dst_name}) " >> "${index}"
+              echo "[${module%@v*}](https://${module%@v*}) | ${module#*@} | [${dst_name}](${dst_name}) " >> "${index}"
           fi
       done
   done
