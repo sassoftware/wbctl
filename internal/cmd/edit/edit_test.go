@@ -454,6 +454,7 @@ func TestEditCommand(t *testing.T) {
 			expected: editExpected{
 				getCalls:  1,
 				postCalls: 1,
+				displays:  []string{"resource-1"},
 			},
 		},
 		{
@@ -526,6 +527,7 @@ func TestEditCommand(t *testing.T) {
 			expected: editExpected{
 				getCalls:  1,
 				postCalls: 1,
+				displays:  []string{"resource-1"},
 			},
 		},
 		{
@@ -552,6 +554,7 @@ func TestEditCommand(t *testing.T) {
 			expected: editExpected{
 				getCalls:  1,
 				postCalls: 1,
+				displays:  []string{"resource-1"},
 			},
 		},
 		{

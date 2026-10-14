@@ -36,6 +36,27 @@ type WorkspaceRequest struct {
 	EphemeralPVC *corev1.PersistentVolumeClaimSpec `json:"ephemeralPVC,omitempty"`
 }
 
+// MountRequest identifies a mount path and volume source to be mounted into a
+// Job or Workbench.
+type MountRequest struct {
+	MountPath    string        `json:"mountPath,omitempty"`
+	VolumeSource *VolumeSource `json:"volumeSource,omitempty"`
+}
+
+// VolumeSource is a corev1.VolumeSource with an additional volume
+// source that supports a Workbench capability mount.
+type VolumeSource struct {
+	corev1.VolumeSource `json:",inline"`
+	Capability          *CapabilityVolumeSource `json:"capability,omitempty"`
+}
+
+// CapabilityVolumeSource identifies a capability to be mounted into a Job or
+// Workbench.
+type CapabilityVolumeSource struct {
+	Name       string `json:"name"`
+	PullPolicy string `json:"pullPolicy,omitempty"`
+}
+
 // ServiceRequest describes a service request payload.
 type ServiceRequest struct {
 	ID    string            `json:"id,omitempty"`
@@ -69,6 +90,7 @@ type Job struct {
 	Username                  string                 `json:"username,omitempty"`
 	WorkspaceNames            map[string]string      `json:"workspace_names,omitempty" wbctl:"alias:volume_names"`
 	Workspaces                []WorkspaceRequest     `json:"workspaces,omitempty" wbctl:"alias:volumes,editable"`
+	Mounts                    []MountRequest         `json:"mounts,omitempty" wbctl:"alias:volumes,editable"`
 }
 
 // Jobs is a slice of Job values.
@@ -198,6 +220,7 @@ type Workbench struct {
 	Username       string                      `json:"username,omitempty"`
 	WorkspaceNames map[string]string           `json:"workspace_names,omitempty" wbctl:"alias:volume_names"`
 	Workspaces     []WorkspaceRequest          `json:"workspaces,omitempty" wbctl:"alias:volumes,editable"`
+	Mounts         []MountRequest              `json:"mounts,omitempty" wbctl:"alias:volumes,editable"`
 }
 
 // Workbenches is a slice of Workbench values.

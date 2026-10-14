@@ -34,6 +34,7 @@ func SupportedResourceTypes() []string {
 }
 
 type editorF func(
+	ui.UI,
 	context.Context,
 	string,
 	afero.Fs,
@@ -126,7 +127,7 @@ func newEditFunction(
 			return err
 		}
 		svc := workbench.NewWorkbenchService(endpoint, accessToken, csrfToken)
-		return editor(ctx, ids[0], fsys, svc)
+		return editor(_ui, ctx, ids[0], fsys, svc)
 	}
 }
 
@@ -152,6 +153,7 @@ func editImpl[T, TS any](
 	slicer slicer[T, TS],
 ) editorF {
 	return func(
+		_ui ui.UI,
 		ctx context.Context,
 		id string,
 		fsys afero.Fs,
@@ -166,6 +168,9 @@ func editImpl[T, TS any](
 			return err
 		}
 		_, err = updater(ctx, svc, []string{id}, modifiedResource)
+		if err == nil {
+			_ui.Display(id)
+		}
 		return err
 	}
 }
