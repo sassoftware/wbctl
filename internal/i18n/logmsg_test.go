@@ -6,7 +6,7 @@ package i18n_test
 import (
 	"testing"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/i18n"
+	"github.com/sassoftware/wbctl/internal/i18n"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

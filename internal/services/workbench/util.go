@@ -10,11 +10,11 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/i18n"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/postgrest"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/types"
 	"github.com/sassoftware/sas-ggdk/pkg/result"
+	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/i18n"
+	"github.com/sassoftware/wbctl/internal/postgrest"
+	"github.com/sassoftware/wbctl/internal/types"
 	corev1 "k8s.io/api/core/v1"
 )
 

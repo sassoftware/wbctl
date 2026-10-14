@@ -11,7 +11,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/stubs"
+	"github.com/sassoftware/wbctl/internal/stubs"
 	"github.com/stretchr/testify/assert"
 )
 

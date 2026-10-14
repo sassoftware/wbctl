@@ -11,14 +11,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/httputil"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/i18n"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/maputil"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/types"
 	"github.com/sassoftware/sas-ggdk/pkg/httputils"
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/sas-ggdk/pkg/sliceutils"
+	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/httputil"
+	"github.com/sassoftware/wbctl/internal/i18n"
+	"github.com/sassoftware/wbctl/internal/maputil"
+	"github.com/sassoftware/wbctl/internal/types"
 )
 
 var defaultClient = result.Ok(&http.Client{

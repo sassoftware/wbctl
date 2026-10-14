@@ -9,11 +9,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/i18n"
 	"github.com/sassoftware/sas-ggdk/pkg/errors"
 	"github.com/sassoftware/sas-ggdk/pkg/jsonutils"
 	"github.com/sassoftware/sas-ggdk/pkg/result"
+	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/i18n"
 	"github.com/spf13/afero"
 )
 

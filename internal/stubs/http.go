@@ -184,6 +184,7 @@ func NewStubHTTPServerWithMultipleResponsesPerEndpoint(
 				hitCounts[hitCountKey] = 0
 			}
 			currentHit := hitCounts[hitCountKey]
+			hitCounts[hitCountKey]++
 			if len(endpoint.Request.ExpectedQueries) > currentHit {
 				query, err := url.QueryUnescape(r.URL.RawQuery)
 				assert.NoError(t, err, "malformed query")
@@ -251,7 +252,6 @@ func NewStubHTTPServerWithMultipleResponsesPerEndpoint(
 				_, err := fmt.Fprint(w, body)
 				assert.NoError(t, err, "error writing response body")
 			}
-			hitCounts[hitCountKey]++
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)

@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/services/workbench"
+	"github.com/sassoftware/wbctl/internal/services/workbench"
 	"github.com/stretchr/testify/require"
 )
 

@@ -12,13 +12,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/i18n"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/postgrest"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/services/workbench"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/stubs"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/timeutil"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/types"
+	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/i18n"
+	"github.com/sassoftware/wbctl/internal/postgrest"
+	"github.com/sassoftware/wbctl/internal/services/workbench"
+	"github.com/sassoftware/wbctl/internal/stubs"
+	"github.com/sassoftware/wbctl/internal/timeutil"
+	"github.com/sassoftware/wbctl/internal/types"
 	"github.com/stretchr/testify/require"
 )
 

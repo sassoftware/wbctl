@@ -7,11 +7,11 @@ import (
 	"context"
 	"os"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/cmd"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/exiter"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/i18n"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/ui"
+	"github.com/sassoftware/wbctl/internal/cmd"
+	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/exiter"
+	"github.com/sassoftware/wbctl/internal/i18n"
+	"github.com/sassoftware/wbctl/internal/ui"
 	"github.com/spf13/afero"
 )
 

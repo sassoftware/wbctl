@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/services/auth0admin"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/stubs"
+	"github.com/sassoftware/wbctl/internal/services/auth0admin"
+	"github.com/sassoftware/wbctl/internal/stubs"
 	"github.com/stretchr/testify/require"
 )
 

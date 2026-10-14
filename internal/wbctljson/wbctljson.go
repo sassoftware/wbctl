@@ -13,8 +13,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/i18n"
+	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/i18n"
 )
 
 const (

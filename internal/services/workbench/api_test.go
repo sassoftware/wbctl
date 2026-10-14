@@ -11,10 +11,10 @@ import (
 	"testing"
 
 	"github.com/go-openapi/spec"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/postgrest"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/services/workbench"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/stubs"
+	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/postgrest"
+	"github.com/sassoftware/wbctl/internal/services/workbench"
+	"github.com/sassoftware/wbctl/internal/stubs"
 	"github.com/stretchr/testify/require"
 )
 

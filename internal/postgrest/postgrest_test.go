@@ -6,7 +6,7 @@ package postgrest_test
 import (
 	"testing"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/postgrest"
+	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/stretchr/testify/require"
 )
 

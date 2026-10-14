@@ -10,13 +10,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/auth0admin"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/cmd"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/cmd/describe"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/postgrest"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/stubs"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/timeutil"
+	"github.com/sassoftware/wbctl/internal/auth0admin"
+	"github.com/sassoftware/wbctl/internal/cmd"
+	"github.com/sassoftware/wbctl/internal/cmd/describe"
+	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/postgrest"
+	"github.com/sassoftware/wbctl/internal/stubs"
+	"github.com/sassoftware/wbctl/internal/timeutil"
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
@@ -1167,7 +1167,7 @@ func TestDescribeCommand(t *testing.T) {
 				t,
 				tt.expected.describeCalls,
 				hitCounts.CountPrefix(expectedCallEndpointPrefix),
-				"describe calls",
+				"describe calls: %v", hitCounts,
 			)
 		})
 	}

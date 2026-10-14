@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/timeutil"
+	"github.com/sassoftware/wbctl/internal/timeutil"
 	"github.com/stretchr/testify/require"
 )
 

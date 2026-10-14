@@ -6,8 +6,8 @@ package flags_test
 import (
 	"testing"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/cmd/flags"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/cmd/flags"
+	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"

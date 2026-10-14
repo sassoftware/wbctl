@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/maputil"
+	"github.com/sassoftware/wbctl/internal/maputil"
 	"github.com/stretchr/testify/require"
 )
 

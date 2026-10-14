@@ -7,8 +7,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/cmd/create"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/stubs"
+	"github.com/sassoftware/wbctl/internal/cmd/create"
+	"github.com/sassoftware/wbctl/internal/stubs"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 )

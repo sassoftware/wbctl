@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/stubs"
 	"github.com/sassoftware/sas-ggdk/pkg/httputils"
+	"github.com/sassoftware/wbctl/internal/stubs"
 	"github.com/stretchr/testify/require"
 )
 

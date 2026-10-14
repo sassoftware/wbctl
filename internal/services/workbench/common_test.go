@@ -4,8 +4,8 @@
 package workbench_test
 
 import (
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/stubs"
+	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/stubs"
 )
 
 // Get test table structs.

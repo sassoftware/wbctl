@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/stubs"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/timeutil"
+	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/stubs"
+	"github.com/sassoftware/wbctl/internal/timeutil"
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"

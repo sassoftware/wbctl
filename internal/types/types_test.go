@@ -6,7 +6,7 @@ package types_test
 import (
 	"testing"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/types"
+	"github.com/sassoftware/wbctl/internal/types"
 	"github.com/stretchr/testify/require"
 )
 

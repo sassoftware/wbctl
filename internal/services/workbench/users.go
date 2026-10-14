@@ -10,16 +10,16 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/auth0admin"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/i18n"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/printutil"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/timeutil"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/types"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/ui"
 	"github.com/sassoftware/sas-ggdk/pkg/errors"
 	"github.com/sassoftware/sas-ggdk/pkg/pointer"
 	"github.com/sassoftware/sas-ggdk/pkg/result"
+	"github.com/sassoftware/wbctl/internal/auth0admin"
+	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/i18n"
+	"github.com/sassoftware/wbctl/internal/printutil"
+	"github.com/sassoftware/wbctl/internal/timeutil"
+	"github.com/sassoftware/wbctl/internal/types"
+	"github.com/sassoftware/wbctl/internal/ui"
 )
 
 // GetUsers gets the users in the given WorkbenchService. If given any ids, only

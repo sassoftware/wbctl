@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/exiter"
+	"github.com/sassoftware/wbctl/internal/exiter"
 	"github.com/stretchr/testify/assert"
 )
 

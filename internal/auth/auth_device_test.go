@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/osutil"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/stubs"
+	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/osutil"
+	"github.com/sassoftware/wbctl/internal/stubs"
 )
 
 func TestGetAccessTokenDevice(t *testing.T) {

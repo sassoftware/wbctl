@@ -8,15 +8,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/auth"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/postgrest"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/printutil"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/sliceutil"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/timeutil"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/types"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/ui"
 	"github.com/sassoftware/sas-ggdk/pkg/result"
+	"github.com/sassoftware/wbctl/internal/auth"
+	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/postgrest"
+	"github.com/sassoftware/wbctl/internal/printutil"
+	"github.com/sassoftware/wbctl/internal/sliceutil"
+	"github.com/sassoftware/wbctl/internal/timeutil"
+	"github.com/sassoftware/wbctl/internal/types"
+	"github.com/sassoftware/wbctl/internal/ui"
 )
 
 // GetWorkspaces gets the workspaces in the given WorkbenchService. If given any

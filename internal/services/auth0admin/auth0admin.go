@@ -9,10 +9,10 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/httputil"
 	"github.com/sassoftware/sas-ggdk/pkg/httputils"
 	"github.com/sassoftware/sas-ggdk/pkg/result"
+	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/httputil"
 )
 
 var defaultClient = result.Ok(&http.Client{

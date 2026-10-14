@@ -6,7 +6,7 @@ package sliceutil_test
 import (
 	"testing"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/sliceutil"
+	"github.com/sassoftware/wbctl/internal/sliceutil"
 	"github.com/stretchr/testify/require"
 )
 

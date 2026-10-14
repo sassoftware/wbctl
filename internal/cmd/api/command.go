@@ -6,10 +6,10 @@ package api
 import (
 	"context"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/cmd/flags"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/i18n"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/ui"
+	"github.com/sassoftware/wbctl/internal/cmd/flags"
+	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/i18n"
+	"github.com/sassoftware/wbctl/internal/ui"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )

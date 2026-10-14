@@ -6,9 +6,9 @@ package auth
 import (
 	"context"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/auth"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/ui"
+	"github.com/sassoftware/wbctl/internal/auth"
+	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/ui"
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
 )

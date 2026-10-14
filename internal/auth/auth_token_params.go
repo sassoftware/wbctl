@@ -6,7 +6,7 @@ package auth
 import (
 	"strings"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/constants"
 )
 
 // GetAccessTokenParams collects the inputs to GetAccessToken in a struct so

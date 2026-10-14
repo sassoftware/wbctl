@@ -6,7 +6,7 @@ package auth0admin_test
 import (
 	"testing"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/auth0admin"
+	"github.com/sassoftware/wbctl/internal/auth0admin"
 	"github.com/stretchr/testify/require"
 )
 

@@ -9,8 +9,8 @@ import (
 
 	"github.com/gotnospirit/messageformat"
 	"github.com/magiconair/properties"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/exiter"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/ui"
+	"github.com/sassoftware/wbctl/internal/exiter"
+	"github.com/sassoftware/wbctl/internal/ui"
 )
 
 // CLI messages.

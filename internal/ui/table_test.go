@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/ui"
+	"github.com/sassoftware/wbctl/internal/ui"
 	"github.com/stretchr/testify/require"
 )
 

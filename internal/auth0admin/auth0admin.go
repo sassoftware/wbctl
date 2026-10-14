@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"path"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/constants"
 )
 
 var endpointBase = constants.Auth0AdminAPIEndpoint

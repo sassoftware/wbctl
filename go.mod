@@ -1,4 +1,4 @@
-module github.com/sas-institute-rnd-saas/wbctl
+module github.com/sassoftware/wbctl
 
 go 1.26.0
 

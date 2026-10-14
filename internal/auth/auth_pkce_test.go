@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/auth"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/stubs"
 	"github.com/sassoftware/sas-ggdk/pkg/pointer"
+	"github.com/sassoftware/wbctl/internal/auth"
+	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/stubs"
 )
 
 func TestGetAccessTokenPKCE(t *testing.T) {

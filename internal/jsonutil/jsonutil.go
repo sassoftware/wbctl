@@ -6,7 +6,7 @@ package jsonutil
 import (
 	"os"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/wbctljson"
+	"github.com/sassoftware/wbctl/internal/wbctljson"
 	"github.com/spf13/afero"
 )
 

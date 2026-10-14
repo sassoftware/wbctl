@@ -6,8 +6,8 @@ package auth_test
 import (
 	"testing"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/auth"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/auth"
+	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/stretchr/testify/require"
 )
 

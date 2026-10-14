@@ -7,7 +7,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/stretchr/testify/require"
 )
 

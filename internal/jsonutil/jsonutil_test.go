@@ -8,8 +8,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/jsonutil"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/stubs"
+	"github.com/sassoftware/wbctl/internal/jsonutil"
+	"github.com/sassoftware/wbctl/internal/stubs"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 )

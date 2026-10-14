@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/stubs"
 	"github.com/sassoftware/sas-ggdk/pkg/errors"
+	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/stubs"
 	"github.com/spf13/afero"
 )
 

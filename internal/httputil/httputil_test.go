@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/httputil"
+	"github.com/sassoftware/wbctl/internal/httputil"
 	"github.com/stretchr/testify/require"
 )
 

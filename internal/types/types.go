@@ -9,7 +9,7 @@ import (
 	"time"
 
 	snapshot1 "github.com/kubernetes-csi/external-snapshotter/client/v8/apis/volumesnapshot/v1"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/maputil"
+	"github.com/sassoftware/wbctl/internal/maputil"
 	corev1 "k8s.io/api/core/v1"
 )
 

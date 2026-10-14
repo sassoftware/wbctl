@@ -9,8 +9,8 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/types"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/wbctljson"
+	"github.com/sassoftware/wbctl/internal/types"
+	"github.com/sassoftware/wbctl/internal/wbctljson"
 	"github.com/stretchr/testify/require"
 )
 

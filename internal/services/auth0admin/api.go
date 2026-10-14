@@ -6,9 +6,9 @@ package auth0admin
 import (
 	"context"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/auth0admin"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
 	"github.com/sassoftware/sas-ggdk/pkg/result"
+	"github.com/sassoftware/wbctl/internal/auth0admin"
+	"github.com/sassoftware/wbctl/internal/constants"
 )
 
 // API is the API specification for the Auth0Admin service.

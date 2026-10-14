@@ -9,10 +9,10 @@ import (
 	"strings"
 	"testing"
 
-	auth0adminhelper "github.com/sas-institute-rnd-saas/wbctl/internal/auth0admin"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/services/auth0admin"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/stubs"
+	auth0adminhelper "github.com/sassoftware/wbctl/internal/auth0admin"
+	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/services/auth0admin"
+	"github.com/sassoftware/wbctl/internal/stubs"
 	"github.com/stretchr/testify/require"
 )
 

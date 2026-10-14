@@ -8,8 +8,8 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/constants"
-	"github.com/sas-institute-rnd-saas/wbctl/internal/stubs"
+	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/stubs"
 )
 
 func TestGetAccessTokenClientCredentials(t *testing.T) {

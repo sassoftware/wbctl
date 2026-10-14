@@ -6,7 +6,7 @@ package sliceutil
 import (
 	"errors"
 
-	"github.com/sas-institute-rnd-saas/wbctl/internal/i18n"
+	"github.com/sassoftware/wbctl/internal/i18n"
 )
 
 // Coalesce returns the first non-zero value.
