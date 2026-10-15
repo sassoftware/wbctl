@@ -21,7 +21,6 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			name: "invalid control plane endpoint returns discovery error - device",
 			input: authInput{
 				authMode:             constants.AuthModeDevice,
-				clientID:             constants.OAuthClientID,
 				controlPlaneEndpoint: authTestInvalidControlPlaneEndpoint,
 			},
 			expected: authExpected{
@@ -36,7 +35,6 @@ func TestGetAccessTokenDevice(t *testing.T) {
 					`{"access_token":"cached","refresh_token":"rt","expires_at":"%s"}`,
 					time.Now().Add(time.Hour).UTC().Format(time.RFC3339Nano),
 				),
-				clientID: constants.OAuthClientID,
 			},
 			mockEndpoints: []stubs.StubHTTPEndpoint{
 				{
@@ -55,18 +53,27 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			},
 		},
 		{
-			name: "first time through with no cached token",
+			name: "first time through with no cached token honors explicit clientid",
 			input: authInput{
-				authMode: constants.AuthModeDevice,
-				clientID: constants.OAuthClientID,
+				authMode:     constants.AuthModeDevice,
+				clientID:     "explicit_client_id",
+				organization: "org-1",
 			},
 			mockEndpoints: getDeviceEndpoints(deviceConfig{
-				discoveryConfig: successfulDeviceAuthDiscovery,
-				deviceConfig:    successfulDevice,
+				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
+				deviceConfig: stubs.StubHTTPPartialPostConfig{
+					ExpectedRequestBody: `audience=discovered_audience` +
+						`&client_id=explicit_client_id` +
+						`&scope=` + url.QueryEscape(constants.OAuthScope),
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   authTestDeviceAuthorizationBody,
+				},
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
-					ExpectedRequestBody: expectedTokenRequestBody,
-					ResponseStatus:      http.StatusOK,
-					ResponseBody:        `{"access_token":"device"}`,
+					ExpectedRequestBody: `audience=discovered_audience` +
+						`&client_id=explicit_client_id` +
+						`&device_code=dc&grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code`,
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   `{"access_token":"device"}`,
 				}},
 			}),
 			expected: authExpected{
@@ -78,27 +85,113 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			},
 		},
 		{
+			name: "first time through with no cached token honors explicit clientid",
+			input: authInput{
+				authMode:     constants.AuthModeDevice,
+				clientID:     "explicit_client_id",
+				organization: "org-1",
+			},
+			mockEndpoints: getDeviceEndpoints(deviceConfig{
+				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
+				deviceConfig: stubs.StubHTTPPartialPostConfig{
+					ExpectedRequestBody: `audience=discovered_audience` +
+						`&client_id=explicit_client_id` +
+						`&scope=` + url.QueryEscape(constants.OAuthScope),
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   authTestDeviceAuthorizationBody,
+				},
+				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
+					ExpectedRequestBody: `audience=discovered_audience` +
+						`&client_id=explicit_client_id` +
+						`&device_code=dc&grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code`,
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   `{"access_token":"device"}`,
+				}},
+			}),
+			expected: authExpected{
+				token:    "device",
+				displays: []string{"Open https://verify and enter code: uc"},
+				cachedToken: &expectedTokenCache{
+					accessToken: "device",
+				},
+			},
+		},
+		{
+			name: "device flow displays verification_uri_complete when present and honors explicit clientid",
+			input: authInput{
+				authMode: constants.AuthModeDevice,
+				clientID: "explicit_client_id",
+			},
+			mockEndpoints: getDeviceEndpoints(deviceConfig{
+				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
+				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
+					ExpectedRequestBody: `audience=discovered_audience` +
+						`&client_id=explicit_client_id` +
+						`&device_code=dc&grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code`,
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   `{"access_token":"device-verify-complete"}`,
+				}},
+				deviceConfig: stubs.StubHTTPPartialPostConfig{
+					ExpectedRequestBody: `audience=discovered_audience` +
+						`&client_id=explicit_client_id` +
+						`&scope=` + url.QueryEscape(constants.OAuthScope),
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   authTestDeviceAuthorizationBodyWithVerificationURIComplete,
+				},
+			}),
+			expected: authExpected{
+				token: "device-verify-complete",
+				displays: []string{
+					"Open this URL in your browser and complete the authorization:\n" +
+						"https://verify.complete",
+				},
+			},
+		},
+		{
+			name: "first time through with no cached token",
+			input: authInput{
+				authMode:     constants.AuthModeDevice,
+				organization: "org-1",
+			},
+			mockEndpoints: getDeviceEndpoints(deviceConfig{
+				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
+				deviceConfig:    successfulDevice,
+				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
+					ExpectedRequestBody: expectedTokenRequestBody,
+					ResponseStatus:      http.StatusOK,
+					ResponseBody:        `{"access_token":"device"}`,
+				}},
+			}),
+			expected: authExpected{
+				token: "device",
+				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
+					"organization=org-1&redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
+					"scope=openid+profile+offline_access and enter code: uc"},
+				cachedToken: &expectedTokenCache{
+					accessToken: "device",
+				},
+			},
+		},
+		{
 			name: "refresh failure falls back to device authorization and returns device token",
 			input: authInput{
 				authMode: constants.AuthModeDevice,
 				cache: fmt.Sprintf(
-					`{"access_token":"old","refresh_token":"rt","expires_at":"%s"}`,
+					`{"access_token":"`+encodedAccessToken+`","refresh_token":"rt","expires_at":"%s"}`,
 					time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano),
 				),
-				clientID: constants.OAuthClientID,
 			},
 			mockEndpoints: getDeviceEndpoints(deviceConfig{
-				discoveryConfig: successfulDeviceAuthDiscovery,
+				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig:    successfulDevice,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{
 					{
-						ExpectedRequestBody: `audience=` + url.QueryEscape(constants.OAuthAudience) +
-							`&client_id=` + url.QueryEscape(constants.OAuthClientID) +
+						ExpectedRequestBody: `audience=discovered_audience` +
+							`&client_id=encoded_client_id` +
 							`&grant_type=refresh_token&refresh_token=rt`,
 						ResponseStatus: http.StatusUnauthorized,
 						ResponseBody:   `{"error":"bad"}`,
 					}, {
-
 						ExpectedRequestBody: expectedTokenRequestBody,
 						ResponseStatus:      http.StatusOK,
 						ResponseBody:        `{"access_token":"device-ok","refresh_token":"drt","expires_in":3600}`,
@@ -106,9 +199,11 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				},
 			}),
 			expected: authExpected{
-				token:    "device-ok",
-				displays: []string{"Open https://verify and enter code: uc"},
-				warns:    []string{"falling back to full reauthorization"},
+				token: "device-ok",
+				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
+					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
+					"scope=openid+profile+offline_access and enter code: uc"},
+				warns: []string{"falling back to full reauthorization"},
 				cachedToken: &expectedTokenCache{
 					accessToken:  "device-ok",
 					refreshToken: "drt",
@@ -121,23 +216,21 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			input: authInput{
 				authMode: constants.AuthModeDevice,
 				cache: fmt.Sprintf(
-					`{"access_token":"old","refresh_token":"rt","expires_at":"%s"}`,
+					`{"access_token":"`+encodedAccessToken+`","refresh_token":"rt","expires_at":"%s"}`,
 					time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano),
 				),
-				clientID: constants.OAuthClientID,
 			},
 			mockEndpoints: getDeviceEndpoints(deviceConfig{
-				discoveryConfig: successfulDeviceAuthDiscovery,
+				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig:    successfulDevice,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{
 					{
-						ExpectedRequestBody: `audience=` + url.QueryEscape(constants.OAuthAudience) +
-							`&client_id=` + url.QueryEscape(constants.OAuthClientID) +
+						ExpectedRequestBody: `audience=discovered_audience` +
+							`&client_id=encoded_client_id` +
 							`&grant_type=refresh_token&refresh_token=rt`,
 						ResponseStatus: http.StatusOK,
 						ResponseBody:   `{"access_token":"","refresh_token":"rt2","expires_in":3600}`,
 					}, {
-
 						ExpectedRequestBody: expectedTokenRequestBody,
 						ResponseStatus:      http.StatusOK,
 						ResponseBody:        `{"access_token":"device2","refresh_token":"d2","expires_in":3600}`,
@@ -145,8 +238,10 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				},
 			}),
 			expected: authExpected{
-				token:    "device2",
-				displays: []string{"Open https://verify and enter code: uc"},
+				token: "device2",
+				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
+					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
+					"scope=openid+profile+offline_access and enter code: uc"},
 				cachedToken: &expectedTokenCache{
 					accessToken:  "device2",
 					refreshToken: "d2",
@@ -160,23 +255,22 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			input: authInput{
 				authMode: constants.AuthModeDevice,
 				cache: fmt.Sprintf(
-					`{"access_token":"old","refresh_token":"rt","expires_at":"%s"}`,
+					`{"access_token":"`+encodedAccessToken+`","refresh_token":"rt","expires_at":"%s"}`,
 					time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano),
 				),
-				clientID: constants.OAuthClientID,
 			},
 			mockEndpoints: getDeviceEndpoints(deviceConfig{
-				discoveryConfig: successfulDeviceAuthDiscovery,
+				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
-					ExpectedRequestBody: `audience=` + url.QueryEscape(constants.OAuthAudience) +
-						`&client_id=` + url.QueryEscape(constants.OAuthClientID) +
+					ExpectedRequestBody: `audience=discovered_audience` +
+						`&client_id=encoded_client_id` +
 						`&grant_type=refresh_token&refresh_token=rt`,
 					ResponseBody:   `{"error":"bad"}`,
 					ResponseStatus: http.StatusUnauthorized,
 				}},
 				deviceConfig: stubs.StubHTTPPartialPostConfig{
-					ExpectedRequestBody: `audience=` + url.QueryEscape(constants.OAuthAudience) +
-						`&client_id=` + url.QueryEscape(constants.OAuthClientID) +
+					ExpectedRequestBody: `audience=discovered_audience` +
+						`&client_id=discovered_native_client_id` +
 						`&scope=` + url.QueryEscape(constants.OAuthScope),
 					ResponseBody:   authTestDeviceInvalidClientBody,
 					ResponseStatus: http.StatusBadRequest,
@@ -193,10 +287,9 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			name: "device mode first time through with no cached token - explicit device flow",
 			input: authInput{
 				authMode: constants.AuthModeDevice,
-				clientID: constants.OAuthClientID,
 			},
 			mockEndpoints: getDeviceEndpoints(deviceConfig{
-				discoveryConfig: successfulDeviceAuthDiscovery,
+				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig:    successfulDevice,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
 					ExpectedRequestBody: expectedTokenRequestBody,
@@ -205,26 +298,27 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				}},
 			}),
 			expected: authExpected{
-				token:    "device-mode-token",
-				displays: []string{"Open https://verify and enter code: uc"},
+				token: "device-mode-token",
+				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
+					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
+					"scope=openid+profile+offline_access and enter code: uc"},
 			},
 		},
 		{
 			name: "device flow displays verification_uri_complete when present",
 			input: authInput{
 				authMode: constants.AuthModeDevice,
-				clientID: constants.OAuthClientID,
 			},
 			mockEndpoints: getDeviceEndpoints(deviceConfig{
-				discoveryConfig: successfulDeviceAuthDiscovery,
+				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
 					ExpectedRequestBody: expectedTokenRequestBody,
 					ResponseStatus:      http.StatusOK,
 					ResponseBody:        `{"access_token":"device-verify-complete"}`,
 				}},
 				deviceConfig: stubs.StubHTTPPartialPostConfig{
-					ExpectedRequestBody: `audience=` + url.QueryEscape(constants.OAuthAudience) +
-						`&client_id=` + url.QueryEscape(constants.OAuthClientID) +
+					ExpectedRequestBody: `audience=discovered_audience` +
+						`&client_id=discovered_native_client_id` +
 						`&scope=` + url.QueryEscape(constants.OAuthScope),
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   authTestDeviceAuthorizationBodyWithVerificationURIComplete,
@@ -233,7 +327,10 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			expected: authExpected{
 				token: "device-verify-complete",
 				displays: []string{
-					"Open this URL in your browser and complete the authorization:\nhttps://verify.complete",
+					"Open this URL in your browser and complete the authorization:\n" +
+						"${URL}/authorization?client_id=discovered_spa_client_id&" +
+						"redirect_uri=https%3A%2F%2Fverify.complete&response_type=code&" +
+						"scope=openid+profile+offline_access",
 				},
 			},
 		},
@@ -241,10 +338,9 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			name: "device polling terminal oauth error fails fast",
 			input: authInput{
 				authMode: constants.AuthModeDevice,
-				clientID: constants.OAuthClientID,
 			},
 			mockEndpoints: getDeviceEndpoints(deviceConfig{
-				discoveryConfig: successfulDeviceAuthDiscovery,
+				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig:    successfulDevice,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
 					ExpectedRequestBody: expectedTokenRequestBody,
@@ -255,7 +351,9 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			expected: authExpected{
 				errFormat: authTestPollingAccessDeniedErrFormat,
 				pollCount: 1,
-				displays:  []string{"Open https://verify and enter code: uc"},
+				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
+					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
+					"scope=openid+profile+offline_access and enter code: uc"},
 			},
 		},
 		{
@@ -264,10 +362,9 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			name: "device polling slow_down increases interval then times out",
 			input: authInput{
 				authMode: constants.AuthModeDevice,
-				clientID: constants.OAuthClientID,
 			},
 			mockEndpoints: getDeviceEndpoints(deviceConfig{
-				discoveryConfig: successfulDeviceAuthDiscovery,
+				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig:    successfulDevice,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
 					ExpectedRequestBody: expectedTokenRequestBody,
@@ -278,17 +375,18 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			expected: authExpected{
 				errFormat:    authTestDeviceAuthorizationTimeoutErr,
 				minPollCount: 1,
-				displays:     []string{"Open https://verify and enter code: uc"},
+				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
+					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
+					"scope=openid+profile+offline_access and enter code: uc"},
 			},
 		},
 		{
 			name: "device polling non-terminal oauth error continues until timeout",
 			input: authInput{
 				authMode: constants.AuthModeDevice,
-				clientID: constants.OAuthClientID,
 			},
 			mockEndpoints: getDeviceEndpoints(deviceConfig{
-				discoveryConfig: successfulDeviceAuthDiscovery,
+				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig:    successfulDevice,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
 					ExpectedRequestBody: expectedTokenRequestBody,
@@ -299,7 +397,9 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			expected: authExpected{
 				errFormat:    authTestDeviceAuthorizationTimeoutErr,
 				minPollCount: 1,
-				displays:     []string{"Open https://verify and enter code: uc"},
+				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
+					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
+					"scope=openid+profile+offline_access and enter code: uc"},
 			},
 		},
 		{
@@ -307,13 +407,12 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			input: authInput{
 				authMode:      constants.AuthModeDevice,
 				cancelContext: true,
-				clientID:      constants.OAuthClientID,
 			},
 			mockEndpoints: getDeviceEndpoints(deviceConfig{
-				discoveryConfig: successfulDeviceAuthDiscovery,
+				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig: stubs.StubHTTPPartialPostConfig{
-					ExpectedRequestBody: `audience=` + url.QueryEscape(constants.OAuthAudience) +
-						`&client_id=` + url.QueryEscape(constants.OAuthClientID) +
+					ExpectedRequestBody: `audience=discovered_audience` +
+						`&client_id=discovered_native_client_id` +
 						`&scope=` + url.QueryEscape(constants.OAuthScope),
 					ResponseBody: `{"device_code":"dc","user_code":"uc",` +
 						`"verification_uri":"https://verify","expires_in":5,"interval":1}`,
@@ -328,7 +427,9 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			expected: authExpected{
 				errFormat: authTestPollingCancelledErr,
 				pollCount: 1,
-				displays:  []string{"Open https://verify and enter code: uc"},
+				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
+					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
+					"scope=openid+profile+offline_access and enter code: uc"},
 			},
 		},
 		{
@@ -336,31 +437,40 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			input: authInput{
 				authMode:      constants.AuthModeDevice,
 				cancelContext: true,
-				clientID:      constants.OAuthClientID,
 			},
 			mockEndpoints: getDeviceEndpoints(deviceConfig{
 				discoveryConfig: stubs.StubHTTPPartialGetConfig{
 					ResponseStatus: http.StatusOK,
-					ResponseBody:   `{"token_endpoint":"a\nb", "device_authorization_endpoint":"http://${HOST}/device"}`,
+					ResponseBody: `{
+							"authorization_endpoint": "http://${HOST}/authorization",
+							"token_endpoint": "a\nb",
+							"device_authorization_endpoint": "http://${HOST}/device",
+							"workbench": {
+								"spa_client_id": "discovered_spa_client_id",
+								"spa_audience": "discovered_audience",
+								"native_client_id": "discovered_native_client_id"
+							}
+						}`,
 				},
 				deviceConfig: successfulDevice,
 			}),
 			expected: authExpected{
 				errFormat: authTestPollingCancelledErr,
-				displays:  []string{"Open https://verify and enter code: uc"},
+				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
+					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
+					"scope=openid+profile+offline_access and enter code: uc"},
 			},
 		},
 		{
 			name: "device polling uses default interval when interval is zero",
 			input: authInput{
 				authMode: constants.AuthModeDevice,
-				clientID: constants.OAuthClientID,
 			},
 			mockEndpoints: getDeviceEndpoints(deviceConfig{
-				discoveryConfig: successfulDeviceAuthDiscovery,
+				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig: stubs.StubHTTPPartialPostConfig{
-					ExpectedRequestBody: `audience=` + url.QueryEscape(constants.OAuthAudience) +
-						`&client_id=` + url.QueryEscape(constants.OAuthClientID) +
+					ExpectedRequestBody: `audience=discovered_audience` +
+						`&client_id=discovered_native_client_id` +
 						`&scope=` + url.QueryEscape(constants.OAuthScope),
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   authTestDeviceAuthorizationBodyWithZeroInterval,
@@ -374,7 +484,9 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			expected: authExpected{
 				token: "device-default-interval",
 				displays: []string{
-					"Open https://verify and enter code: uc",
+					"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
+						"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
+						"scope=openid+profile+offline_access and enter code: uc",
 				},
 			},
 		},
@@ -382,10 +494,9 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			name: "modern discovery 404 falls back to legacy discovery path",
 			input: authInput{
 				authMode: constants.AuthModeDevice,
-				clientID: constants.OAuthClientID,
 			},
 			mockEndpoints: getLegacyDeviceEndpoints(deviceConfig{
-				discoveryConfig: successfulDeviceAuthDiscovery,
+				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig:    successfulDevice,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
 					ExpectedRequestBody: expectedTokenRequestBody,
@@ -394,8 +505,10 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				}},
 			}),
 			expected: authExpected{
-				token:               "device-legacy",
-				displays:            []string{"Open https://verify and enter code: uc"},
+				token: "device-legacy",
+				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
+					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
+					"scope=openid+profile+offline_access and enter code: uc"},
 				modernDiscoveryHits: 1,
 				legacyDiscoveryHits: 1,
 			},
@@ -404,11 +517,10 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			name: "load cache fail for invalid home still returns token",
 			input: authInput{
 				authMode: constants.AuthModeDevice,
-				clientID: constants.OAuthClientID,
 				home:     homeAsFile,
 			},
 			mockEndpoints: getDeviceEndpoints(deviceConfig{
-				discoveryConfig: successfulDeviceAuthDiscovery,
+				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig:    successfulDevice,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
 					ExpectedRequestBody: expectedTokenRequestBody,
@@ -417,8 +529,10 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				}},
 			}),
 			expected: authExpected{
-				token:    "device3",
-				displays: []string{"Open https://verify and enter code: uc"},
+				token: "device3",
+				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
+					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
+					"scope=openid+profile+offline_access and enter code: uc"},
 				warns: []string{
 					"failed to load token cache" +
 						"\n Caused by:" +
@@ -434,11 +548,10 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			name: "load cache fail for unset home still returns token",
 			input: authInput{
 				authMode: constants.AuthModeDevice,
-				clientID: constants.OAuthClientID,
 				home:     homeAsUnset,
 			},
 			mockEndpoints: getDeviceEndpoints(deviceConfig{
-				discoveryConfig: successfulDeviceAuthDiscovery,
+				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig:    successfulDevice,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
 					ExpectedRequestBody: expectedTokenRequestBody,
@@ -447,8 +560,10 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				}},
 			}),
 			expected: authExpected{
-				token:    "device3",
-				displays: []string{"Open https://verify and enter code: uc"},
+				token: "device3",
+				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
+					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
+					"scope=openid+profile+offline_access and enter code: uc"},
 				warns: []string{
 					osutil.HomeEnvVarName() + " is not defined",
 					"failed to save device token: failed to save token cache\n Caused by:\n\t* " +
@@ -460,7 +575,6 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			name: "device mode with invalid device url is error",
 			input: authInput{
 				authMode: constants.AuthModeDevice,
-				clientID: constants.OAuthClientID,
 			},
 			mockEndpoints: getDeviceEndpoints(deviceConfig{
 				discoveryConfig: stubs.StubHTTPPartialGetConfig{
@@ -476,10 +590,9 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			name: "device mode with empty access token is error",
 			input: authInput{
 				authMode: constants.AuthModeDevice,
-				clientID: constants.OAuthClientID,
 			},
 			mockEndpoints: getDeviceEndpoints(deviceConfig{
-				discoveryConfig: successfulDeviceAuthDiscovery,
+				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig:    successfulDevice,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
 					ExpectedRequestBody: expectedTokenRequestBody,
@@ -489,7 +602,9 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			}),
 			expected: authExpected{
 				errFormat: authTestDeviceModeEmptyAccessTokenErr,
-				displays:  []string{"Open https://verify and enter code: uc"},
+				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
+					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
+					"scope=openid+profile+offline_access and enter code: uc"},
 			},
 		},
 		{
@@ -500,7 +615,6 @@ func TestGetAccessTokenDevice(t *testing.T) {
 					`{"access_token":"old","refresh_token":"rt","expires_at":"%s"}`,
 					time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano),
 				),
-				clientID: constants.OAuthClientID,
 			},
 			mockEndpoints: getDeviceEndpoints(deviceConfig{
 				discoveryConfig: stubs.StubHTTPPartialGetConfig{
@@ -524,29 +638,30 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: `audience=discovered_audience` +
-						`&client_id=discovered_client_id` +
+						`&client_id=discovered_native_client_id` +
 						`&scope=` + url.QueryEscape(constants.OAuthScope),
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   authTestDeviceAuthorizationBody,
 				},
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
 					ExpectedRequestBody: `audience=discovered_audience` +
-						`&client_id=discovered_client_id` +
+						`&client_id=discovered_native_client_id` +
 						`&device_code=dc&grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code`,
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   `{"access_token":"device"}`,
 				}},
 			}),
 			expected: authExpected{
-				token:    "device",
-				displays: []string{"Open https://verify and enter code: uc"},
+				token: "device",
+				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
+					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
+					"scope=openid+profile+offline_access and enter code: uc"},
 				cachedToken: &expectedTokenCache{
 					accessToken: "device",
 				},
 			},
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, makeAuthTestFunc(tt))
 	}

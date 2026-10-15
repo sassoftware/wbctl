@@ -28,7 +28,6 @@ import (
 )
 
 type pkceAuthState struct {
-	audience             string
 	callbackURL          string
 	challenge            string
 	clientID             string
@@ -69,15 +68,12 @@ func getAccessTokenByPKCE(
 	if err != nil {
 		return "", errors.Wrap(err, i18n.Format(i18n.FailedToGetPKCEToken))
 	}
-	authState.clientID = sliceutil.Coalesce(authState.clientID, cfg.Workbench.SPAClientID)
-	authState.audience = cfg.Workbench.SPAAudience
 
 	// Check for a cached access token.
 	if !params.IgnoreTokenCache {
 		tokenResp, accessToken = getCachedOrRefreshedToken(
 			ctx,
 			_ui,
-			authState.clientID,
 			cfg,
 			fsys,
 			authState.controlPlaneEndpoint,
@@ -117,7 +113,7 @@ func getCodeFromPKCEManualFlow(
 	authState *pkceAuthState,
 ) (string, error) {
 	authState.callbackURL = constants.PKCECallbackURL
-	authURL := cfg.AuthorizationEndpoint + "?" + buildPKCELoopbackValues(authState).Encode()
+	authURL := cfg.AuthorizationEndpoint + "?" + buildPKCELoopbackValues(authState, cfg).Encode()
 	msg := i18n.Format(i18n.OpenThisURLInYourBrowser, i18n.A{
 		constants.I18nArgKeyURL: authURL,
 	})
@@ -156,7 +152,7 @@ func getCodeFromPKCELoopbackFlow(
 	if err != nil {
 		return "", err
 	}
-	authURL := cfg.AuthorizationEndpoint + "?" + buildPKCELoopbackValues(authState).Encode()
+	authURL := cfg.AuthorizationEndpoint + "?" + buildPKCELoopbackValues(authState, cfg).Encode()
 
 	msg := i18n.Format(i18n.OpenThisURLInYourBrowser, i18n.A{
 		constants.I18nArgKeyURL: authURL,
@@ -195,7 +191,7 @@ func exchangePKCECodeForToken(
 	authState *pkceAuthState,
 ) (tokenResponse, string, error) {
 	// Exchange code for token
-	data := buildPKCEExchangeValues(authState)
+	data := buildPKCEExchangeValues(authState, cfg)
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodPost,
@@ -268,10 +264,11 @@ func startCallbackListener(ctx context.Context, authState *pkceAuthState) (chan 
 
 func buildPKCELoopbackValues(
 	authState *pkceAuthState,
+	cfg wellKnownConfigResponse,
 ) url.Values {
 	return url.Values{
-		constants.QueryParameterAudience:            {sliceutil.Coalesce(authState.audience, constants.OAuthAudience)},
-		constants.QueryParameterClientID:            {authState.clientID},
+		constants.QueryParameterAudience:            {sliceutil.Coalesce(cfg.Workbench.SPAAudience, constants.OAuthAudience)},
+		constants.QueryParameterClientID:            {sliceutil.Coalesce(authState.clientID, cfg.Workbench.SPAClientID)},
 		constants.QueryParameterCodeChallenge:       {authState.challenge},
 		constants.QueryParameterCodeChallengeMethod: {constants.PKCEChallengeMethod},
 		constants.QueryParameterIngressHost:         {authState.ingressHost},
@@ -285,9 +282,10 @@ func buildPKCELoopbackValues(
 
 func buildPKCEExchangeValues(
 	authState *pkceAuthState,
+	cfg wellKnownConfigResponse,
 ) url.Values {
 	return url.Values{
-		constants.QueryParameterClientID:     {authState.clientID},
+		constants.QueryParameterClientID:     {sliceutil.Coalesce(authState.clientID, cfg.Workbench.SPAClientID)},
 		constants.QueryParameterCode:         {authState.code},
 		constants.QueryParameterCodeVerifier: {authState.verifier},
 		constants.QueryParameterGrantType:    {constants.OAuthAuthCodeGrantType},

@@ -148,7 +148,6 @@ func deferSaveTokenToCache(
 func getCachedOrRefreshedToken(
 	ctx context.Context,
 	_ui ui.UI,
-	clientID string,
 	cfg wellKnownConfigResponse,
 	fsys afero.Fs,
 	controlPlaneEndpoint string,
@@ -167,7 +166,7 @@ func getCachedOrRefreshedToken(
 	if ct.RefreshToken != "" {
 		tokenResp, err := performRefreshForToken(
 			ctx,
-			clientID,
+			clientIDFromAccessToken(ct.AccessToken),
 			cfg.TokenEndpoint,
 			ct.RefreshToken,
 			ingressHost,
@@ -267,9 +266,19 @@ func IsRole(
 	token string,
 	role string,
 ) bool {
+	parsedToken := parseAccessToken(token)
+	return slices.Contains(parsedToken.Sas.Roles, role)
+}
+
+func clientIDFromAccessToken(token string) string {
+	parsedToken := parseAccessToken(token)
+	return parsedToken.Azp
+}
+
+func parseAccessToken(token string) jwt {
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
-		return false
+		return jwt{}
 	}
 	payloadPart := parts[1]
 	padLen := (4 - (len(payloadPart) % 4)) % 4
@@ -277,16 +286,16 @@ func IsRole(
 	decoder := base64.NewDecoder(base64.URLEncoding, strings.NewReader(payloadPart))
 	payloadBytes, err := io.ReadAll(decoder)
 	if err != nil {
-		return false
+		return jwt{}
 	}
-	jwtPayload, err := result.Split(jsonutils.UnmarshalAs[auth0Payload](payloadBytes))
+	jwtPayload, err := result.Split(jsonutils.UnmarshalAs[jwt](payloadBytes))
 	if err != nil {
-		return false
+		return jwt{}
 	}
-	return slices.Contains(jwtPayload.Sas.Roles, role)
+	return jwtPayload
 }
 
-type workbenchlaims struct {
+type workbenchClaims struct {
 	Auth0OrgID  string   `json:"auth0_org_id"`
 	Auth0UserID string   `json:"auth0_user_id"`
 	OrgID       string   `json:"org_id"`
@@ -295,41 +304,15 @@ type workbenchlaims struct {
 	UserID      string   `json:"user_id"`
 }
 
-type auth0Payload struct {
-	Sas     workbenchlaims `json:"sas"`
-	Iss     string         `json:"iss"`
-	Sub     string         `json:"sub"`
-	Aud     []string       `json:"aud"`
-	Iat     int            `json:"iat"`
-	Exp     int            `json:"exp"`
-	Scope   string         `json:"scope"`
-	OrgID   string         `json:"org_id"`
-	OrgName string         `json:"org_name"`
-	Azp     string         `json:"azp"`
-}
-
-// RealmAccess represents realm-level roles assigned to a user.
-type RealmAccess struct {
-	Roles []string `json:"roles"`
-}
-
-// Account represents account-level roles assigned to a user.
-type Account struct {
-	Roles []string `json:"roles"`
-}
-
-// ResourceAccess contains access information scoped to specific resources.
-type ResourceAccess struct {
-	Account Account `json:"account"`
-}
-
-// ActiveOrg identifies the organization currently active for the user.
-type ActiveOrg struct {
-	ID string `json:"id"`
-}
-
-// Organization represents an organization with associated roles and metadata.
-type Organization struct {
-	Roles []string `json:"roles"`
-	Name  string   `json:"name"`
+type jwt struct {
+	Sas     workbenchClaims `json:"sas"`
+	Iss     string          `json:"iss"`
+	Sub     string          `json:"sub"`
+	Aud     []string        `json:"aud"`
+	Iat     int             `json:"iat"`
+	Exp     int             `json:"exp"`
+	Scope   string          `json:"scope"`
+	OrgID   string          `json:"org_id"`
+	OrgName string          `json:"org_name"`
+	Azp     string          `json:"azp"`
 }

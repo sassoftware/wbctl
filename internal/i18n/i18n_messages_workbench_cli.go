@@ -118,7 +118,7 @@ var wbctlMessages = "\n" +
 	"wbctl-cli-icu.flag.password.usage.msg=The password to authenticate with the Workbench API ($WBPASSWORD).\n" +
 	"wbctl-cli-icu.flag.query.usage.msg=The query parameters to include in the API request, in key=value&key2=value2 format.\n" +
 	"wbctl-cli-icu.flag.required.when.msg=--{child} required when --{parent} specified\n" +
-	"wbctl-cli-icu.flag.schedule.usage.msg=The cron schedule for the job. If not specified, the job will only run when a job-run is explicitly created.\n" +
+	"wbctl-cli-icu.flag.schedule.usage.msg=The cron schedule for the job. If not specified, the job will only run when a job-submission is explicitly created.\n" +
 	"wbctl-cli-icu.flag.service.usage.msg=The Service(s) to run in {type}. At least one service is required if application is not specified.\n" +
 	"wbctl-cli-icu.flag.set.usage.msg=The name of a setting to set.\n" +
 	"wbctl-cli-icu.flag.size.usage.msg=The size of the volume.\n" +

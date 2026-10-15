@@ -118,11 +118,13 @@ const (
 		"\t* POST  failed\n" +
 		"\t* Post \"\": unsupported protocol scheme \"\""
 	authTestInvalidControlPlaneEndpoint = "a\nb"
+	// nolint:gosec
+	encodedAccessToken = ".eyJhenAiOiJlbmNvZGVkX2NsaWVudF9pZCJ9Cg."
 )
 
 var (
-	expectedTokenRequestBody = `audience=` + url.QueryEscape(constants.OAuthAudience) +
-		`&client_id=` + url.QueryEscape(constants.OAuthClientID) +
+	expectedTokenRequestBody = `audience=discovered_audience` +
+		`&client_id=discovered_native_client_id` +
 		`&device_code=dc&grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code`
 	successfulPasswordAuthDiscovery = stubs.StubHTTPPartialGetConfig{
 		ResponseStatus: http.StatusOK,
@@ -148,20 +150,18 @@ var (
 		ResponseStatus: http.StatusOK,
 		ResponseBody: `
 {
+  "authorization_endpoint": "http://${HOST}/authorization",
   "token_endpoint": "http://${HOST}/token",
   "device_authorization_endpoint": "http://${HOST}/device",
   "workbench": {
+    "spa_client_id": "discovered_spa_client_id",
     "spa_audience": "discovered_audience",
-    "native_client_id": "discovered_client_id"
+    "native_client_id": "discovered_native_client_id"
   }
 }
 `,
 	}
 	successfulPKCEAuthDiscovery = stubs.StubHTTPPartialGetConfig{
-		ResponseStatus: http.StatusOK,
-		ResponseBody:   `{"token_endpoint":"http://${HOST}/token", "authorization_endpoint":"http://${HOST}/authorization"}`,
-	}
-	successfulPKCEAuthDiscoveryWithClientID = stubs.StubHTTPPartialGetConfig{
 		ResponseStatus: http.StatusOK,
 		ResponseBody: `
 {
@@ -175,8 +175,8 @@ var (
 `,
 	}
 	successfulDevice = stubs.StubHTTPPartialPostConfig{
-		ExpectedRequestBody: `audience=` + url.QueryEscape(constants.OAuthAudience) +
-			`&client_id=` + url.QueryEscape(constants.OAuthClientID) +
+		ExpectedRequestBody: `audience=discovered_audience` +
+			`&client_id=discovered_native_client_id` +
 			`&scope=` + url.QueryEscape(constants.OAuthScope),
 		ResponseStatus: http.StatusOK,
 		ResponseBody:   authTestDeviceAuthorizationBody,
@@ -445,7 +445,7 @@ func TestGetAccessToken(t *testing.T) {
 			input: authInput{
 				authMode: constants.AuthModeAuto,
 				cache: fmt.Sprintf(
-					`{"access_token":"old","refresh_token":"rt","expires_at":"%s"}`,
+					`{"access_token":"`+encodedAccessToken+`","refresh_token":"rt","expires_at":"%s"}`,
 					time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano),
 				),
 				clientID: constants.OAuthClientID,
@@ -454,7 +454,7 @@ func TestGetAccessToken(t *testing.T) {
 				discoveryConfig: successfulDeviceAuthDiscovery,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
 					ExpectedRequestBody: `audience=` + url.QueryEscape(constants.OAuthAudience) +
-						`&client_id=` + url.QueryEscape(constants.OAuthClientID) +
+						`&client_id=encoded_client_id` +
 						`&grant_type=refresh_token` +
 						`&ingressHost={SANITIZE:127.0.0.1%3A\d+:SANITIZED}` +
 						`&refresh_token=rt`,
@@ -520,7 +520,7 @@ func TestGetAccessToken(t *testing.T) {
 			input: authInput{
 				authMode: constants.AuthModeAuto,
 				cache: fmt.Sprintf(
-					`{"access_token":"old","refresh_token":"rt","expires_at":"%s"}`,
+					`{"access_token":"`+encodedAccessToken+`","refresh_token":"rt","expires_at":"%s"}`,
 					time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano),
 				),
 				clientID:      constants.OAuthClientID,
@@ -530,7 +530,7 @@ func TestGetAccessToken(t *testing.T) {
 				discoveryConfig: successfulDeviceAuthDiscovery,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
 					ExpectedRequestBody: `audience=` + url.QueryEscape(constants.OAuthAudience) +
-						`&client_id=` + url.QueryEscape(constants.OAuthClientID) +
+						`&client_id=encoded_client_id` +
 						`&grant_type=refresh_token` +
 						`&ingressHost={SANITIZE:127.0.0.1%3A\d+:SANITIZED}` +
 						`&refresh_token=rt`,
@@ -662,6 +662,19 @@ func makeAuthTestFunc(tt authTestCase) func(t *testing.T) {
 			"${HOME}": home,
 			"${URL}":  srv.URL,
 		}
+		// Verify any expected error is returned
+		if tt.expected.errFormat != "" {
+			expectedErr := tt.expected.errFormat
+			expectedErr = stubs.Replace(expectedErr, replacements)
+			require.EqualError(t, err, expectedErr)
+		} else {
+			// Verify any expected success is returned
+			require.NoError(t, err)
+			require.Equal(t, tt.expected.token, res)
+			if tt.expected.cachedToken != nil {
+				verifyTokenCacheContents(t, fsys, home, srv.URL, *tt.expected.cachedToken)
+			}
+		}
 		if len(tt.expected.displays) == 0 {
 			require.Empty(t, uiStub.Displays, "unexpected display messages: %v", uiStub.Displays)
 		} else {
@@ -715,19 +728,6 @@ func makeAuthTestFunc(tt authTestCase) func(t *testing.T) {
 		}
 		for k, v := range *hitCounts {
 			assert.Equal(t, expectedHits[k], v, k)
-		}
-		// Verify any expected error is returned
-		if tt.expected.errFormat != "" {
-			expectedErr := tt.expected.errFormat
-			expectedErr = stubs.Replace(expectedErr, replacements)
-			require.EqualError(t, err, expectedErr)
-			return
-		}
-		// Verify any expected success is returned
-		require.NoError(t, err)
-		require.Equal(t, tt.expected.token, res)
-		if tt.expected.cachedToken != nil {
-			verifyTokenCacheContents(t, fsys, home, srv.URL, *tt.expected.cachedToken)
 		}
 	}
 }

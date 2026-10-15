@@ -20,7 +20,7 @@ Flags:
   -l, --label strings         Labels to apply to the job, in key=value format.
   -n, --name string           The name of the job.
       --nodepool string       The nodepool in which to run the job.
-      --schedule string       The cron schedule for the job. If not specified, the job will only run when a job-run is explicitly created.
+      --schedule string       The cron schedule for the job. If not specified, the job will only run when a job-submission is explicitly created.
   -s, --service strings       The Service(s) to run in job. At least one service is required if application is not specified.
       --sub-path string       The subpath of the job. Only valid when context is specified.
       --volume strings        Volume(s) to attach to the job.

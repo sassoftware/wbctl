@@ -36,14 +36,12 @@ func getAccessTokenByDeviceGrant(
 	if err != nil {
 		return "", errors.Wrap(err, i18n.Format(i18n.FailedToGetDeviceToken))
 	}
-	params.ClientID = sliceutil.Coalesce(params.ClientID, cfg.Workbench.NativeClientID)
 
 	// Check for a cached access token.
 	if !params.IgnoreTokenCache {
 		tokenResp, accessToken = getCachedOrRefreshedToken(
 			ctx,
 			_ui,
-			params.ClientID,
 			cfg,
 			fsys,
 			params.ControlPlaneEndpoint,
@@ -59,7 +57,7 @@ func getAccessTokenByDeviceGrant(
 	if err != nil {
 		return "", errors.Wrap(err, i18n.Format(i18n.FailedToGetDeviceToken))
 	}
-	tokenResp, err = authorizationPolling(ctx, _ui, params.ClientID, deviceAuthResponse, cfg)
+	tokenResp, err = authorizationPolling(ctx, _ui, params.ClientID, params.Organization, deviceAuthResponse, cfg)
 	if err != nil {
 		return "", errors.Wrap(err, i18n.Format(i18n.FailedToGetDeviceToken))
 	}
@@ -75,6 +73,9 @@ func startDeviceAuthorizationAtEndpoint(
 	clientID string,
 	cfg wellKnownConfigResponse,
 ) (deviceAuthorizationResponse, error) {
+	if clientID == "" {
+		clientID = cfg.Workbench.NativeClientID
+	}
 	data := buildDeviceGrantValues(clientID, cfg.Workbench.SPAAudience)
 	req, err := http.NewRequestWithContext(
 		ctx,
@@ -95,6 +96,9 @@ func pollForDeviceTokenAuthorization(
 	device deviceAuthorizationResponse,
 	cfg wellKnownConfigResponse,
 ) (tokenResponse, error) {
+	if clientID == "" {
+		clientID = cfg.Workbench.NativeClientID
+	}
 	interval := normalizePollInterval(device.Interval)
 	deadline := time.Now().Add(time.Duration(device.ExpiresIn) * time.Second)
 	for time.Now().Before(deadline) {
@@ -170,28 +174,58 @@ func checkForAuthorizedDeviceToken(
 
 func displayDeviceInstructions(
 	_ui ui.UI,
+	clientID string,
+	organization string,
 	d deviceAuthorizationResponse,
+	cfg wellKnownConfigResponse,
 ) {
-	if d.VerificationURIComplete != "" {
-		_ui.Display(i18n.Format(i18n.OpenThisURLInYourBrowser, i18n.A{
-			constants.I18nArgKeyURL: d.VerificationURIComplete,
-		}))
-	} else {
+	// If we have been given a client ID then assume the user wants normal device auth.
+	if clientID != "" {
+		if d.VerificationURIComplete != "" {
+			_ui.Display(i18n.Format(i18n.OpenThisURLInYourBrowser, i18n.A{
+				constants.I18nArgKeyURL: d.VerificationURIComplete,
+			}))
+			return
+		}
 		_ui.Display(i18n.Format(i18n.OpenURLAndEnterCode, i18n.A{
 			constants.I18nArgKeyURL:  d.VerificationURI,
 			constants.I18nArgKeyCode: d.UserCode,
 		}))
+		return
 	}
+	// Otherwise assume we need to go to the SPA endpoint first
+	var msg string
+	data := url.Values{}
+	data.Set(constants.QueryParameterClientID, cfg.Workbench.SPAClientID)
+	data.Set(constants.QueryParameterResponseType, constants.PKCEResponseType)
+	data.Set(constants.QueryParameterScope, constants.OAuthScope)
+	if organization != "" {
+		data.Set(constants.QueryParameterOrganization, organization)
+	}
+	if d.VerificationURIComplete != "" {
+		data.Set(constants.QueryParameterRedirectURI, d.VerificationURIComplete)
+		msg = i18n.Format(i18n.OpenThisURLInYourBrowser, i18n.A{
+			constants.I18nArgKeyURL: cfg.AuthorizationEndpoint + "?" + data.Encode(),
+		})
+	} else {
+		data.Set(constants.QueryParameterRedirectURI, d.VerificationURI)
+		msg = i18n.Format(i18n.OpenURLAndEnterCode, i18n.A{
+			constants.I18nArgKeyURL:  cfg.AuthorizationEndpoint + "?" + data.Encode(),
+			constants.I18nArgKeyCode: d.UserCode,
+		})
+	}
+	_ui.Display(msg)
 }
 
 func authorizationPolling(
 	ctx context.Context,
 	_ui ui.UI,
 	clientID string,
+	organization string,
 	deviceAuthResponse deviceAuthorizationResponse,
 	cfg wellKnownConfigResponse,
 ) (tokenResponse, error) {
-	displayDeviceInstructions(_ui, deviceAuthResponse)
+	displayDeviceInstructions(_ui, clientID, organization, deviceAuthResponse, cfg)
 	return pollForDeviceTokenAuthorization(ctx, clientID, deviceAuthResponse, cfg)
 }
 
