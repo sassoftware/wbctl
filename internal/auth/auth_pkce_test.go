@@ -22,7 +22,6 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 			name: "invalid control plane endpoint returns discovery error - pkce",
 			input: authInput{
 				authMode:             constants.AuthModePKCE,
-				clientID:             constants.OAuthClientID,
 				controlPlaneEndpoint: authTestInvalidControlPlaneEndpoint,
 			},
 			expected: authExpected{
@@ -33,7 +32,6 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 			name: "pkce with no listener available fails state validation",
 			input: authInput{
 				authMode:     constants.AuthModePKCE,
-				clientID:     constants.OAuthClientID,
 				noListen:     true,
 				organization: "org-1",
 				askResponses: []string{"http://example.com?code=abc"},
@@ -45,8 +43,8 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 				displays: []string{
 					"Open this URL in your browser and complete the authorization:\n" +
 						"${URL}/authorization?" +
-						"audience=https%3A%2F%2Fworkbench.sas.com%2Fpostgrest" +
-						"&client_id=" + url.QueryEscape(constants.OAuthClientID) +
+						"audience=discovered_audience" +
+						"&client_id=discovered_client_id" +
 						"{SANITIZE:&code_challenge=.*?&:&code_challenge=SANITIZED&}" +
 						"code_challenge_method=S256" +
 						"&ingressHost=${HOST}%3A${PORT}" +
@@ -69,7 +67,7 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 			},
 		},
 		{
-			name: "pkce with no listener available prompts",
+			name: "pkce with no listener available prompts and honors explicit clientid",
 			input: authInput{
 				authMode:           constants.AuthModePKCE,
 				clientID:           constants.OAuthClientID,
@@ -94,7 +92,7 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 				displays: []string{
 					"Open this URL in your browser and complete the authorization:\n" +
 						"${URL}/authorization?" +
-						"audience=https%3A%2F%2Fworkbench.sas.com%2Fpostgrest" +
+						"audience=discovered_audience" +
 						"&client_id=" + url.QueryEscape(constants.OAuthClientID) +
 						"{SANITIZE:&code_challenge=.*?&:&code_challenge=SANITIZED&}" +
 						"code_challenge_method=S256" +
@@ -119,7 +117,6 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 			name: "pkce with no listener invalid copy/paste",
 			input: authInput{
 				authMode:           constants.AuthModePKCE,
-				clientID:           constants.OAuthClientID,
 				noListen:           true,
 				organization:       "org-1",
 				askResponses:       []string{"not-\x7fvalid"},
@@ -135,8 +132,8 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 				displays: []string{
 					"Open this URL in your browser and complete the authorization:\n" +
 						"${URL}/authorization?" +
-						"audience=https%3A%2F%2Fworkbench.sas.com%2Fpostgrest" +
-						"&client_id=" + url.QueryEscape(constants.OAuthClientID) +
+						"audience=discovered_audience" +
+						"&client_id=discovered_client_id" +
 						"{SANITIZE:&code_challenge=.*?&:&code_challenge=SANITIZED&}" +
 						"code_challenge_method=S256" +
 						"&ingressHost=${HOST}%3A${PORT}" +
@@ -160,7 +157,6 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 			name: "pkce with no listener available error in copy/paste url",
 			input: authInput{
 				authMode:     constants.AuthModePKCE,
-				clientID:     constants.OAuthClientID,
 				noListen:     true,
 				organization: "org-1",
 				askResponses: []string{
@@ -175,8 +171,8 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 				displays: []string{
 					"Open this URL in your browser and complete the authorization:\n" +
 						"${URL}/authorization?" +
-						"audience=https%3A%2F%2Fworkbench.sas.com%2Fpostgrest" +
-						"&client_id=" + url.QueryEscape(constants.OAuthClientID) +
+						"audience=discovered_audience" +
+						"&client_id=discovered_client_id" +
 						"{SANITIZE:&code_challenge=.*?&:&code_challenge=SANITIZED&}" +
 						"code_challenge_method=S256" +
 						"&ingressHost=${HOST}%3A${PORT}" +
@@ -199,7 +195,7 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 			},
 		},
 		{
-			name: "pkce expected callback flow",
+			name: "pkce expected callback flow - honors explicit clientid",
 			input: authInput{
 				authMode:                  constants.AuthModePKCE,
 				clientID:                  constants.OAuthClientID,
@@ -223,7 +219,7 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 				displays: []string{
 					"Open this URL in your browser and complete the authorization:\n" +
 						"${URL}/authorization?" +
-						"audience=https%3A%2F%2Fworkbench.sas.com%2Fpostgrest" +
+						"audience=discovered_audience" +
 						"&client_id=" + url.QueryEscape(constants.OAuthClientID) +
 						"{SANITIZE:&code_challenge=.*?&:&code_challenge=SANITIZED&}" +
 						"code_challenge_method=S256" +
@@ -241,7 +237,6 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 			name: "pkce expected callback flow fails state validation",
 			input: authInput{
 				authMode:                  constants.AuthModePKCE,
-				clientID:                  constants.OAuthClientID,
 				organization:              "org-1",
 				pkceAuthorizationResponse: "code=abc",
 				pkceListenPort:            20001,
@@ -253,8 +248,8 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 				displays: []string{
 					"Open this URL in your browser and complete the authorization:\n" +
 						"${URL}/authorization?" +
-						"audience=https%3A%2F%2Fworkbench.sas.com%2Fpostgrest" +
-						"&client_id=" + url.QueryEscape(constants.OAuthClientID) +
+						"audience=discovered_audience" +
+						"&client_id=discovered_client_id" +
 						"{SANITIZE:&code_challenge=.*?&:&code_challenge=SANITIZED&}" +
 						"code_challenge_method=S256" +
 						"&ingressHost=${HOST}%3A${PORT}" +
@@ -273,7 +268,6 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 			name: "pkce expected callback flow error response",
 			input: authInput{
 				authMode:                  constants.AuthModePKCE,
-				clientID:                  constants.OAuthClientID,
 				organization:              "org-1",
 				pkceAuthorizationResponse: "code=abc&error=access_denied&error_description=invalid%20parameter",
 				pkceListenPort:            20002,
@@ -285,8 +279,8 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 				displays: []string{
 					"Open this URL in your browser and complete the authorization:\n" +
 						"${URL}/authorization?" +
-						"audience=https%3A%2F%2Fworkbench.sas.com%2Fpostgrest" +
-						"&client_id=" + url.QueryEscape(constants.OAuthClientID) +
+						"audience=discovered_audience" +
+						"&client_id=discovered_client_id" +
 						"{SANITIZE:&code_challenge=.*?&:&code_challenge=SANITIZED&}" +
 						"code_challenge_method=S256" +
 						"&ingressHost=${HOST}%3A${PORT}" +
@@ -305,7 +299,6 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 			name: "pkce expected callback flow failed exchange",
 			input: authInput{
 				authMode:                  constants.AuthModePKCE,
-				clientID:                  constants.OAuthClientID,
 				organization:              "org-1",
 				pkceAuthorizationResponse: "code=abc",
 				pkceListenPort:            20003,
@@ -314,7 +307,7 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 			mockEndpoints: getPasswordEndpoints(passwordConfig{
 				discoveryConfig: successfulPKCEAuthDiscovery,
 				tokenConfig: stubs.StubHTTPPartialPostConfig{
-					ExpectedRequestBody: `client_id=` + url.QueryEscape(constants.OAuthClientID) +
+					ExpectedRequestBody: `client_id=discovered_client_id` +
 						`&code=abc` +
 						`{SANITIZE:&code_verifier=.*?&:&code_verifier=SANITIZED&}` +
 						`grant_type=authorization_code` +
@@ -327,8 +320,8 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 				displays: []string{
 					"Open this URL in your browser and complete the authorization:\n" +
 						"${URL}/authorization?" +
-						"audience=https%3A%2F%2Fworkbench.sas.com%2Fpostgrest" +
-						"&client_id=" + url.QueryEscape(constants.OAuthClientID) +
+						"audience=discovered_audience" +
+						"&client_id=discovered_client_id" +
 						"{SANITIZE:&code_challenge=.*?&:&code_challenge=SANITIZED&}" +
 						"code_challenge_method=S256" +
 						"&ingressHost=${HOST}%3A${PORT}" +
@@ -347,7 +340,6 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 			name: "pkce expected callback flow invalid exchange response body",
 			input: authInput{
 				authMode:                  constants.AuthModePKCE,
-				clientID:                  constants.OAuthClientID,
 				organization:              "org-1",
 				pkceAuthorizationResponse: "code=abc",
 				pkceListenPort:            20004,
@@ -356,7 +348,7 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 			mockEndpoints: getPasswordEndpoints(passwordConfig{
 				discoveryConfig: successfulPKCEAuthDiscovery,
 				tokenConfig: stubs.StubHTTPPartialPostConfig{
-					ExpectedRequestBody: `client_id=` + url.QueryEscape(constants.OAuthClientID) +
+					ExpectedRequestBody: `client_id=discovered_client_id` +
 						`&code=abc` +
 						`{SANITIZE:&code_verifier=.*?&:&code_verifier=SANITIZED&}` +
 						`grant_type=authorization_code` +
@@ -369,8 +361,8 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 				displays: []string{
 					"Open this URL in your browser and complete the authorization:\n" +
 						"${URL}/authorization?" +
-						"audience=https%3A%2F%2Fworkbench.sas.com%2Fpostgrest" +
-						"&client_id=" + url.QueryEscape(constants.OAuthClientID) +
+						"audience=discovered_audience" +
+						"&client_id=discovered_client_id" +
 						"{SANITIZE:&code_challenge=.*?&:&code_challenge=SANITIZED&}" +
 						"code_challenge_method=S256" +
 						"&ingressHost=${HOST}%3A${PORT}" +
@@ -390,7 +382,6 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 			name: "pkce expected callback flow unavailable listen port",
 			input: authInput{
 				authMode:                  constants.AuthModePKCE,
-				clientID:                  constants.OAuthClientID,
 				organization:              "org-1",
 				pkceAuthorizationResponse: "code=abc",
 				pkceListenPort:            math.MaxInt,
@@ -409,7 +400,6 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 			name: "pkce expected callback flow invalid token endpoint",
 			input: authInput{
 				authMode:                  constants.AuthModePKCE,
-				clientID:                  constants.OAuthClientID,
 				organization:              "org-1",
 				pkceAuthorizationResponse: "code=abc",
 				pkceListenPort:            20005,
@@ -418,16 +408,24 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 			mockEndpoints: getPasswordEndpoints(passwordConfig{
 				discoveryConfig: stubs.StubHTTPPartialGetConfig{
 					ResponseStatus: http.StatusOK,
-					ResponseBody: "{\"token_endpoint\":\"http://${HOST}/\x7f/invalid\"," +
-						" \"authorization_endpoint\":\"http://${HOST}/authorization\"}",
+					ResponseBody: `
+						{
+						  "token_endpoint": "http://${HOST}/` + "\x7f" + `/invalid",
+						  "authorization_endpoint": "http://${HOST}/authorization",
+						  "workbench": {
+							"spa_audience": "discovered_audience",
+							"spa_client_id": "discovered_client_id"
+						  }
+						}
+						`,
 				},
 			}),
 			expected: authExpected{
 				displays: []string{
 					"Open this URL in your browser and complete the authorization:\n" +
 						"${URL}/authorization?" +
-						"audience=https%3A%2F%2Fworkbench.sas.com%2Fpostgrest" +
-						"&client_id=" + url.QueryEscape(constants.OAuthClientID) +
+						"audience=discovered_audience" +
+						"&client_id=discovered_client_id" +
 						"{SANITIZE:&code_challenge=.*?&:&code_challenge=SANITIZED&}" +
 						"code_challenge_method=S256" +
 						"&ingressHost=${HOST}%3A${PORT}" +
@@ -446,7 +444,6 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 			name: "pkce expected callback flow timeout",
 			input: authInput{
 				authMode:                  constants.AuthModePKCE,
-				clientID:                  constants.OAuthClientID,
 				organization:              "org-1",
 				pkceAuthorizationResponse: "code=abc",
 				pkceListenPort:            20006,
@@ -460,8 +457,8 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 				displays: []string{
 					"Open this URL in your browser and complete the authorization:\n" +
 						"${URL}/authorization?" +
-						"audience=https%3A%2F%2Fworkbench.sas.com%2Fpostgrest" +
-						"&client_id=" + url.QueryEscape(constants.OAuthClientID) +
+						"audience=discovered_audience" +
+						"&client_id=discovered_client_id" +
 						"{SANITIZE:&code_challenge=.*?&:&code_challenge=SANITIZED&}" +
 						"code_challenge_method=S256" +
 						"&ingressHost=${HOST}%3A${PORT}" +
@@ -485,7 +482,7 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 				pkceAuthorizationResponse: "code=abc",
 			},
 			mockEndpoints: getPasswordEndpoints(passwordConfig{
-				discoveryConfig: successfulPKCEAuthDiscoveryWithClientID,
+				discoveryConfig: successfulPKCEAuthDiscovery,
 				tokenConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: `client_id=discovered_client_id` +
 						`&code=abc` +
