@@ -45,23 +45,101 @@ const (
 	expectedApplicationQuery        = "id=in.(app-1)"
 	expectedApplicationResponseBody = `[{"id":"app-1","display_name":"RStudio",` +
 		`"description":"R app","services":["svc-a","svc-b"]}]`
-	expectedCreateJobRequestBodyWithContext = `` +
-		`{"param":{"context":"build/src","dataplane_id":"123e4567-e89b-12d3-a456-426614174000",` +
-		`"description":"job desc","name":"job-1","nodepool":"np-1",` +
-		`"services":[{"id":"svc-a"},{"id":"svc-b"}]}}`
-	expectedCreateJobRequestBodyNoWorkspaces = `` +
-		`{"param":{"dataplane_id":"123e4567-e89b-12d3-a456-426614174000","description":"job desc",` +
-		`"name":"job-1","nodepool":"np-1","services":[{"id":"svc-a"},{"id":"svc-b"}],` +
-		`"spec":{"tasks":{"default":{"cmds":["run.sh"]}},"version":"3"}}}`
-	expectedCreateJobRequestBodyWithWorkspaces = `` +
-		`{"param":{"dataplane_id":"123e4567-e89b-12d3-a456-426614174000","description":"job desc",` +
-		`"name":"job-2","nodepool":"np-2",` +
-		`"services":[{"id":"svc-a",` +
-		`"env":{"DEFAULT_MOUNTNAME":"data"}},{"id":"svc-b",` +
-		`"env":{"DEFAULT_MOUNTNAME":"data"}}],` +
-		`"spec":{"tasks":{"default":{"cmds":["run.sh"]}},"version":"3"},` +
-		`"sub_path":"src","workspaces":[{"id":"ctrl-home",` +
-		`"mountName":"sas"},{"id":"ctrl-data","mountName":"data"}]}}`
+	expectedCreateJobRequestBodyWithContext = `
+{
+  "param": {
+    "application_id": "app-1",
+    "context": "build/src",
+    "dataplane_id": "123e4567-e89b-12d3-a456-426614174000",
+    "description": "job desc",
+    "name": "job-1",
+    "nodepool": "np-1",
+    "services": [ { "id": "svc-a" }, { "id": "svc-b" } ],
+    "properties": {
+      "isWorkbenchAppCreated": true
+    }
+  }
+}
+`
+	expectedCreateJobRequestBodyNoWorkspaces = `
+{
+  "param": {
+    "application_id": "app-1",
+    "dataplane_id": "123e4567-e89b-12d3-a456-426614174000",
+    "description": "job desc",
+    "name": "job-1",
+    "nodepool": "np-1",
+    "services": [ { "id": "svc-a" }, { "id": "svc-b" } ],
+    "spec": {
+      "tasks": {
+        "default": {
+          "cmds": [
+            "run.sh"
+          ]
+        }
+      },
+      "version": "3"
+    },
+    "properties": {
+      "isWorkbenchAppCreated": true
+    }
+  }
+}
+`
+	expectedCreateJobRequestBodyWithWorkspaces = `
+{
+  "param": {
+    "application_id": "app-1",
+    "dataplane_id": "123e4567-e89b-12d3-a456-426614174000",
+    "description": "job desc",
+    "name": "job-2",
+    "nodepool": "np-2",
+    "services": [
+      {
+        "id": "svc-a",
+        "env": {
+          "DEFAULT_MOUNTNAME": "data"
+        }
+      },
+      {
+        "id": "svc-b",
+        "env": {
+          "DEFAULT_MOUNTNAME": "data"
+        }
+      }
+    ],
+    "spec": {
+      "tasks": {
+        "default": {
+          "cmds": [
+            "run.sh"
+          ]
+        }
+      },
+      "version": "3"
+    },
+    "sub_path": "src",
+    "workspaces": [
+      {
+        "id": "ctrl-home",
+        "mountName": "sas"
+      },
+      {
+        "id": "ctrl-data",
+        "mountName": "data"
+      }
+    ],
+    "properties": {
+      "isWorkbenchAppCreated": true,
+      "primaryVolume": {
+        "controller_id": "ctrl-home",
+        "folderName": "sas",
+        "id": "ws-home"
+      }
+    }
+  }
+}
+`
 	expectedUpdateJobDryRunOutput = `{
     "ids": [
         "job-cli-1",
@@ -69,6 +147,9 @@ const (
     ],
     "param": {
         "description": "job update desc",
+        "properties": {
+            "isWorkbenchAppCreated": true
+        },
         "spec": {
             "tasks": {
                 "default": {
@@ -88,13 +169,51 @@ const (
         ]
     }
 }`
-	expectedUpdateJobRequestBodyMapping = `` +
-		`{"ids":["job-cli-1","job-cli-2"],"param":{` +
-		`"description":"job update desc","spec":{"tasks":{"default":{"cmds":["run.sh"]}},"version":"3"},` +
-		`"sub_path":"src","workspaces":[{"id":"ctrl-home","mountName":"sas"}]}}`
-	expectedUpdateJobRequestBodyIDsOnly = `{"ids":["job-cli-1"],"param":{}}`
-	expectedUpdateJobFileContent        = `{"id":"job-file","description":"from file"}`
-	expectedUpdateJobFileDryRunOutput   = `{
+	expectedUpdateJobRequestBodyMapping = `
+{
+  "ids": [
+    "job-cli-1",
+    "job-cli-2"
+  ],
+  "param": {
+    "description": "job update desc",
+    "properties": {
+      "isWorkbenchAppCreated": true
+    },
+    "spec": {
+      "tasks": {
+        "default": {
+          "cmds": [
+            "run.sh"
+          ]
+        }
+      },
+      "version": "3"
+    },
+    "sub_path": "src",
+    "workspaces": [
+      {
+        "id": "ctrl-home",
+        "mountName": "sas"
+      }
+    ]
+  }
+}
+`
+	expectedUpdateJobRequestBodyIDsOnly = `
+{
+  "ids": [
+    "job-cli-1"
+  ],
+  "param": {
+    "properties": {
+      "isWorkbenchAppCreated": true
+    }
+  }
+}
+`
+	expectedUpdateJobFileContent      = `{"id":"job-file","description":"from file"}`
+	expectedUpdateJobFileDryRunOutput = `{
     "ids": [
         "job-file"
     ],
@@ -106,17 +225,59 @@ const (
 	expectedUpdateJobServerErr    = "POST ${URL}/postgrest/rpc/job_bulk_update failed\n" +
 		" Caused by:\n" +
 		"\t* 401 unauthorized"
-	expectedUpdateJobRequestBodyAllFlags = `` +
-		`{"ids":["job-cli-1"],"param":{"context":"build/src",` +
-		`"description":"job update desc","labels":{"team":"core"},"name":"job-name",` +
-		`"nodepool":"np-1","schedule":"0 0 * * *",` +
-		`"services":[{"id":"svc-a","env":{"A":"B"}},{"id":"svc-b","env":{"A":"B"}}],` +
-		`"spec":{"tasks":{"default":{"cmds":["run.sh"]}},"version":"3"},"sub_path":"src"}}`
+	expectedUpdateJobRequestBodyAllFlags = `
+{
+  "ids": [
+    "job-cli-1"
+  ],
+  "param": {
+    "application_id": "app-1",
+    "context": "build/src",
+    "description": "job update desc",
+    "labels": {
+      "team": "core"
+    },
+    "name": "job-name",
+    "nodepool": "np-1",
+    "properties": {
+      "isWorkbenchAppCreated": true,
+      "schedule": "simple"
+    },
+    "schedule": "0 0 * * *",
+    "services": [
+      {
+        "id": "svc-a",
+        "env": {
+          "A": "B"
+        }
+      },
+      {
+        "id": "svc-b",
+        "env": {
+          "A": "B"
+        }
+      }
+    ],
+    "spec": {
+      "tasks": {
+        "default": {
+          "cmds": [
+            "run.sh"
+          ]
+        }
+      },
+      "version": "3"
+    },
+    "sub_path": "src"
+  }
+}
+	`
 	expectedUpdateJobLongFlagsDryRunOutput = `{
     "ids": [
         "job-cli-1"
     ],
     "param": {
+        "application_id": "app-1",
         "context": "build/src",
         "description": "job update desc",
         "labels": {
@@ -124,6 +285,10 @@ const (
         },
         "name": "job-name",
         "nodepool": "np-1",
+        "properties": {
+            "isWorkbenchAppCreated": true,
+            "schedule": "simple"
+        },
         "schedule": "0 0 * * *",
         "services": [
             {

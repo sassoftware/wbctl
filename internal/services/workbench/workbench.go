@@ -129,13 +129,14 @@ func GetValidDataplaneID(ctx context.Context, svc *WorkbenchService, dataplaneID
 }
 
 // GetValidWorkspaceRequests takes the given worksaceIDs, fetches those
-// workspaces from the server, and returns the full workspace body.
+// workspaces from the server, and returns the database id and full workspace
+// request body for each.
 func GetValidWorkspaceRequests(
 	ctx context.Context,
 	svc *WorkbenchService,
 	workspaceIDs []string,
-) ([]types.HomeDirAwareWorkspaceRequest, error) {
-	validWorkspaces := make([]types.HomeDirAwareWorkspaceRequest, 0, len(workspaceIDs))
+) ([]types.WorkspaceRequestWithMetadata, error) {
+	validWorkspaces := make([]types.WorkspaceRequestWithMetadata, 0, len(workspaceIDs))
 	for _, workspaceID := range workspaceIDs {
 		workspaces, err := GetWorkspaces(ctx, svc, []string{workspaceID}, "")
 		if err != nil {
@@ -158,12 +159,13 @@ func GetValidWorkspaceRequests(
 		if homeDir {
 			mountName = "sas"
 		}
-		validWorkspaces = append(validWorkspaces, types.HomeDirAwareWorkspaceRequest{
+		validWorkspaces = append(validWorkspaces, types.WorkspaceRequestWithMetadata{
 			WorkspaceRequest: types.WorkspaceRequest{
 				ID:        id,
 				MountName: mountName,
 			},
 			HomeDir: homeDir,
+			DbID:    workspaces[0].ID,
 		})
 	}
 	return validWorkspaces, nil

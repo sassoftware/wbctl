@@ -157,7 +157,7 @@ func getCreateJobSubmissionRequestBody(
 
 func setWorkspaceRequests(
 	jobSubmission *types.JobSubmission,
-	workspaceRequests []types.HomeDirAwareWorkspaceRequest,
+	workspaceRequests []types.WorkspaceRequestWithMetadata,
 ) {
 	for _, workspaceRequest := range workspaceRequests {
 		jobSubmission.Workspaces = append(jobSubmission.Workspaces, workspaceRequest.WorkspaceRequest)
