@@ -181,6 +181,13 @@ var (
 		ResponseStatus: http.StatusOK,
 		ResponseBody:   authTestDeviceAuthorizationBody,
 	}
+	successfulDeviceWithOrg = stubs.StubHTTPPartialPostConfig{
+		ExpectedRequestBody: `audience=discovered_audience` +
+			`&client_id=discovered_native_client_id` +
+			`&scope=` + url.QueryEscape(constants.OAuthScope+" organization:org-1"),
+		ResponseStatus: http.StatusOK,
+		ResponseBody:   authTestDeviceAuthorizationBody,
+	}
 )
 
 func TestGetCSRFToken(t *testing.T) {

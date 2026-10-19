@@ -64,7 +64,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				deviceConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: `audience=discovered_audience` +
 						`&client_id=explicit_client_id` +
-						`&scope=` + url.QueryEscape(constants.OAuthScope),
+						`&scope=` + url.QueryEscape(constants.OAuthScope+" organization:org-1"),
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   authTestDeviceAuthorizationBody,
 				},
@@ -96,7 +96,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				deviceConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: `audience=discovered_audience` +
 						`&client_id=explicit_client_id` +
-						`&scope=` + url.QueryEscape(constants.OAuthScope),
+						`&scope=` + url.QueryEscape(constants.OAuthScope+" organization:org-1"),
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   authTestDeviceAuthorizationBody,
 				},
@@ -155,7 +155,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			},
 			mockEndpoints: getDeviceEndpoints(deviceConfig{
 				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
-				deviceConfig:    successfulDevice,
+				deviceConfig:    successfulDeviceWithOrg,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
 					ExpectedRequestBody: expectedTokenRequestBody,
 					ResponseStatus:      http.StatusOK,

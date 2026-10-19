@@ -53,7 +53,7 @@ func getAccessTokenByDeviceGrant(
 	}
 
 	// Fall back to device authorization
-	deviceAuthResponse, err := startDeviceAuthorizationAtEndpoint(ctx, params.ClientID, cfg)
+	deviceAuthResponse, err := startDeviceAuthorizationAtEndpoint(ctx, params.ClientID, params.Organization, cfg)
 	if err != nil {
 		return "", errors.Wrap(err, i18n.Format(i18n.FailedToGetDeviceToken))
 	}
@@ -71,12 +71,13 @@ func getAccessTokenByDeviceGrant(
 func startDeviceAuthorizationAtEndpoint(
 	ctx context.Context,
 	clientID string,
+	organization string,
 	cfg wellKnownConfigResponse,
 ) (deviceAuthorizationResponse, error) {
 	if clientID == "" {
 		clientID = cfg.Workbench.NativeClientID
 	}
-	data := buildDeviceGrantValues(clientID, cfg.Workbench.SPAAudience)
+	data := buildDeviceGrantValues(clientID, organization, cfg.Workbench.SPAAudience)
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodPost,
@@ -231,12 +232,17 @@ func authorizationPolling(
 
 func buildDeviceGrantValues(
 	clientID string,
+	organization string,
 	audience string,
 ) url.Values {
 	data := url.Values{}
 	data.Set(constants.QueryParameterAudience, sliceutil.Coalesce(audience, constants.OAuthAudience))
 	data.Set(constants.QueryParameterClientID, clientID)
-	data.Set(constants.QueryParameterScope, constants.OAuthScope)
+	scope := constants.OAuthScope
+	if organization != "" {
+		scope += " organization:" + organization
+	}
+	data.Set(constants.QueryParameterScope, scope)
 	return data
 }
 
