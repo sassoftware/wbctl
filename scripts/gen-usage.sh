@@ -13,7 +13,7 @@ usage() {
   shift
   local cmd="$@"
   local helptext=$($cmd --help)
-  echo Generating using doc for: $cmd
+  echo Generating usage doc for: $cmd
   local subcommands=()
   while read -r subcommand
   do
