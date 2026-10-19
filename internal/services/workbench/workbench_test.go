@@ -363,7 +363,7 @@ func TestGetWorkspaceRequests(t *testing.T) {
 		workspaceIDs []string
 	}
 	type expected struct {
-		value []types.HomeDirAwareWorkspaceRequest
+		value []types.WorkspaceRequestWithMetadata
 		err   string
 	}
 	type testCase struct {
@@ -382,9 +382,10 @@ func TestGetWorkspaceRequests(t *testing.T) {
 				http.StatusOK,
 				`[ {"id":"ws-1","controller_id":"ctrl-1","name":"myws","properties":{"HOME_DIRECTORY":"true"}} ]`,
 			),
-			expected: expected{value: []types.HomeDirAwareWorkspaceRequest{{
+			expected: expected{value: []types.WorkspaceRequestWithMetadata{{
 				WorkspaceRequest: types.WorkspaceRequest{ID: "ctrl-1", MountName: "sas"},
 				HomeDir:          true,
+				DbID:             "ws-1",
 			}}},
 		},
 		{
@@ -396,9 +397,10 @@ func TestGetWorkspaceRequests(t *testing.T) {
 				http.StatusOK,
 				`[ {"id":"00000000-0000-0000-0000-000000000001","controller_id":"","name":"wsname","properties":{}} ]`,
 			),
-			expected: expected{value: []types.HomeDirAwareWorkspaceRequest{{
+			expected: expected{value: []types.WorkspaceRequestWithMetadata{{
 				WorkspaceRequest: types.WorkspaceRequest{ID: "00000000-0000-0000-0000-000000000001", MountName: "wsname"},
 				HomeDir:          false,
+				DbID:             "00000000-0000-0000-0000-000000000001",
 			}}},
 		},
 		{

@@ -293,7 +293,7 @@ func makeUpdateWorkbenchPayload(
 
 func setWorkspaceRequests(
 	wkbnch *types.Workbench,
-	workspaceRequests []types.HomeDirAwareWorkspaceRequest,
+	workspaceRequests []types.WorkspaceRequestWithMetadata,
 ) {
 	defaultMountName := "" // the first non-home workspace
 	for _, workspaceRequest := range workspaceRequests {

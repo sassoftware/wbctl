@@ -374,10 +374,12 @@ type Dataplane struct {
 // Dataplanes is a slice of Dataplane values.
 type Dataplanes []Dataplane
 
-// HomeDirAwareWorkspaceRequest wraps a workspace request with home directory metadata.
-type HomeDirAwareWorkspaceRequest struct {
+// WorkspaceRequestWithMetadata wraps a workspace request with home directory
+// and db id metadata.
+type WorkspaceRequestWithMetadata struct {
 	WorkspaceRequest
 	HomeDir bool
+	DbID    string
 }
 
 // StorageClass represents a storage class.

@@ -221,18 +221,33 @@ func getJobRequestBody(
 	}
 	serviceRequests = workbench.AddEnvsToServiceRequests(envs, serviceRequests)
 	job := types.Job{
-		Name:        name,
-		Description: description,
-		Context:     jobContext,
-		Labels:      maputil.FromEqualDelimitedLines(labels),
-		Spec:        getSpec(command),
-		SubPath:     subPath,
-		Schedule:    schedule,
-		Nodepool:    nodepool,
-		Workspaces:  make([]types.WorkspaceRequest, 0),
-		Services:    serviceRequests,
+		Name:          name,
+		ApplicationID: application,
+		Description:   description,
+		Context:       jobContext,
+		Labels:        maputil.FromEqualDelimitedLines(labels),
+		Spec:          getSpec(command),
+		SubPath:       subPath,
+		Schedule:      schedule,
+		Nodepool:      nodepool,
+		Workspaces:    make([]types.WorkspaceRequest, 0),
+		Services:      serviceRequests,
 	}
 	setWorkspaceRequests(&job, workspaceRequests)
+	properties := map[string]interface{}{
+		"isWorkbenchAppCreated": true,
+	}
+	if job.Schedule != "" {
+		properties["schedule"] = "simple"
+	}
+	if len(job.Workspaces) > 1 {
+		properties["primaryVolume"] = map[string]interface{}{
+			"id":            workspaceRequests[0].DbID,
+			"controller_id": workspaceRequests[0].ID,
+			"folderName":    workspaceRequests[0].MountName,
+		}
+	}
+	job.Properties = properties
 	return job, nil
 }
 
@@ -289,7 +304,7 @@ func getCreateJobRequestBody(
 
 func setWorkspaceRequests(
 	job *types.Job,
-	workspaceRequests []types.HomeDirAwareWorkspaceRequest,
+	workspaceRequests []types.WorkspaceRequestWithMetadata,
 ) {
 	defaultMountName := "" // the first non-home workspace
 	for _, workspaceRequest := range workspaceRequests {
