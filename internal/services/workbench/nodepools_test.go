@@ -225,6 +225,61 @@ func TestGetNodepools(t *testing.T) {
 	}
 }
 
+func TestGetAllNodepoolIDs(t *testing.T) {
+	tests := []getTestCase[[]string]{
+		{
+			name: "get nodepool ids success",
+			mockEndpoints: getNodepoolsGetEndpoints(
+				"",
+				http.StatusOK,
+				nodepoolsGetTwoResponseJSON,
+			),
+			expected: getExpected[[]string]{
+				result: []string{"id-a", "id-b"},
+			},
+		},
+		{
+			name: "get nodepool ids invalid json response",
+			mockEndpoints: getNodepoolsGetEndpoints(
+				"",
+				http.StatusOK,
+				"[",
+			),
+			expected: getExpected[[]string]{
+				err: "GET ${URL}/postgrest/dataplane_nodepools failed\n Caused by:\n\t* unexpected EOF",
+			},
+		},
+		{
+			name: "get nodepool ids non-200 from server",
+			mockEndpoints: getNodepoolsGetEndpoints(
+				"",
+				http.StatusUnauthorized,
+				"unauthorized",
+			),
+			expected: getExpected[[]string]{
+				err: "GET ${URL}/postgrest/dataplane_nodepools failed\n Caused by:\n\t* 401 unauthorized",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			srv, _ := stubs.NewStubHTTPServer(t, tt.mockEndpoints)
+			defer srv.Close()
+			svc := workbench.NewWorkbenchService(srv.URL, "access-token", "csrf-token")
+
+			actual, err := workbench.GetNodepoolIDs(context.Background(), svc)
+			if tt.expected.err != "" {
+				require.EqualError(t, err, strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL))
+				return
+			}
+
+			require.NoError(t, err)
+			require.Equal(t, tt.expected.result, actual)
+		})
+	}
+}
+
 func TestPrintNodepools(t *testing.T) {
 	tests := []struct {
 		name               string

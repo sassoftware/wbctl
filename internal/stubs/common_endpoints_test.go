@@ -29,19 +29,49 @@ func TestGetStubWorkspaceEndpoints(t *testing.T) {
 }
 
 func TestGetStubDataplaneEndpoints(t *testing.T) {
-	defaultEndpoints := stubs.GetStubDataplaneEndpoints(stubs.StubHTTPPartialGetConfig{
+	defaultEndpoints := stubs.GetStubDataplaneEndpoints(stubs.StubHTTPPartialGetConfig{})
+	require.Empty(t, defaultEndpoints)
+
+	endpoints := stubs.GetStubDataplaneEndpoints(stubs.StubHTTPPartialGetConfig{
 		ResponseStatus: http.StatusOK,
 		ResponseBody:   `ok`,
 	})
-	require.Len(t, defaultEndpoints, 1)
-	require.Equal(t, `ok`, defaultEndpoints[0].Response.Body)
+	require.Len(t, endpoints, 1)
+	require.Equal(t, `ok`, endpoints[0].Response.Body)
 }
 
 func TestGetStubApplicationEndpoints(t *testing.T) {
-	defaultEndpoints := stubs.GetStubApplicationEndpoints(stubs.StubHTTPPartialGetConfig{
+	defaultEndpoints := stubs.GetStubApplicationsEndpoints(stubs.StubHTTPPartialGetConfig{})
+	require.Empty(t, defaultEndpoints)
+
+	endpoints := stubs.GetStubApplicationsEndpoints(stubs.StubHTTPPartialGetConfig{
 		ResponseStatus: http.StatusOK,
 		ResponseBody:   `ok`,
 	})
-	require.Len(t, defaultEndpoints, 1)
-	require.Equal(t, `ok`, defaultEndpoints[0].Response.Body)
+	require.Len(t, endpoints, 1)
+	require.Equal(t, `ok`, endpoints[0].Response.Body)
+}
+
+func TestGetStubServicesEndpoints(t *testing.T) {
+	defaultEndpoints := stubs.GetStubServicesEndpoints(stubs.StubHTTPPartialGetConfig{})
+	require.Empty(t, defaultEndpoints)
+
+	endpoints := stubs.GetStubServicesEndpoints(stubs.StubHTTPPartialGetConfig{
+		ResponseStatus: http.StatusOK,
+		ResponseBody:   `ok`,
+	})
+	require.Len(t, endpoints, 1)
+	require.Equal(t, `ok`, endpoints[0].Response.Body)
+}
+
+func TestGetStubNodepoolsEndpoints(t *testing.T) {
+	defaultEndpoints := stubs.GetStubNodepoolsEndpoints(stubs.StubHTTPPartialGetConfig{})
+	require.Empty(t, defaultEndpoints)
+
+	endpoints := stubs.GetStubNodepoolsEndpoints(stubs.StubHTTPPartialGetConfig{
+		ResponseStatus: http.StatusOK,
+		ResponseBody:   `ok`,
+	})
+	require.Len(t, endpoints, 1)
+	require.Equal(t, `ok`, endpoints[0].Response.Body)
 }

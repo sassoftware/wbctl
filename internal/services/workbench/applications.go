@@ -5,6 +5,7 @@ package workbench
 
 import (
 	"context"
+	"slices"
 	"strings"
 
 	"github.com/sassoftware/sas-ggdk/pkg/result"
@@ -29,6 +30,24 @@ func GetApplications(
 	return result.Split(Get[types.Applications](
 		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointDataplaneWorkbenchApplications), IDsQuery(ids, sortSpec),
 	))
+}
+
+// GetApplicationIDs returns all application IDs present in the
+// WorkbenchService.
+func GetApplicationIDs(
+	ctx context.Context,
+	s *WorkbenchService,
+) ([]string, error) {
+	applications, err := GetApplications(ctx, s, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]string, 0, len(applications))
+	for _, app := range applications {
+		ids = append(ids, app.ID)
+	}
+	slices.Sort(ids)
+	return ids, nil
 }
 
 // PrintApplications returns a function that prints the given applications.

@@ -501,6 +501,11 @@ func TestGetServiceRequests(t *testing.T) {
 	}
 	tests := []testCase{
 		{
+			name:     "empty request",
+			request:  request{},
+			expected: expected{value: nil},
+		},
+		{
 			name:    "from application",
 			request: request{application: "app-1"},
 			mockEndpoints: getEndpoints(
@@ -527,7 +532,7 @@ func TestGetServiceRequests(t *testing.T) {
 			request: request{serviceIDs: []string{"svc-a"}},
 			mockEndpoints: getEndpoints(
 				postgrest.Endpoint(constants.WorkbenchEndpointDataplaneWorkbenchServices),
-				"id=in.(svc-a)",
+				"",
 				http.StatusOK,
 				`[ {"id":"svc-a"} ]`,
 			),
@@ -538,7 +543,7 @@ func TestGetServiceRequests(t *testing.T) {
 			request: request{serviceIDs: []string{"missing"}},
 			mockEndpoints: getEndpoints(
 				postgrest.Endpoint(constants.WorkbenchEndpointDataplaneWorkbenchServices),
-				"id=in.(missing)",
+				"",
 				http.StatusOK,
 				`[]`,
 			),
@@ -564,12 +569,12 @@ func TestGetServiceRequests(t *testing.T) {
 			request: request{serviceIDs: []string{"service-1"}},
 			mockEndpoints: getEndpoints(
 				postgrest.Endpoint(constants.WorkbenchEndpointDataplaneWorkbenchServices),
-				"id=in.(service-1)",
+				"",
 				http.StatusOK,
 				`[invalid`,
 			),
 			expected: expected{
-				err: "GET ${URL}/postgrest/dataplane_workbench_services?id=in.%28service-1%29 failed" +
+				err: "GET ${URL}/postgrest/dataplane_workbench_services failed" +
 					"\n Caused by:" +
 					"\n\t* invalid character 'i' looking for beginning of value",
 			},

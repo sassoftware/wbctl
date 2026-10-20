@@ -13,7 +13,6 @@ import (
 
 	"github.com/sassoftware/sas-ggdk/pkg/httputils"
 	"github.com/sassoftware/sas-ggdk/pkg/result"
-	"github.com/sassoftware/sas-ggdk/pkg/sliceutils"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/httputil"
 	"github.com/sassoftware/wbctl/internal/i18n"
@@ -208,12 +207,7 @@ func GetServiceRequests(
 	if application != "" {
 		return applicationToServiceRequests(ctx, svc, application)
 	}
-	return result.Split(
-		sliceutils.Map(
-			result.MakeFlatMapper(serviceIDtoServiceRequest(ctx, svc)),
-			serviceIDs,
-		),
-	)
+	return serviceIDsToServiceRequests(ctx, svc, serviceIDs)
 }
 
 func applicationToServiceRequests(
@@ -233,34 +227,45 @@ func applicationToServiceRequests(
 			),
 		)
 	}
-	services := []types.ServiceRequest{}
+	services := make([]types.ServiceRequest, 0, len(applications[0].Services))
 	for _, service := range applications[0].Services {
 		services = append(services, types.ServiceRequest{ID: service})
 	}
 	return services, nil
 }
 
-func serviceIDtoServiceRequest(
+func serviceIDsToServiceRequests(
 	ctx context.Context,
 	svc *WorkbenchService,
-) func(string) (types.ServiceRequest, error) {
-	return func(serviceID string) (types.ServiceRequest, error) {
-		services, err := GetServices(ctx, svc, []string{serviceID}, "")
-		if err != nil {
-			return types.ServiceRequest{}, err
+	ids []string,
+) ([]types.ServiceRequest, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	services, err := GetServices(ctx, svc, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	requests := make([]types.ServiceRequest, 0, len(ids))
+	for _, id := range ids {
+		serviceFound := false
+		for _, service := range services {
+			if service.ID == id {
+				requests = append(requests, types.ServiceRequest{ID: service.ID})
+				serviceFound = true
+				break
+			}
 		}
-		if len(services) == 0 {
-			return types.ServiceRequest{}, errors.New(
+		if !serviceFound {
+			return nil, errors.New(
 				i18n.Format(
 					i18n.ResourceNotFoundWithID,
-					i18n.A{constants.I18nArgTypeKey: constants.ServiceType, constants.I18nArgKeyID: serviceID},
+					i18n.A{constants.I18nArgTypeKey: constants.ServiceType, constants.I18nArgKeyID: id},
 				),
 			)
 		}
-		return types.ServiceRequest{
-			ID: services[0].ID,
-		}, nil
 	}
+	return requests, nil
 }
 
 // GetInitializerRequests converts the given initializer IDs into a set of

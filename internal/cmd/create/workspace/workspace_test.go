@@ -1005,7 +1005,7 @@ func getWorkspaceEndpoints(
 	config workspaceEndpointsConfig,
 ) []stubs.StubHTTPEndpoint {
 	endpoints := append(stubs.GetStubAuthEndpoints(), stubs.GetStubDataplaneEndpoints(config.dataplaneConfig)...)
-	endpoints = append(endpoints, stubs.GetStubApplicationEndpoints(config.applicationsConfig)...)
+	endpoints = append(endpoints, stubs.GetStubApplicationsEndpoints(config.applicationsConfig)...)
 	endpoints = append(endpoints,
 		[]stubs.StubHTTPEndpoint{
 			{

@@ -5,6 +5,7 @@ package workbench
 
 import (
 	"context"
+	"slices"
 
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/constants"
@@ -28,6 +29,23 @@ func GetNodepools(
 	return result.Split(Get[types.Nodepools](
 		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointDataplaneNodepools), IDsQuery(ids, sortSpec),
 	))
+}
+
+// GetNodepoolIDs returns all nodepool IDs present in the WorkbenchService.
+func GetNodepoolIDs(
+	ctx context.Context,
+	s *WorkbenchService,
+) ([]string, error) {
+	nodepools, err := GetNodepools(ctx, s, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]string, 0, len(nodepools))
+	for _, nodepool := range nodepools {
+		ids = append(ids, nodepool.ID)
+	}
+	slices.Sort(ids)
+	return ids, nil
 }
 
 // PrintNodepools returns a function that prints the given nodepools.

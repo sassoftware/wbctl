@@ -146,6 +146,9 @@ func GetStubWorkspaceEndpoints(config StubHTTPPartialGetConfig) []StubHTTPEndpoi
 // GetStubDataplaneEndpoints returns a dataplane endpoint. The first
 // request/response is configured with the given config.
 func GetStubDataplaneEndpoints(config StubHTTPPartialGetConfig) []StubHTTPEndpoint {
+	if config.ResponseStatus == 0 {
+		return nil
+	}
 	return []StubHTTPEndpoint{
 		{
 			Request: StubHTTPRequest{
@@ -162,14 +165,61 @@ func GetStubDataplaneEndpoints(config StubHTTPPartialGetConfig) []StubHTTPEndpoi
 	}
 }
 
-// GetStubApplicationEndpoints returns an application endpoint. The first
+// GetStubApplicationsEndpoints returns an application endpoint. The first
 // request/response is configured with the given config.
-func GetStubApplicationEndpoints(config StubHTTPPartialGetConfig) []StubHTTPEndpoint {
+func GetStubApplicationsEndpoints(config StubHTTPPartialGetConfig) []StubHTTPEndpoint {
+	if config.ResponseStatus == 0 {
+		return nil
+	}
 	return []StubHTTPEndpoint{
 		{
 			Request: StubHTTPRequest{
 				Method:          http.MethodGet,
 				URL:             postgrest.Endpoint(constants.WorkbenchEndpointDataplaneWorkbenchApplications),
+				ExpectedHeaders: StubAuthHeaders,
+				ExpectedQuery:   config.ExpectedQuery,
+			},
+			Response: StubHTTPResponse{
+				Status: config.ResponseStatus,
+				Body:   config.ResponseBody,
+			},
+		},
+	}
+}
+
+// GetStubServicesEndpoints returns a services endpoint. The first
+// request/response is configured with the given config.
+func GetStubServicesEndpoints(config StubHTTPPartialGetConfig) []StubHTTPEndpoint {
+	if config.ResponseStatus == 0 {
+		return nil
+	}
+	return []StubHTTPEndpoint{
+		{
+			Request: StubHTTPRequest{
+				Method:          http.MethodGet,
+				URL:             postgrest.Endpoint(constants.WorkbenchEndpointDataplaneWorkbenchServices),
+				ExpectedHeaders: StubAuthHeaders,
+				ExpectedQuery:   config.ExpectedQuery,
+			},
+			Response: StubHTTPResponse{
+				Status: config.ResponseStatus,
+				Body:   config.ResponseBody,
+			},
+		},
+	}
+}
+
+// GetStubNodepoolsEndpoints returns a nodepools endpoint. The first
+// request/response is configured with the given config.
+func GetStubNodepoolsEndpoints(config StubHTTPPartialGetConfig) []StubHTTPEndpoint {
+	if config.ResponseStatus == 0 {
+		return nil
+	}
+	return []StubHTTPEndpoint{
+		{
+			Request: StubHTTPRequest{
+				Method:          http.MethodGet,
+				URL:             postgrest.Endpoint(constants.WorkbenchEndpointDataplaneNodepools),
 				ExpectedHeaders: StubAuthHeaders,
 				ExpectedQuery:   config.ExpectedQuery,
 			},

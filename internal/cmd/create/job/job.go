@@ -6,6 +6,7 @@ package job
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/sassoftware/wbctl/internal/cmd/auth"
 	"github.com/sassoftware/wbctl/internal/cmd/flags"
@@ -286,13 +287,21 @@ func getCreateJobRequestBody(
 		}))
 	}
 	if job.ApplicationID == "" && len(job.Services) == 0 {
-		return types.Job{}, errors.New(i18n.Format(i18n.EitherApplicationOrServiceIsRequired))
+		validApplicationValues, _ := workbench.GetApplicationIDs(ctx, svc)
+		validServiceValues, _ := workbench.GetServiceIDs(ctx, svc)
+		return types.Job{}, errors.New(i18n.Format(i18n.EitherApplicationOrServiceIsRequired,
+			i18n.A{
+				constants.I18nArgKeyApplications: strings.Join(validApplicationValues, ", "),
+				constants.I18nArgKeyServices:     strings.Join(validServiceValues, ", "),
+			},
+		))
 	}
 	if job.Nodepool == "" {
+		validNodepools, _ := workbench.GetNodepoolIDs(ctx, svc)
 		return types.Job{}, errors.New(
 			i18n.Format(
-				i18n.FlagIsRequired,
-				i18n.A{constants.I18nArgKeyFlagName: constants.NodepoolFlag},
+				i18n.FlagNodepoolIsRequired,
+				i18n.A{constants.I18nArgKeyNodepools: strings.Join(validNodepools, ", ")},
 			),
 		)
 	}

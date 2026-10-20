@@ -31,13 +31,18 @@ const (
 		`"nodepool":"np-file","context":"ws-1","application_id":"vscode"}`
 	expectedCreateJobIncompleteFileContent = `{"name":"job-from-incomplete-file",` +
 		`"nodepool":"np-file","context":"ws-1"}`
-	expectedCrateJobIncompleteFileErr = "either --application or at least one --service is required"
-	expectedCreateJobID               = "job-1"
-	expectedCreateJobNameError        = "--name is required"
-	expectedCreateJobContextErr       = "either --context or --command is required"
-	expectedCreateJobAppErr           = "either --application or at least one --service is required"
-	expectedCreateJobNodepoolErr      = "--nodepool is required"
-	expectedCreateJobServerErr        = "POST ${URL}/postgrest/rpc/job_create failed\n" +
+	expectedCrateJobIncompleteFileErr = "either --application or at least one --service is required\n" +
+		"  Valid Applications: application-1, application-2\n" +
+		"  Valid Services: service-1, service-2"
+	expectedCreateJobID         = "job-1"
+	expectedCreateJobNameError  = "--name is required"
+	expectedCreateJobContextErr = "either --context or --command is required"
+	expectedCreateJobAppErr     = "either --application or at least one --service is required\n" +
+		"  Valid Applications: application-1, application-2\n" +
+		"  Valid Services: service-1, service-2"
+	expectedCreateJobNodepoolErr = "--nodepool is required\n" +
+		"  Valid Nodepools: np-1, np-2"
+	expectedCreateJobServerErr = "POST ${URL}/postgrest/rpc/job_create failed\n" +
 		" Caused by:\n" +
 		"\t* 401 unauthorized"
 	expectedCreateJobWarn           = "no volume specified"
@@ -45,6 +50,8 @@ const (
 	expectedApplicationQuery        = "id=in.(app-1)"
 	expectedApplicationResponseBody = `[{"id":"app-1","display_name":"RStudio",` +
 		`"description":"R app","services":["svc-a","svc-b"]}]`
+	expectedServicesResponseBody = `[{"id":"service-1","name":"service 1"},` +
+		`{"id":"service-2","name":"service 2"}]`
 	expectedCreateJobRequestBodyWithContext = `
 {
   "param": {
@@ -103,6 +110,59 @@ const (
       },
       {
         "id": "svc-b",
+        "env": {
+          "DEFAULT_MOUNTNAME": "data"
+        }
+      }
+    ],
+    "spec": {
+      "tasks": {
+        "default": {
+          "cmds": [
+            "run.sh"
+          ]
+        }
+      },
+      "version": "3"
+    },
+    "sub_path": "src",
+    "workspaces": [
+      {
+        "id": "ctrl-home",
+        "mountName": "sas"
+      },
+      {
+        "id": "ctrl-data",
+        "mountName": "data"
+      }
+    ],
+    "properties": {
+      "isWorkbenchAppCreated": true,
+      "primaryVolume": {
+        "controller_id": "ctrl-home",
+        "folderName": "sas",
+        "id": "ws-home"
+      }
+    }
+  }
+}
+`
+	expectedCreateJobRequestBodyWithServices = `
+{
+  "param": {
+    "dataplane_id": "123e4567-e89b-12d3-a456-426614174000",
+    "description": "job desc",
+    "name": "job-2",
+    "nodepool": "np-2",
+    "services": [
+      {
+        "id": "service-1",
+        "env": {
+          "DEFAULT_MOUNTNAME": "data"
+        }
+      },
+      {
+        "id": "service-2",
         "env": {
           "DEFAULT_MOUNTNAME": "data"
         }
@@ -349,6 +409,7 @@ type createInput struct {
 	context     string
 	command     string
 	application string
+	services    []string
 	nodepool    string
 	subPath     string
 	workspaces  []string
@@ -359,9 +420,11 @@ type createExpected struct {
 	warns             []string
 	err               string
 	createCalls       int
-	dataplaneCalls    int
+	dataplanesCalls   int
 	applicationsCalls int
-	workspaceCalls    int
+	servicesCalls     int
+	nodepoolsCalls    int
+	workspacesCalls   int
 }
 
 type createJobTestCase struct {
@@ -387,9 +450,9 @@ func TestCreateJobCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
-				displays:       []string{expectedCreateJobDryRunOutput},
-				warns:          []string{expectedCreateJobWarn},
-				dataplaneCalls: 1,
+				displays:        []string{expectedCreateJobDryRunOutput},
+				warns:           []string{expectedCreateJobWarn},
+				dataplanesCalls: 1,
 			},
 		},
 		{
@@ -404,10 +467,20 @@ func TestCreateJobCommand(t *testing.T) {
 					ResponseBody:   `[{"id":"123e4567-e89b-12d3-a456-426614174000"}]`,
 					ResponseStatus: http.StatusOK,
 				},
+				applicationsConfig: stubs.StubHTTPPartialGetConfig{
+					ResponseBody:   `[{"id": "application-1"}, {"id": "application-2"}]`,
+					ResponseStatus: http.StatusOK,
+				},
+				servicesConfig: stubs.StubHTTPPartialGetConfig{
+					ResponseBody:   `[{"id": "service-1"}, {"id": "service-2"}]`,
+					ResponseStatus: http.StatusOK,
+				},
 			}),
 			expected: createExpected{
-				err:            expectedCrateJobIncompleteFileErr,
-				dataplaneCalls: 1,
+				err:               expectedCrateJobIncompleteFileErr,
+				dataplanesCalls:   1,
+				applicationsCalls: 1,
+				servicesCalls:     1,
 			},
 		},
 		{
@@ -441,7 +514,7 @@ func TestCreateJobCommand(t *testing.T) {
 				displays:          []string{expectedCreateJobID},
 				warns:             []string{expectedCreateJobWarn},
 				createCalls:       1,
-				dataplaneCalls:    1,
+				dataplanesCalls:   1,
 				applicationsCalls: 1,
 			},
 		},
@@ -477,9 +550,45 @@ func TestCreateJobCommand(t *testing.T) {
 			expected: createExpected{
 				displays:          []string{expectedCreateJobID},
 				createCalls:       1,
-				dataplaneCalls:    1,
+				dataplanesCalls:   1,
 				applicationsCalls: 1,
-				workspaceCalls:    2,
+				workspacesCalls:   2,
+			},
+		},
+		{
+			name: "create success with services",
+			input: createInput{
+				dataplane:   "123e4567-e89b-12d3-a456-426614174000",
+				name:        "job-2",
+				description: "job desc",
+				command:     "run.sh",
+				services:    []string{"service-1", "service-2"},
+				nodepool:    "np-2",
+				subPath:     "src",
+				workspaces:  []string{"ws-home", "ws-data"},
+			},
+			mockEndpoints: getCreateJobEndpoints(jobEndpointsConfig{
+				dataplaneConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedDataplaneQuery,
+					ResponseBody:   `[{"id":"123e4567-e89b-12d3-a456-426614174000"}]`,
+					ResponseStatus: http.StatusOK,
+				},
+				servicesConfig: stubs.StubHTTPPartialGetConfig{
+					ResponseBody:   expectedServicesResponseBody,
+					ResponseStatus: http.StatusOK,
+				},
+				jobConfig: stubs.StubHTTPPartialPostConfig{
+					ExpectedRequestBody: expectedCreateJobRequestBodyWithServices,
+					ResponseBody:        `{"id":"job-1"}`,
+					ResponseStatus:      http.StatusOK,
+				},
+			}),
+			expected: createExpected{
+				displays:        []string{expectedCreateJobID},
+				createCalls:     1,
+				dataplanesCalls: 1,
+				servicesCalls:   1,
+				workspacesCalls: 2,
 			},
 		},
 		{
@@ -513,7 +622,7 @@ func TestCreateJobCommand(t *testing.T) {
 				err:               expectedCreateJobServerErr,
 				warns:             []string{expectedCreateJobWarn},
 				createCalls:       1,
-				dataplaneCalls:    1,
+				dataplanesCalls:   1,
 				applicationsCalls: 1,
 			},
 		},
@@ -538,7 +647,7 @@ func TestCreateJobCommand(t *testing.T) {
 			expected: createExpected{
 				err:               expectedCreateJobNameError,
 				applicationsCalls: 1,
-				dataplaneCalls:    1,
+				dataplanesCalls:   1,
 			},
 		},
 		{
@@ -562,7 +671,7 @@ func TestCreateJobCommand(t *testing.T) {
 			expected: createExpected{
 				err:               expectedCreateJobContextErr,
 				applicationsCalls: 1,
-				dataplaneCalls:    1,
+				dataplanesCalls:   1,
 			},
 		},
 		{
@@ -577,10 +686,20 @@ func TestCreateJobCommand(t *testing.T) {
 					ResponseBody:   `[{"id":"123e4567-e89b-12d3-a456-426614174000"}]`,
 					ResponseStatus: http.StatusOK,
 				},
+				applicationsConfig: stubs.StubHTTPPartialGetConfig{
+					ResponseBody:   `[{"id": "application-1"}, {"id": "application-2"}]`,
+					ResponseStatus: http.StatusOK,
+				},
+				servicesConfig: stubs.StubHTTPPartialGetConfig{
+					ResponseBody:   `[{"id": "service-1"}, {"id": "service-2"}]`,
+					ResponseStatus: http.StatusOK,
+				},
 			}),
 			expected: createExpected{
-				dataplaneCalls: 1,
-				err:            expectedCreateJobAppErr,
+				dataplanesCalls:   1,
+				err:               expectedCreateJobAppErr,
+				applicationsCalls: 1,
+				servicesCalls:     1,
 			},
 		},
 		{
@@ -600,11 +719,16 @@ func TestCreateJobCommand(t *testing.T) {
 					ResponseBody:   expectedApplicationResponseBody,
 					ResponseStatus: http.StatusOK,
 				},
+				nodepoolsConfig: stubs.StubHTTPPartialGetConfig{
+					ResponseBody:   `[{"id": "np-1"}, {"id": "np-2"}]`,
+					ResponseStatus: http.StatusOK,
+				},
 			}),
 			expected: createExpected{
 				err:               expectedCreateJobNodepoolErr,
 				applicationsCalls: 1,
-				dataplaneCalls:    1,
+				dataplanesCalls:   1,
+				nodepoolsCalls:    1,
 			},
 		},
 		{
@@ -630,8 +754,8 @@ func TestCreateJobCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
-				err:            expectedInvlidDataplaneErr,
-				dataplaneCalls: 1,
+				err:             expectedInvlidDataplaneErr,
+				dataplanesCalls: 1,
 			},
 		},
 		{
@@ -648,8 +772,8 @@ func TestCreateJobCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
-				workspaceCalls: 1,
-				err:            expectedInvlidWorkspaceErr,
+				workspacesCalls: 1,
+				err:             expectedInvlidWorkspaceErr,
 			},
 		},
 		{
@@ -710,7 +834,7 @@ func TestCreateJobCommand(t *testing.T) {
 			)
 			require.Equal(
 				t,
-				tt.expected.dataplaneCalls,
+				tt.expected.dataplanesCalls,
 				hitCounts.Count("GET"+postgrest.Endpoint(constants.WorkbenchEndpointDataplanes)),
 				"dataplane calls",
 			)
@@ -722,7 +846,19 @@ func TestCreateJobCommand(t *testing.T) {
 			)
 			require.Equal(
 				t,
-				tt.expected.workspaceCalls,
+				tt.expected.servicesCalls,
+				hitCounts.Count("GET"+postgrest.Endpoint(constants.WorkbenchEndpointDataplaneWorkbenchServices)),
+				"service calls",
+			)
+			require.Equal(
+				t,
+				tt.expected.nodepoolsCalls,
+				hitCounts.Count("GET"+postgrest.Endpoint(constants.WorkbenchEndpointDataplaneNodepools)),
+				"nodepool calls",
+			)
+			require.Equal(
+				t,
+				tt.expected.workspacesCalls,
 				hitCounts.Count("GET"+postgrest.Endpoint(constants.WorkbenchEndpointWorkspaces)),
 				"workspace calls",
 			)
@@ -757,6 +893,8 @@ type updateExpected struct {
 	err               string
 	updateCalls       int
 	applicationsCalls int
+	servicesCalls     int
+	nodepoolsCalls    int
 	workspaceCalls    int
 }
 
@@ -1028,9 +1166,21 @@ func TestUpdateJobCommand(t *testing.T) {
 			)
 			require.Equal(
 				t,
+				tt.expected.servicesCalls,
+				hitCounts.Count("GET"+postgrest.Endpoint(constants.WorkbenchEndpointDataplaneWorkbenchServices)),
+				"services calls",
+			)
+			require.Equal(
+				t,
+				tt.expected.nodepoolsCalls,
+				hitCounts.Count("GET"+postgrest.Endpoint(constants.WorkbenchEndpointDataplaneNodepools)),
+				"nodepools calls",
+			)
+			require.Equal(
+				t,
 				tt.expected.workspaceCalls,
 				hitCounts.Count("GET"+postgrest.Endpoint(constants.WorkbenchEndpointWorkspaces)),
-				"workspace calls",
+				"workspaces calls",
 			)
 		})
 	}
@@ -1073,6 +1223,11 @@ func getCreateArgs(
 	}
 	if tt.input.application != "" {
 		args = append(args, "--"+constants.ApplicationFlag, tt.input.application)
+	}
+	if len(tt.input.services) != 0 {
+		for _, service := range tt.input.services {
+			args = append(args, "--"+constants.ServiceFlag, service)
+		}
 	}
 	if tt.input.subPath != "" {
 		args = append(args, "--"+constants.SubPathFlag, tt.input.subPath)
@@ -1141,6 +1296,8 @@ func getUpdateArgs(
 type jobEndpointsConfig struct {
 	dataplaneConfig    stubs.StubHTTPPartialGetConfig
 	applicationsConfig stubs.StubHTTPPartialGetConfig
+	servicesConfig     stubs.StubHTTPPartialGetConfig
+	nodepoolsConfig    stubs.StubHTTPPartialGetConfig
 	workspaceConfig    stubs.StubHTTPPartialGetConfig
 	jobConfig          stubs.StubHTTPPartialPostConfig
 }
@@ -1151,7 +1308,9 @@ func getJobEndpoints(
 ) []stubs.StubHTTPEndpoint {
 	endpoints := append(stubs.GetStubAuthEndpoints(), stubs.GetStubWorkspaceEndpoints(config.workspaceConfig)...)
 	endpoints = append(endpoints, stubs.GetStubDataplaneEndpoints(config.dataplaneConfig)...)
-	endpoints = append(endpoints, stubs.GetStubApplicationEndpoints(config.applicationsConfig)...)
+	endpoints = append(endpoints, stubs.GetStubApplicationsEndpoints(config.applicationsConfig)...)
+	endpoints = append(endpoints, stubs.GetStubServicesEndpoints(config.servicesConfig)...)
+	endpoints = append(endpoints, stubs.GetStubNodepoolsEndpoints(config.nodepoolsConfig)...)
 	return append(endpoints,
 		[]stubs.StubHTTPEndpoint{
 			{
