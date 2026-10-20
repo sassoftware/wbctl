@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/sassoftware/wbctl/internal/cmd/flags"
-	"github.com/sassoftware/wbctl/internal/cmd/types"
+	cmdtypes "github.com/sassoftware/wbctl/internal/cmd/types"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/i18n"
 	"github.com/sassoftware/wbctl/internal/ui"
@@ -38,19 +38,29 @@ func getSubcommands(
 	_ui ui.UI,
 ) []*cobra.Command {
 	return []*cobra.Command{
-		{
-			Use:     constants.JobSubmissionCommandName,
-			Aliases: []string{constants.JobSubmissionsCommandName},
-			Args:    cobra.MinimumNArgs(1),
-			RunE:    newCancelFunction(ctx, fsys, _ui, constants.JobSubmissionType),
-			Short: i18n.Format(
-				i18n.CmdCancelTypeUsage,
-				i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.JobSubmissionType)},
-			),
-			Long: i18n.Format(
-				i18n.CmdCancelTypeDescription,
-				i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.JobSubmissionType)},
-			),
-		},
+		CancelJobSubmissionCommand(ctx, fsys, _ui),
+	}
+}
+
+// CancelJobSubmissionCommand returns the cancel job-submission command.
+// nolint:revive
+func CancelJobSubmissionCommand(
+	ctx context.Context,
+	fsys afero.Fs,
+	_ui ui.UI,
+) *cobra.Command {
+	return &cobra.Command{
+		Use:     constants.JobSubmissionCommandName,
+		Aliases: []string{constants.JobSubmissionsCommandName},
+		Args:    cobra.MinimumNArgs(1),
+		RunE:    newCancelFunction(ctx, fsys, _ui, constants.JobSubmissionType),
+		Short: i18n.Format(
+			i18n.CmdCancelTypeUsage,
+			i18n.A{constants.I18nArgTypeKey: cmdtypes.Titler.String(constants.JobSubmissionType)},
+		),
+		Long: i18n.Format(
+			i18n.CmdCancelTypeDescription,
+			i18n.A{constants.I18nArgTypeKey: cmdtypes.Titler.String(constants.JobSubmissionType)},
+		),
 	}
 }

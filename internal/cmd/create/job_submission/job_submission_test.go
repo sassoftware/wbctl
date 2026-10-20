@@ -313,7 +313,238 @@ func TestCreateJobSubmissionCommand(t *testing.T) {
 	}
 }
 
+func TestStartJobCommand(t *testing.T) {
+	tests := []createJobSubmissionTestCase{
+		{
+			name: "success with inline fields",
+			input: createInput{
+				dataplane:     "dp-1",
+				jobID:         "js-1",
+				nodepoolValue: "np-1",
+				labelValues:   []string{"team=analytics"},
+				envValues:     []string{"MODE=nightly"},
+				volumeValues:  []string{"ws-home", "ws-data"},
+			},
+			mockEndpoints: getJobRunEndpoints(jobSubmissionEndpointsConfig{
+				dataplaneConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  "id=in.(dp-1)",
+					ResponseBody:   `[{"id":"dp-1"}]`,
+					ResponseStatus: http.StatusOK,
+				},
+				jobConfig: stubs.StubHTTPPartialPostConfig{
+					ExpectedRequestBody: expectedCreateJobSubmissionRequestBody,
+					ResponseStatus:      http.StatusOK,
+					ResponseBody:        `{"id":"js-1"}`,
+				},
+			}),
+			expected: createExpected{
+				displays:       []string{expectedCreateJobSubmissionID},
+				createCalls:    1,
+				dataplaneCalls: 1,
+				workspaceCalls: 2,
+			},
+		},
+		{
+			name: "success with inline fields (workspace flag)",
+			input: createInput{
+				dataplane:       "dp-1",
+				jobID:           "js-1",
+				nodepoolValue:   "np-1",
+				labelValues:     []string{"team=analytics"},
+				envValues:       []string{"MODE=nightly"},
+				workspaceValues: []string{"ws-home", "ws-data"},
+			},
+			mockEndpoints: getJobRunEndpoints(jobSubmissionEndpointsConfig{
+				dataplaneConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  "id=in.(dp-1)",
+					ResponseBody:   `[{"id":"dp-1"}]`,
+					ResponseStatus: http.StatusOK,
+				},
+				jobConfig: stubs.StubHTTPPartialPostConfig{
+					ExpectedRequestBody: expectedCreateJobSubmissionRequestBody,
+					ResponseStatus:      http.StatusOK,
+					ResponseBody:        `{"id":"js-1"}`,
+				},
+			}),
+			expected: createExpected{
+				displays:       []string{expectedCreateJobSubmissionID},
+				createCalls:    1,
+				dataplaneCalls: 1,
+				workspaceCalls: 2,
+			},
+		},
+		{
+			name: "error",
+			input: createInput{
+				dataplane:     "dp-1",
+				jobID:         "js-1",
+				nodepoolValue: "np-1",
+			},
+			mockEndpoints: getJobRunEndpoints(jobSubmissionEndpointsConfig{
+				dataplaneConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  "id=in.(dp-1)",
+					ResponseBody:   `[{"id":"dp-1"}]`,
+					ResponseStatus: http.StatusOK,
+				},
+				jobConfig: stubs.StubHTTPPartialPostConfig{
+					ExpectedRequestBody: expectedCreateJobSubmissionRequestBodyNoExtras,
+					ResponseStatus:      http.StatusUnauthorized,
+					ResponseBody:        `unauthorized`,
+				},
+			}),
+			expected: createExpected{
+				err:            expectedCreateJobSubmissionServerErr,
+				createCalls:    1,
+				dataplaneCalls: 1,
+			},
+		},
+		{
+			name: "job id required",
+			input: createInput{
+				dataplane:     "dp-1",
+				nodepoolValue: "np-1",
+			},
+			mockEndpoints: getJobRunEndpoints(jobSubmissionEndpointsConfig{
+				dataplaneConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  "id=in.(dp-1)",
+					ResponseBody:   `[{"id":"dp-1"}]`,
+					ResponseStatus: http.StatusOK,
+				},
+			}),
+			expected: createExpected{
+				err: "requires at least 1 arg(s), only received 0",
+			},
+		},
+		{
+			name: "invalid endpoint",
+			input: createInput{
+				jobID:    "js-1",
+				endpoint: "a\nb",
+			},
+			expected: createExpected{
+				err: expectedCreateJobInvalidEndpointErr,
+			},
+		},
+		{
+			name: "invalid dataplane id",
+			input: createInput{
+				jobID:     "js-1",
+				dryRun:    true,
+				dataplane: "invalid",
+			},
+			mockEndpoints: getJobRunEndpoints(jobSubmissionEndpointsConfig{
+				dataplaneConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  "id=in.(invalid)",
+					ResponseBody:   `error`,
+					ResponseStatus: http.StatusBadRequest,
+				},
+			}),
+			expected: createExpected{
+				err:            expectedInvlidDataplaneErr,
+				dataplaneCalls: 1,
+			},
+		},
+		{
+			name: "invalid workspace id",
+			input: createInput{
+				jobID:           "js-1",
+				dryRun:          true,
+				dataplane:       "dp-1",
+				workspaceValues: []string{"invalid"},
+			},
+			mockEndpoints: getJobRunEndpoints(jobSubmissionEndpointsConfig{
+				dataplaneConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  "id=in.(dp-1)",
+					ResponseBody:   `[{"id":"dp-1"}]`,
+					ResponseStatus: http.StatusOK,
+				},
+				workspaceConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  "controller_id=in.(invalid)",
+					ResponseStatus: http.StatusBadRequest,
+					ResponseBody:   `error`,
+				},
+			}),
+			expected: createExpected{
+				dataplaneCalls: 1,
+				workspaceCalls: 1,
+				err:            expectedInvlidWorkspaceErr,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer viper.Reset()
+			t.Setenv("HOME", t.TempDir())
+
+			srv, hitCounts := stubs.NewStubHTTPServer(t, tt.mockEndpoints)
+			defer srv.Close()
+
+			fsys := afero.NewMemMapFs()
+			if tt.input.filename != "" {
+				require.NoError(t, afero.WriteFile(fsys, tt.input.filename, []byte(tt.input.fileContent), 0o600))
+			}
+
+			stubUI := &stubs.StubUI{}
+			if tt.input.endpoint == "" {
+				tt.input.endpoint = srv.URL
+			}
+			mockCmd := job_submission.StartCommand(context.Background(), fsys, stubUI)
+			cmd.AddRootFlags(mockCmd)
+			mockCmd.SetArgs(getStartArgs(tt))
+			err := mockCmd.Execute()
+			if tt.expected.err != "" {
+				expectedErr := strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL)
+				require.EqualError(t, err, expectedErr)
+			} else {
+				require.NoError(t, err)
+			}
+
+			require.Equal(t, tt.expected.displays, stubUI.Displays, strings.Join(stubUI.Displays, "\n"))
+			require.Equal(t, tt.expected.warns, stubUI.Warns, strings.Join(stubUI.Warns, "\n"))
+			require.Equal(
+				t,
+				tt.expected.createCalls,
+				hitCounts.Count("POST"+postgrest.Endpoint(constants.WorkbenchEndpointRPCJobRunCreate)),
+				"create calls",
+			)
+			require.Equal(
+				t,
+				tt.expected.dataplaneCalls,
+				hitCounts.Count("GET"+postgrest.Endpoint(constants.WorkbenchEndpointDataplanes)),
+				"dataplane calls",
+			)
+			require.Equal(
+				t,
+				tt.expected.workspaceCalls,
+				hitCounts.Count("GET"+postgrest.Endpoint(constants.WorkbenchEndpointWorkspaces)),
+				"workspace calls",
+			)
+		})
+	}
+}
+
 func getCreateArgs(
+	tt createJobSubmissionTestCase,
+) []string {
+	args := getCommonArgs(tt)
+	if tt.input.jobID != "" {
+		args = append(args, "--"+constants.JobIDFlag, tt.input.jobID)
+	}
+	return args
+}
+
+func getStartArgs(
+	tt createJobSubmissionTestCase,
+) []string {
+	args := getCommonArgs(tt)
+	if tt.input.jobID != "" {
+		args = append(args, tt.input.jobID)
+	}
+	return args
+}
+
+func getCommonArgs(
 	tt createJobSubmissionTestCase,
 ) []string {
 	args := []string{}
@@ -335,9 +566,6 @@ func getCreateArgs(
 	}
 	if tt.input.nodepoolValue != "" {
 		args = append(args, "--"+constants.NodepoolFlag, tt.input.nodepoolValue)
-	}
-	if tt.input.jobID != "" {
-		args = append(args, "--"+constants.JobIDFlag, tt.input.jobID)
 	}
 	for _, label := range tt.input.labelValues {
 		args = append(args, "--"+constants.LabelFlag, label)

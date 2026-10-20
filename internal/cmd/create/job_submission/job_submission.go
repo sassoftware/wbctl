@@ -56,6 +56,56 @@ func CreateCommand(
 	return cmd
 }
 
+// StartCommand returns the start job command.
+func StartCommand(
+	ctx context.Context,
+	fsys afero.Fs,
+	_ui ui.UI,
+) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     constants.JobsCommandName,
+		Aliases: []string{constants.JobCommandName},
+		Args:    cobra.MinimumNArgs(1),
+		RunE:    newStartJobFunction(ctx, fsys, _ui),
+		Short: i18n.Format(
+			i18n.CmdStartTypeUsage,
+			i18n.A{constants.I18nArgTypeKey: cmdtypes.Titler.String(constants.JobSubmissionType)},
+		),
+		Long: i18n.Format(
+			i18n.CmdStartTypeDescription,
+			i18n.A{constants.I18nArgTypeKey: cmdtypes.Titler.String(constants.JobSubmissionType)},
+		),
+		PreRun: flags.BindToViper,
+	}
+	flags.AddDryRunFlag(cmd)
+	flags.AddDataplaneFlag(cmd, constants.JobSubmissionType)
+	flags.AddNodepoolFlag(cmd, constants.JobSubmissionType)
+	flags.AddLabelFlag(cmd, constants.JobSubmissionType)
+	flags.AddEnvironmentFlag(cmd, constants.JobSubmissionType)
+	flags.AddVolumeFlag(cmd, constants.JobSubmissionType)
+	return cmd
+}
+
+// newStartJobFunction creates a new clityeps.ActionFunc for the start job
+// command.
+func newStartJobFunction(
+	ctx context.Context,
+	fsys afero.Fs,
+	_ui ui.UI,
+) func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		v := viper.GetViper()
+		for _, arg := range args {
+			v.Set(constants.JobIDFlag, arg)
+			err := newCreateJobSubmissionFunction(ctx, fsys, _ui)(cmd, args)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
+
 // newCreateJobSubmissionFunction creates a new clitypes.ActionFunc for the
 // create job command.
 func newCreateJobSubmissionFunction(
