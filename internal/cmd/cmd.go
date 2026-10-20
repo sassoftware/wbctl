@@ -110,14 +110,11 @@ func isKnownViperType(configPath string) bool {
 func AddRootFlags(cmd *cobra.Command) {
 	flags.AddAuthModeFlag(cmd)
 	flags.AddEndpointFlag(cmd)
-	flags.AddPasswordFlag(cmd)
-	flags.AddUsernameFlag(cmd)
 	flags.AddIgnoreTokenCacheFlag(cmd)
 	flags.AddNoListenFlag(cmd)
 	flags.AddIngressHostFlag(cmd)
 	flags.AddOrganizationFlag(cmd)
 	flags.AddClientIDFlag(cmd)
-	flags.AddClientSecretFlag(cmd)
 }
 
 func createCommands(

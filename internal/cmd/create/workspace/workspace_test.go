@@ -109,7 +109,7 @@ const (
         "name": "ws-name"
     }
 }`
-	expectedCreateSnapshotInvalidEndpointErr = "failed to get username/password token" +
+	expectedCreateSnapshotInvalidEndpointErr = "failed to get device token" +
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
 	expectedInvlidDataplaneErr = "GET ${URL}/postgrest/dataplanes?id=in.%28invalid%29 failed" +
@@ -179,7 +179,7 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
-				displays:       []string{workspaceFilePrettyJSON},
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay, workspaceFilePrettyJSON},
 				dataplaneCalls: 1,
 			},
 		},
@@ -210,7 +210,7 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
-				displays:          []string{"ws-1"},
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay, "ws-1"},
 				createCalls:       1,
 				dataplaneCalls:    1,
 				storageclassCalls: 1,
@@ -248,7 +248,7 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
-				displays:          []string{"ws-1"},
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay, "ws-1"},
 				warns:             []string{"defaulting to 'standard' storage class"},
 				createCalls:       1,
 				dataplaneCalls:    1,
@@ -280,7 +280,7 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
-				displays:       []string{"ws-2"},
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay, "ws-2"},
 				createCalls:    1,
 				dataplaneCalls: 1,
 				snapshotCalls:  1,
@@ -313,6 +313,7 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 				err: "POST ${URL}/postgrest/rpc/workspace_create failed\n" +
 					" Caused by:\n" +
 					"\t* 401 unauthorized",
@@ -329,7 +330,8 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: createExpected{
-				err: "--name is required",
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				err:      "--name is required",
 			},
 		},
 		{
@@ -340,7 +342,8 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: createExpected{
-				err: "one, and only one, of --snapshot or --storageclass is required",
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				err:      "one, and only one, of --snapshot or --storageclass is required",
 			},
 		},
 		{
@@ -351,7 +354,8 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: createExpected{
-				err: "--size required when --storageclass specified",
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				err:      "--size required when --storageclass specified",
 			},
 		},
 		{
@@ -363,7 +367,8 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: createExpected{
-				err: "--storageclass required when --size specified",
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				err:      "--storageclass required when --size specified",
 			},
 		},
 		{
@@ -382,6 +387,7 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 				}},
 			}),
 			expected: createExpected{
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay},
 				err:               "storage class not found: invalid-sc: no elements found",
 				storageclassCalls: 1,
 			},
@@ -401,6 +407,7 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay},
 				err:           "failed to add snapshot invalid-snap: no elements found",
 				snapshotCalls: 1,
 			},
@@ -421,6 +428,7 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 				err: "failed to add snapshot snap-not-ready: snapshot not ready: volume status " +
 					"missing or not ready",
 				snapshotCalls: 1,
@@ -443,6 +451,7 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 				err: "failed to add snapshot snap-no-size: snapshot not ready: restore size " +
 					"not available",
 				snapshotCalls: 1,
@@ -464,6 +473,7 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 				err: "failed to add snapshot snap-1: snapshot not ready: source or storage " +
 					"spec missing",
 				snapshotCalls: 1,
@@ -486,6 +496,7 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 				err: "failed to add snapshot snap-1: invalid snapshot: access mode not " +
 					"specified",
 				snapshotCalls: 1,
@@ -521,6 +532,7 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 				err:            expectedInvlidDataplaneErr,
 				dataplaneCalls: 1,
 				snapshotCalls:  1,
@@ -542,6 +554,7 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 				}},
 			}),
 			expected: createExpected{
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay},
 				err:               expectedInvalidSizeErr,
 				storageclassCalls: 1,
 			},
@@ -562,6 +575,7 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 				}},
 			}),
 			expected: createExpected{
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay},
 				err:               expectedInvalidStorageClassErr,
 				storageclassCalls: 1,
 			},
@@ -581,6 +595,7 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay},
 				err:           expectedInvalidSnapshotErr,
 				snapshotCalls: 1,
 			},
@@ -608,14 +623,29 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getCreateArgs(tt))
 			err := mockCmd.Execute()
+			replacements := map[string]string{
+				"${PORT}": stubs.Port(t, srv.URL),
+				"${HOST}": stubs.Host(t, srv.URL),
+				"${URL}":  srv.URL,
+			}
 			if tt.expected.err != "" {
-				expectedErr := strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL)
-				require.EqualError(t, err, expectedErr)
+				expectedErr, actualErr := stubs.Sanitize(tt.expected.err, err.Error(), replacements)
+				require.Equal(t, expectedErr, actualErr)
 			} else {
 				require.NoError(t, err)
 			}
 
-			require.Equal(t, tt.expected.displays, stubUI.Displays, strings.Join(stubUI.Displays, "\n"))
+			expectedDisplays, actualDisplays := stubs.SanitizeSlice(
+				tt.expected.displays,
+				stubUI.Displays,
+				replacements,
+			)
+			require.Equal(t,
+				expectedDisplays,
+				actualDisplays,
+				"unexpected display messages: %v",
+				stubUI.Displays,
+			)
 			require.Equal(t, tt.expected.warns, stubUI.Warns, strings.Join(stubUI.Warns, "\n"))
 			require.Equal(
 				t,
@@ -692,7 +722,7 @@ func TestUpdateWorkspaceCommand(t *testing.T) {
 				ResponseBody:   `[{"id":"init-1","name":"init"}]`,
 			})...),
 			expected: updateExpected{
-				displays:         []string{workspaceUpdateDryRunOutput},
+				displays:         []string{stubs.ExpectedDeviceAuthDisplay, workspaceUpdateDryRunOutput},
 				initializerCalls: 1,
 			},
 		},
@@ -713,7 +743,7 @@ func TestUpdateWorkspaceCommand(t *testing.T) {
 				ResponseBody:   `[{"id":"init-1","name":"init"}]`,
 			})...),
 			expected: updateExpected{
-				displays:         []string{workspaceUpdateDryRunOutput},
+				displays:         []string{stubs.ExpectedDeviceAuthDisplay, workspaceUpdateDryRunOutput},
 				initializerCalls: 1,
 			},
 		},
@@ -729,7 +759,7 @@ func TestUpdateWorkspaceCommand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: updateExpected{
-				displays: []string{workspaceUpdateNameDescDryRunOutput},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, workspaceUpdateNameDescDryRunOutput},
 			},
 		},
 		{
@@ -745,7 +775,7 @@ func TestUpdateWorkspaceCommand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
-				displays:        []string{"ws-a", "ws-b"},
+				displays:        []string{stubs.ExpectedDeviceAuthDisplay, "ws-a", "ws-b"},
 				bulkUpdateCalls: 1,
 			},
 		},
@@ -762,6 +792,7 @@ func TestUpdateWorkspaceCommand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
+				displays:        []string{stubs.ExpectedDeviceAuthDisplay},
 				err:             workspaceBulkUpdateServerErr,
 				bulkUpdateCalls: 1,
 			},
@@ -775,7 +806,7 @@ func TestUpdateWorkspaceCommand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: updateExpected{
-				displays: []string{workspaceUpdateFileDryRunOutput},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, workspaceUpdateFileDryRunOutput},
 			},
 		},
 		{
@@ -785,7 +816,8 @@ func TestUpdateWorkspaceCommand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: updateExpected{
-				err: workspaceUpdateMissingIDErr,
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				err:      workspaceUpdateMissingIDErr,
 			},
 		},
 		{
@@ -801,7 +833,7 @@ func TestUpdateWorkspaceCommand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
-				displays:        []string{"ws-cli-1"},
+				displays:        []string{stubs.ExpectedDeviceAuthDisplay, "ws-cli-1"},
 				bulkUpdateCalls: 1,
 			},
 		},
@@ -820,7 +852,7 @@ func TestUpdateWorkspaceCommand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
-				displays:          []string{"ws-cli-1"},
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay, "ws-cli-1"},
 				singleUpdateCalls: 1,
 			},
 		},
@@ -848,6 +880,7 @@ func TestUpdateWorkspaceCommand(t *testing.T) {
 				ResponseBody:   `error`,
 			})...),
 			expected: updateExpected{
+				displays:         []string{stubs.ExpectedDeviceAuthDisplay},
 				err:              expectedInvalidInitalizersErr,
 				initializerCalls: 1,
 			},
@@ -875,14 +908,29 @@ func TestUpdateWorkspaceCommand(t *testing.T) {
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getUpdateArgs(tt))
 			err := mockCmd.Execute()
+			replacements := map[string]string{
+				"${PORT}": stubs.Port(t, srv.URL),
+				"${HOST}": stubs.Host(t, srv.URL),
+				"${URL}":  srv.URL,
+			}
 			if tt.expected.err != "" {
-				expectedErr := strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL)
-				require.EqualError(t, err, expectedErr)
+				expectedErr, actualErr := stubs.Sanitize(tt.expected.err, err.Error(), replacements)
+				require.Equal(t, expectedErr, actualErr)
 			} else {
 				require.NoError(t, err)
 			}
 
-			require.Equal(t, tt.expected.displays, stubUI.Displays, strings.Join(stubUI.Displays, "\n"))
+			expectedDisplays, actualDisplays := stubs.SanitizeSlice(
+				tt.expected.displays,
+				stubUI.Displays,
+				replacements,
+			)
+			require.Equal(t,
+				expectedDisplays,
+				actualDisplays,
+				"unexpected display messages: %v",
+				stubUI.Displays,
+			)
 			require.Equal(t, tt.expected.warns, stubUI.Warns, strings.Join(stubUI.Warns, "\n"))
 			require.Equal(
 				t,
@@ -910,10 +958,7 @@ func getCreateArgs(
 	tt createWorkspaceTestCase,
 ) []string {
 	args := []string{}
-	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModePassword)
-	args = append(args, "--"+constants.ClientIDFlag, constants.OAuthClientID)
-	args = append(args, "--"+constants.PasswordFlag, "pass")
-	args = append(args, "--"+constants.UsernameFlag, "user")
+	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModeDevice)
 	if tt.input.endpoint != "" {
 		args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
 	}
@@ -954,10 +999,7 @@ func getUpdateArgs(
 	tt updateWorkspaceTestCase,
 ) []string {
 	args := []string{}
-	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModePassword)
-	args = append(args, "--"+constants.ClientIDFlag, constants.OAuthClientID)
-	args = append(args, "--"+constants.PasswordFlag, "pass")
-	args = append(args, "--"+constants.UsernameFlag, "user")
+	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModeDevice)
 	if tt.input.endpoint != "" {
 		args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
 	}

@@ -22,10 +22,7 @@ func GetAccessTokens(
 ) (string, string, error) {
 	authMode := v.GetString(constants.AuthModeFlag)
 	endpoint := v.GetString(constants.EndpointFlag)
-	password := v.GetString(constants.PasswordFlag)
-	username := v.GetString(constants.UsernameFlag)
 	clientID := v.GetString(constants.ClientIDFlag)
-	clientSecret := v.GetString(constants.ClientSecretFlag)
 	ingressHost := v.GetString(constants.IngressHostFlag)
 	organization := v.GetString(constants.OrganizationFlag)
 	ignoreTokenCache := v.GetBool(constants.IgnoreTokenCacheFlag)
@@ -39,10 +36,7 @@ func GetAccessTokens(
 			IngressHost:          ingressHost,
 			Organization:         organization,
 			AuthMode:             authMode,
-			Username:             username,
-			Password:             password,
 			ClientID:             clientID,
-			ClientSecret:         clientSecret,
 			IgnoreTokenCache:     ignoreTokenCache,
 			NoListen:             noListen,
 		},

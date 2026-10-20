@@ -5,7 +5,6 @@ package settings_test
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -81,15 +80,15 @@ const (
   "value" : true
 }`
 
-	expectedUserError = "GET %s/postgrest/rpc/get_settings failed\n Caused by:\n\t* 400 "
+	expectedUserError = "GET ${URL}/postgrest/rpc/get_settings failed\n Caused by:\n\t* 400 "
 
-	expectedTenantError = "GET %s/postgrest/rpc/get_tenant_settings failed\n Caused by:\n\t* 400 "
+	expectedTenantError = "GET ${URL}/postgrest/rpc/get_tenant_settings failed\n Caused by:\n\t* 400 "
 
-	expectedUserSetError = "POST %s/postgrest/rpc/set_user_setting failed\n Caused by:\n\t* 400 "
+	expectedUserSetError = "POST ${URL}/postgrest/rpc/set_user_setting failed\n Caused by:\n\t* 400 "
 
-	expectedTenantSetError = "POST %s/postgrest/rpc/set_tenant_setting failed\n Caused by:\n\t* 400 "
+	expectedTenantSetError = "POST ${URL}/postgrest/rpc/set_tenant_setting failed\n Caused by:\n\t* 400 "
 
-	expectedInvalidEndpointErr = "failed to get username/password token" +
+	expectedInvalidEndpointErr = "failed to get device token" +
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
 )
@@ -124,7 +123,10 @@ func TestSettingsCommand(t *testing.T) {
 				ResponseBody:   userSettingsReponseBody,
 				ResponseStatus: http.StatusOK,
 			}),
-			expected: settingsExpected{tableStrings: []string{userSettingsTable}},
+			expected: settingsExpected{
+				displays:     []string{stubs.ExpectedDeviceAuthDisplay},
+				tableStrings: []string{userSettingsTable},
+			},
 		},
 		{
 			name:  "get user settings json",
@@ -133,14 +135,18 @@ func TestSettingsCommand(t *testing.T) {
 				ResponseBody:   userSettingsReponseBody,
 				ResponseStatus: http.StatusOK,
 			}),
-			expected: settingsExpected{displays: []string{userSettingsReponseBody}},
+			expected: settingsExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, userSettingsReponseBody},
+			},
 		},
 		{
 			name: "get user settings error",
 			mockEndpoints: getGetUserSettingsEndpoint(stubs.StubHTTPPartialGetConfig{
 				ResponseStatus: http.StatusBadRequest,
 			}),
-			expected: settingsExpected{err: expectedUserError},
+			expected: settingsExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				err:      expectedUserError},
 		},
 		{
 			name:  "get tenant settings",
@@ -149,7 +155,10 @@ func TestSettingsCommand(t *testing.T) {
 				ResponseStatus: http.StatusOK,
 				ResponseBody:   tenantSettingsReponseBody,
 			}),
-			expected: settingsExpected{tableStrings: []string{tenantSettingsTable}},
+			expected: settingsExpected{
+				displays:     []string{stubs.ExpectedDeviceAuthDisplay},
+				tableStrings: []string{tenantSettingsTable},
+			},
 		},
 		{
 			name:  "get tenant settings json",
@@ -158,7 +167,9 @@ func TestSettingsCommand(t *testing.T) {
 				ResponseStatus: http.StatusOK,
 				ResponseBody:   tenantSettingsReponseBody,
 			}),
-			expected: settingsExpected{displays: []string{tenantSettingsReponseBody}},
+			expected: settingsExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, tenantSettingsReponseBody},
+			},
 		},
 		{
 			name:  "get tenant settings error",
@@ -166,7 +177,10 @@ func TestSettingsCommand(t *testing.T) {
 			mockEndpoints: getGetTenantSettingsEndpoint(stubs.StubHTTPPartialGetConfig{
 				ResponseStatus: http.StatusBadRequest,
 			}),
-			expected: settingsExpected{err: expectedTenantError},
+			expected: settingsExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				err:      expectedTenantError,
+			},
 		},
 		{
 			name:  "set user settings",
@@ -176,7 +190,9 @@ func TestSettingsCommand(t *testing.T) {
 				ResponseStatus:      http.StatusOK,
 				ResponseBody:        "true",
 			}),
-			expected: settingsExpected{displays: []string{"user name"}},
+			expected: settingsExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, "user name"},
+			},
 		},
 		{
 			name:  "set user settings - int",
@@ -186,7 +202,9 @@ func TestSettingsCommand(t *testing.T) {
 				ResponseStatus:      http.StatusOK,
 				ResponseBody:        "true",
 			}),
-			expected: settingsExpected{displays: []string{"user name"}},
+			expected: settingsExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, "user name"},
+			},
 		},
 		{
 			name:  "set user settings - array",
@@ -196,7 +214,9 @@ func TestSettingsCommand(t *testing.T) {
 				ResponseStatus:      http.StatusOK,
 				ResponseBody:        "true",
 			}),
-			expected: settingsExpected{displays: []string{"user name"}},
+			expected: settingsExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, "user name"},
+			},
 		},
 		{
 			name:  "set user settings - object",
@@ -206,7 +226,9 @@ func TestSettingsCommand(t *testing.T) {
 				ResponseStatus:      http.StatusOK,
 				ResponseBody:        "true",
 			}),
-			expected: settingsExpected{displays: []string{"user name"}},
+			expected: settingsExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, "user name"},
+			},
 		},
 		{
 			name:  "set user settings - bool",
@@ -216,7 +238,9 @@ func TestSettingsCommand(t *testing.T) {
 				ResponseStatus:      http.StatusOK,
 				ResponseBody:        "true",
 			}),
-			expected: settingsExpected{displays: []string{"user name"}},
+			expected: settingsExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, "user name"},
+			},
 		},
 		{
 			name:  "set tenant settings",
@@ -226,7 +250,9 @@ func TestSettingsCommand(t *testing.T) {
 				ResponseStatus:      http.StatusOK,
 				ResponseBody:        "true",
 			}),
-			expected: settingsExpected{displays: []string{"tenant name"}},
+			expected: settingsExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, "tenant name"},
+			},
 		},
 		{
 			name:  "set user settings error",
@@ -235,7 +261,10 @@ func TestSettingsCommand(t *testing.T) {
 				ExpectedRequestBody: expectedUserPostBody,
 				ResponseStatus:      http.StatusBadRequest,
 			}),
-			expected: settingsExpected{err: expectedUserSetError},
+			expected: settingsExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				err:      expectedUserSetError,
+			},
 		},
 		{
 			name:  "set tenant settings error",
@@ -244,7 +273,10 @@ func TestSettingsCommand(t *testing.T) {
 				ExpectedRequestBody: expectedTenantPostBody,
 				ResponseStatus:      http.StatusBadRequest,
 			}),
-			expected: settingsExpected{err: expectedTenantSetError},
+			expected: settingsExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				err:      expectedTenantSetError,
+			},
 		},
 		{
 			name: "invalid endpoint",
@@ -271,12 +303,14 @@ func TestSettingsCommand(t *testing.T) {
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getSettingsArgs(tt))
 			err := mockCmd.Execute()
+			replacements := map[string]string{
+				"${PORT}": stubs.Port(t, srv.URL),
+				"${HOST}": stubs.Host(t, srv.URL),
+				"${URL}":  srv.URL,
+			}
 			if tt.expected.err != "" {
-				if strings.Contains(tt.expected.err, "%s") {
-					require.EqualError(t, err, fmt.Sprintf(tt.expected.err, srv.URL))
-				} else {
-					require.EqualError(t, err, tt.expected.err)
-				}
+				expectedErr, actualErr := stubs.Sanitize(tt.expected.err, err.Error(), replacements)
+				require.Equal(t, expectedErr, actualErr)
 			} else {
 				require.NoError(t, err)
 			}
@@ -287,7 +321,17 @@ func TestSettingsCommand(t *testing.T) {
 				require.Equal(t, expected, actual, actual)
 				require.Equal(t, 1, stubUI.Tables[i].PrintCalls)
 			}
-			require.Equal(t, tt.expected.displays, stubUI.Displays, strings.Join(stubUI.Displays, "\n"))
+			expectedDisplays, actualDisplays := stubs.SanitizeSlice(
+				tt.expected.displays,
+				stubUI.Displays,
+				replacements,
+			)
+			require.Equal(t,
+				expectedDisplays,
+				actualDisplays,
+				"unexpected display messages: %v",
+				stubUI.Displays,
+			)
 			require.Equal(t, tt.expected.warns, stubUI.Warns, strings.Join(stubUI.Warns, "\n"))
 		})
 	}
@@ -297,10 +341,7 @@ func getSettingsArgs(
 	tt settingsTestCase,
 ) []string {
 	args := []string{}
-	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModePassword)
-	args = append(args, "--"+constants.ClientIDFlag, constants.OAuthClientID)
-	args = append(args, "--"+constants.PasswordFlag, "pass")
-	args = append(args, "--"+constants.UsernameFlag, "user")
+	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModeDevice)
 	if tt.input.endpoint != "" {
 		args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
 	}

@@ -183,7 +183,7 @@ const (
 		`"env":{"DEFAULT_MOUNTNAME":"containers","WB_LOCALE":"en-US,en"}}],` +
 		`"spec":{"tasks":{"default":{"cmds":["echo \"test123\""]}},"version":"3"},` +
 		`"workspaces":[{"id":"sas-workbench-5tcc2a32w0wu293go4nu8ldvj","mountName":"UPDATED"}]}}`
-	expectedInvalidEndpointErr = "failed to get username/password token" +
+	expectedInvalidEndpointErr = "failed to get device token" +
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
 	expectedInvalidResourceErr = "" +
@@ -280,6 +280,7 @@ func TestEditCommand(t *testing.T) {
 				},
 			}),
 			expected: editExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 				getCalls: 1,
 				err:      "no elements found",
 			},
@@ -296,6 +297,7 @@ func TestEditCommand(t *testing.T) {
 				},
 			}),
 			expected: editExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 				getCalls: 1, err: "multiple elements found",
 			},
 		},
@@ -318,6 +320,7 @@ func TestEditCommand(t *testing.T) {
 				},
 			}),
 			expected: editExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 				getCalls: 1, err: "open file test error",
 			},
 		},
@@ -340,6 +343,7 @@ func TestEditCommand(t *testing.T) {
 				},
 			}),
 			expected: editExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 				getCalls: 1, err: "open file test error",
 			},
 		},
@@ -363,7 +367,15 @@ func TestEditCommand(t *testing.T) {
 				},
 			}),
 			expected: editExpected{
-				getCalls: 1, err: "open test error",
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				warns: []string{
+					"failed to save device token: failed to save token cache\n" +
+						" Caused by:\n" +
+						"\t* failed to load token cache\n" +
+						"\t* open test error",
+				},
+				getCalls: 1,
+				err:      "open test error",
 			},
 		},
 		{
@@ -382,6 +394,7 @@ func TestEditCommand(t *testing.T) {
 				},
 			}),
 			expected: editExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 				getCalls: 1,
 				err:      "exec: \"no-such-editor\": executable file not found in " + osutil.PathEnvVarName(),
 			},
@@ -402,6 +415,7 @@ func TestEditCommand(t *testing.T) {
 				},
 			}),
 			expected: editExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 				getCalls: 1,
 				err: "failed to start editor\n" +
 					" Caused by:\n" +
@@ -424,6 +438,7 @@ func TestEditCommand(t *testing.T) {
 				},
 			}),
 			expected: editExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 				getCalls: 1,
 				err: "failed to wait for editor\n" +
 					" Caused by:\n" +
@@ -454,7 +469,7 @@ func TestEditCommand(t *testing.T) {
 			expected: editExpected{
 				getCalls:  1,
 				postCalls: 1,
-				displays:  []string{"resource-1"},
+				displays:  []string{stubs.ExpectedDeviceAuthDisplay, "resource-1"},
 			},
 		},
 		{
@@ -479,6 +494,7 @@ func TestEditCommand(t *testing.T) {
 				},
 			}),
 			expected: editExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 				getCalls: 1,
 				err:      "edit canceled: file unchanged",
 			},
@@ -499,6 +515,7 @@ func TestEditCommand(t *testing.T) {
 				},
 			}),
 			expected: editExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 				getCalls: 1,
 				err:      "edit canceled: file empty",
 			},
@@ -527,7 +544,7 @@ func TestEditCommand(t *testing.T) {
 			expected: editExpected{
 				getCalls:  1,
 				postCalls: 1,
-				displays:  []string{"resource-1"},
+				displays:  []string{stubs.ExpectedDeviceAuthDisplay, "resource-1"},
 			},
 		},
 		{
@@ -554,7 +571,7 @@ func TestEditCommand(t *testing.T) {
 			expected: editExpected{
 				getCalls:  1,
 				postCalls: 1,
-				displays:  []string{"resource-1"},
+				displays:  []string{stubs.ExpectedDeviceAuthDisplay, "resource-1"},
 			},
 		},
 		{
@@ -583,6 +600,7 @@ func TestEditCommand(t *testing.T) {
 				},
 			}),
 			expected: editExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 				getCalls: 1,
 				err:      expectedInvalidResourceErr,
 			},
@@ -609,6 +627,7 @@ func TestEditCommand(t *testing.T) {
 				},
 			}),
 			expected: editExpected{
+				displays:  []string{stubs.ExpectedDeviceAuthDisplay},
 				getCalls:  1,
 				postCalls: 1,
 				err:       expectedEditErr,
@@ -635,14 +654,29 @@ func TestEditCommand(t *testing.T) {
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getEditArgs(tt))
 			err := mockCmd.Execute()
+			replacements := map[string]string{
+				"${PORT}": stubs.Port(t, srv.URL),
+				"${HOST}": stubs.Host(t, srv.URL),
+				"${URL}":  srv.URL,
+			}
 			if tt.expected.err != "" {
-				expectedErr := strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL)
-				require.EqualError(t, err, expectedErr)
+				expectedErr, actualErr := stubs.Sanitize(tt.expected.err, err.Error(), replacements)
+				require.Equal(t, expectedErr, actualErr)
 			} else {
 				require.NoError(t, err)
 			}
 
-			require.Equal(t, tt.expected.displays, stubUI.Displays, strings.Join(stubUI.Displays, "\n"))
+			expectedDisplays, actualDisplays := stubs.SanitizeSlice(
+				tt.expected.displays,
+				stubUI.Displays,
+				replacements,
+			)
+			require.Equal(t,
+				expectedDisplays,
+				actualDisplays,
+				"unexpected display messages: %v",
+				stubUI.Displays,
+			)
 			require.Equal(t, tt.expected.warns, stubUI.Warns, strings.Join(stubUI.Warns, "\n"))
 			require.Empty(t, stubUI.Tables)
 
@@ -679,10 +713,7 @@ func getEditArgs(
 ) []string {
 	args := []string{}
 	args = append(args, tt.input.resourceType)
-	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModePassword)
-	args = append(args, "--"+constants.ClientIDFlag, constants.OAuthClientID)
-	args = append(args, "--"+constants.PasswordFlag, "pass")
-	args = append(args, "--"+constants.UsernameFlag, "user")
+	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModeDevice)
 	if tt.input.endpoint != "" {
 		args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
 	}

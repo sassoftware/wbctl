@@ -32,8 +32,6 @@ type loginInput struct {
 	authMode string
 	clientID string
 	endpoint string
-	username string
-	password string
 }
 
 type loginResponse struct {
@@ -63,56 +61,6 @@ func TestLoginCommand(t *testing.T) {
 					"Authentication mode: pkce, client_id, password, or device (default \"pkce\")",
 					"Endpoint URL",
 				},
-			},
-		},
-		{
-			name: "user provides auth-mode password, endpoint, and username, prompts for password",
-			input: loginInput{
-				authMode: constants.AuthModePassword,
-				clientID: constants.OAuthClientID,
-				endpoint: "ignored-endpoint",
-				username: "testuser",
-			},
-			expected: loginExpected{
-				askForPasswords: []string{"Password"},
-				err:             loginPasswordGrantFailureErr,
-			},
-		},
-		{
-			name: "user provides auth-mode password and endpoint, prompts for username and password",
-			input: loginInput{
-				authMode: constants.AuthModePassword,
-				clientID: constants.OAuthClientID,
-				endpoint: "ignored-endpoint",
-			},
-			response: loginResponse{
-				stubUI: &stubs.StubUI{
-					AskResponses:            []string{"testuser"},
-					AskForPasswordResponses: []string{"testpassword"},
-				},
-			},
-			expected: loginExpected{
-				asks:            []string{"Username"},
-				askForPasswords: []string{"Password"},
-				err:             loginPasswordGrantFailureErr,
-			},
-		},
-		{
-			name: "user provides auth-mode client-credentials, prompts for client-id and client-secret",
-			input: loginInput{
-				authMode: constants.AuthModeClientCredentials,
-				endpoint: "ignored-endpoint",
-			},
-			response: loginResponse{
-				stubUI: &stubs.StubUI{
-					AskResponses:            []string{"testclientid"},
-					AskForPasswordResponses: []string{"testclientsecret"},
-				},
-			},
-			expected: loginExpected{
-				asks:            []string{"Client ID"},
-				askForPasswords: []string{"Client Secret"},
-				err:             loginClientCredentialsGrantFailureErr,
 			},
 		},
 	}
@@ -150,7 +98,5 @@ func getLoginArgs(
 	args = append(args, "--"+constants.ClientIDFlag, tt.input.clientID)
 	args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
 	args = append(args, "--"+constants.AuthModeFlag, tt.input.authMode)
-	args = append(args, "--"+constants.UsernameFlag, tt.input.username)
-	args = append(args, "--"+constants.PasswordFlag, tt.input.password)
 	return args
 }

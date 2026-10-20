@@ -5,7 +5,6 @@ package delete_test
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -33,7 +32,7 @@ const (
 	workbench2ID               = "workbench-2"
 	workspace1ID               = "workspace-1"
 	workspace2ID               = "workspace-2"
-	expectedInvalidEndpointErr = "failed to get username/password token" +
+	expectedInvalidEndpointErr = "failed to get device token" +
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
 )
@@ -88,7 +87,8 @@ func TestDeleteCommand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: deleteExpected{
-				err: "at least one resource ID must be provided for delete",
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				err:      "at least one resource ID must be provided for delete",
 			},
 		},
 		{
@@ -106,7 +106,8 @@ func TestDeleteCommand(t *testing.T) {
 				},
 			),
 			expected: deleteExpected{
-				err: "POST %s/postgrest/rpc/workspace_bulk_delete failed\n" +
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				err: "POST ${URL}/postgrest/rpc/workspace_bulk_delete failed\n" +
 					" Caused by:\n" +
 					"\t* 400 error",
 				deleteCalls: 1,
@@ -127,7 +128,7 @@ func TestDeleteCommand(t *testing.T) {
 				},
 			),
 			expected: deleteExpected{
-				displays:    []string{expectedImageDisplay},
+				displays:    []string{stubs.ExpectedDeviceAuthDisplay, expectedImageDisplay},
 				deleteCalls: 1,
 			},
 		},
@@ -146,7 +147,7 @@ func TestDeleteCommand(t *testing.T) {
 				},
 			),
 			expected: deleteExpected{
-				displays:    []string{expectedImageDisplay},
+				displays:    []string{stubs.ExpectedDeviceAuthDisplay, expectedImageDisplay},
 				deleteCalls: 1,
 			},
 		},
@@ -165,7 +166,7 @@ func TestDeleteCommand(t *testing.T) {
 				},
 			),
 			expected: deleteExpected{
-				displays:    []string{expectedSubmissionDisplay},
+				displays:    []string{stubs.ExpectedDeviceAuthDisplay, expectedSubmissionDisplay},
 				deleteCalls: 1,
 			},
 		},
@@ -184,7 +185,7 @@ func TestDeleteCommand(t *testing.T) {
 				},
 			),
 			expected: deleteExpected{
-				displays:    []string{expectedSubmissionDisplay},
+				displays:    []string{stubs.ExpectedDeviceAuthDisplay, expectedSubmissionDisplay},
 				deleteCalls: 1,
 			},
 		},
@@ -203,7 +204,7 @@ func TestDeleteCommand(t *testing.T) {
 				},
 			),
 			expected: deleteExpected{
-				displays:    []string{expectedJobDisplay},
+				displays:    []string{stubs.ExpectedDeviceAuthDisplay, expectedJobDisplay},
 				deleteCalls: 1,
 			},
 		},
@@ -222,7 +223,7 @@ func TestDeleteCommand(t *testing.T) {
 				},
 			),
 			expected: deleteExpected{
-				displays:    []string{expectedJobDisplay},
+				displays:    []string{stubs.ExpectedDeviceAuthDisplay, expectedJobDisplay},
 				deleteCalls: 1,
 			},
 		},
@@ -241,7 +242,7 @@ func TestDeleteCommand(t *testing.T) {
 				},
 			),
 			expected: deleteExpected{
-				displays:    []string{expectedSnapshotDisplay},
+				displays:    []string{stubs.ExpectedDeviceAuthDisplay, expectedSnapshotDisplay},
 				deleteCalls: 1,
 			},
 		},
@@ -260,7 +261,7 @@ func TestDeleteCommand(t *testing.T) {
 				},
 			),
 			expected: deleteExpected{
-				displays:    []string{expectedSnapshotDisplay},
+				displays:    []string{stubs.ExpectedDeviceAuthDisplay, expectedSnapshotDisplay},
 				deleteCalls: 1,
 			},
 		},
@@ -279,7 +280,7 @@ func TestDeleteCommand(t *testing.T) {
 				},
 			),
 			expected: deleteExpected{
-				displays:    []string{expectedWorkbenchDisplay},
+				displays:    []string{stubs.ExpectedDeviceAuthDisplay, expectedWorkbenchDisplay},
 				deleteCalls: 1,
 			},
 		},
@@ -298,7 +299,7 @@ func TestDeleteCommand(t *testing.T) {
 				},
 			),
 			expected: deleteExpected{
-				displays:    []string{expectedWorkbenchDisplay},
+				displays:    []string{stubs.ExpectedDeviceAuthDisplay, expectedWorkbenchDisplay},
 				deleteCalls: 1,
 			},
 		},
@@ -317,7 +318,7 @@ func TestDeleteCommand(t *testing.T) {
 				},
 			),
 			expected: deleteExpected{
-				displays:    []string{expectedWorkspaceDisplay},
+				displays:    []string{stubs.ExpectedDeviceAuthDisplay, expectedWorkspaceDisplay},
 				deleteCalls: 1,
 			},
 		},
@@ -336,7 +337,7 @@ func TestDeleteCommand(t *testing.T) {
 				},
 			),
 			expected: deleteExpected{
-				displays:    []string{expectedWorkspaceDisplay},
+				displays:    []string{stubs.ExpectedDeviceAuthDisplay, expectedWorkspaceDisplay},
 				deleteCalls: 1,
 			},
 		},
@@ -367,18 +368,29 @@ func TestDeleteCommand(t *testing.T) {
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getDeleteArgs(tt))
 			err := mockCmd.Execute()
+			replacements := map[string]string{
+				"${PORT}": stubs.Port(t, srv.URL),
+				"${HOST}": stubs.Host(t, srv.URL),
+				"${URL}":  srv.URL,
+			}
 			if tt.expected.err != "" {
-				if strings.Contains(tt.expected.err, "%s") {
-					expectedErr := fmt.Sprintf(tt.expected.err, srv.URL)
-					require.EqualError(t, err, expectedErr)
-				} else {
-					require.EqualError(t, err, tt.expected.err)
-				}
+				expectedErr, actualErr := stubs.Sanitize(tt.expected.err, err.Error(), replacements)
+				require.Equal(t, expectedErr, actualErr)
 			} else {
 				require.NoError(t, err)
 			}
 
-			require.Equal(t, tt.expected.displays, stubUI.Displays, strings.Join(stubUI.Displays, "\n"))
+			expectedDisplays, actualDisplays := stubs.SanitizeSlice(
+				tt.expected.displays,
+				stubUI.Displays,
+				replacements,
+			)
+			require.Equal(t,
+				expectedDisplays,
+				actualDisplays,
+				"unexpected display messages: %v",
+				stubUI.Displays,
+			)
 			require.Equal(t, tt.expected.warns, stubUI.Warns, strings.Join(stubUI.Warns, "\n"))
 			require.Empty(t, stubUI.Tables)
 			require.Equal(
@@ -408,10 +420,7 @@ func getDeleteArgs(
 	tt deleteTestCase,
 ) []string {
 	args := []string{tt.input.resourceType}
-	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModePassword)
-	args = append(args, "--"+constants.ClientIDFlag, constants.OAuthClientID)
-	args = append(args, "--"+constants.PasswordFlag, "pass")
-	args = append(args, "--"+constants.UsernameFlag, "user")
+	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModeDevice)
 	if tt.input.endpoint != "" {
 		args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
 	}

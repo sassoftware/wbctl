@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/sassoftware/wbctl/internal/cmd"
@@ -29,18 +29,12 @@ const (
 		"\t* HEAD ${URL}/postgrest/ failed\n" +
 		"\t* 500 "
 	cmdAuthInvalidAuthModeErr = "invalid --auth-mode: \"invalid\" (allowed: auto, password, device)"
-	// This is not a hardcoded credential value, but rather the expected error
-	// messages when options are missing.
-	// nolint:gosec
-	cmdAuthPasswordUserRequired = "--auth-mode=password requires --username"
 )
 
 type authInput struct {
 	authMode string
 	clientID string
 	endpoint string
-	password string
-	username string
 }
 
 type authEndpointsConfig struct {
@@ -48,12 +42,14 @@ type authEndpointsConfig struct {
 	tokenBody           string
 	csrfStatus          int
 	csrfSetCookieHeader string
+	clientID            string
 }
 
 type authExpected struct {
 	accessToken string
 	csrfToken   string
 	err         string
+	displays    []string
 }
 
 type authTestCase struct {
@@ -71,39 +67,16 @@ func TestGetAccessTokens(t *testing.T) {
 		{
 			name: "endpoint required",
 			input: authInput{
-				authMode: constants.AuthModeAuto,
+				authMode: constants.AuthModeDevice,
 			},
 			expected: authExpected{
 				err: cmdAuthEndpointRequiredErr,
 			},
 		},
 		{
-			name: "password and csrf success",
-			input: authInput{
-				authMode: constants.AuthModeAuto,
-				clientID: constants.OAuthClientID,
-				username: "user",
-				password: "pass",
-			},
-			mockEndpoints: getAuthEndpoints(
-				authEndpointsConfig{
-					tokenStatus:         http.StatusOK,
-					tokenBody:           `{"access_token":"at"}`,
-					csrfStatus:          http.StatusOK,
-					csrfSetCookieHeader: "postgrest-csrf-token=csrf-token; Path=/",
-				}),
-			expected: authExpected{
-				accessToken: "at",
-				csrfToken:   "csrf-token",
-			},
-		},
-		{
 			name: "csrf request failure",
 			input: authInput{
-				authMode: constants.AuthModeAuto,
-				clientID: constants.OAuthClientID,
-				username: "user",
-				password: "pass",
+				authMode: constants.AuthModeDevice,
 			},
 			mockEndpoints: getAuthEndpoints(
 				authEndpointsConfig{
@@ -114,35 +87,46 @@ func TestGetAccessTokens(t *testing.T) {
 			expected: authExpected{
 				accessToken: "at",
 				err:         cmdAuthExpectedCSRFFailureErrFormat,
+				displays: []string{"Open this URL in your browser and complete the authorization:\n" +
+					"${URL}/authorization?client_id=discovered_spa_client_id&redirect_uri=verification_uri_complete&" +
+					"response_type=code&scope=openid+profile+offline_access"},
 			},
 		},
 		{
 			name: "invalid auth mode",
 			input: authInput{
 				authMode: "invalid",
-				clientID: constants.OAuthClientID,
 			},
 			expected: authExpected{
 				err: cmdAuthInvalidAuthModeErr,
 			},
 		},
 		{
-			name: "password mode requires username",
+			name: "explicit client id honored",
 			input: authInput{
-				authMode: constants.AuthModePassword,
-				clientID: constants.OAuthClientID,
-				endpoint: "https://example.test",
+				authMode: constants.AuthModeDevice,
+				clientID: "explicit_client_id",
 			},
+			mockEndpoints: getAuthEndpoints(
+				authEndpointsConfig{
+					tokenStatus: http.StatusOK,
+					tokenBody:   `{"access_token":"at"}`,
+					csrfStatus:  http.StatusOK,
+					clientID:    "explicit_client_id",
+				}),
 			expected: authExpected{
-				err: cmdAuthPasswordUserRequired,
+				accessToken: "at",
+				displays: []string{"Open this URL in your browser and complete the authorization:\n" +
+					"verification_uri_complete"},
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			var srv *httptest.Server
 			if tt.input.endpoint == "" && tt.name != "endpoint required" {
-				srv, _ := stubs.NewStubHTTPServer(t, tt.mockEndpoints)
+				srv, _ = stubs.NewStubHTTPServer(t, tt.mockEndpoints)
 				defer srv.Close()
 				tt.input.endpoint = srv.URL
 			}
@@ -159,15 +143,34 @@ func TestGetAccessTokens(t *testing.T) {
 				afero.NewMemMapFs(),
 			)
 
+			var replacements map[string]string
+			if srv != nil {
+				replacements = map[string]string{
+					"${PORT}": stubs.Port(t, srv.URL),
+					"${HOST}": stubs.Host(t, srv.URL),
+					"${URL}":  srv.URL,
+				}
+			}
 			if tt.expected.err != "" {
-				require.EqualError(t, err, strings.ReplaceAll(tt.expected.err, "${URL}", tt.input.endpoint))
+				expectedErr, actualErr := stubs.Sanitize(tt.expected.err, err.Error(), replacements)
+				require.Equal(t, expectedErr, actualErr)
 			} else {
 				require.NoError(t, err)
 				require.Equal(t, tt.expected.accessToken, accessToken)
 				require.Equal(t, tt.expected.csrfToken, csrfToken)
 			}
 
-			require.Empty(t, stubUI.Displays)
+			expectedDisplays, actualDisplays := stubs.SanitizeSlice(
+				tt.expected.displays,
+				stubUI.Displays,
+				replacements,
+			)
+			require.Equal(t,
+				expectedDisplays,
+				actualDisplays,
+				"unexpected display messages: %v",
+				stubUI.Displays,
+			)
 			require.Empty(t, stubUI.Warns)
 			require.Empty(t, stubUI.Tables)
 		})
@@ -185,17 +188,11 @@ func bindFlags(
 	if tt.input.authMode != "" {
 		args = append(args, "--"+constants.AuthModeFlag, tt.input.authMode)
 	}
-	if tt.input.clientID != "" {
-		args = append(args, "--"+constants.ClientIDFlag, tt.input.clientID)
-	}
-	if tt.input.password != "" {
-		args = append(args, "--"+constants.PasswordFlag, tt.input.password)
-	}
-	if tt.input.username != "" {
-		args = append(args, "--"+constants.UsernameFlag, tt.input.username)
-	}
 	if tt.input.endpoint != "" {
 		args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
+	}
+	if tt.input.clientID != "" {
+		args = append(args, "--"+constants.ClientIDFlag, tt.input.clientID)
 	}
 	require.NoError(t, mockCmd.ParseFlags(args))
 	flags.BindToViper(mockCmd, args)
@@ -204,6 +201,28 @@ func bindFlags(
 
 func getAuthEndpoints(config authEndpointsConfig) []stubs.StubHTTPEndpoint {
 	csrfEndpoint := postgrest.Endpoint(constants.WorkbenchEndpointRoot)
+	expectedTokenBody := `audience=discovered_audience&` +
+		`client_id=discovered_native_client_id&` +
+		`device_code=device-code&` +
+		`grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code`
+	expectedDeviceBody := `audience=discovered_audience&` +
+		`client_id=discovered_native_client_id&` +
+		`scope=openid+profile+offline_access`
+	if config.clientID != "" {
+		expectedTokenBody = fmt.Sprintf(
+			"audience=discovered_audience&"+
+				"client_id=%s&"+
+				"device_code=device-code&"+
+				"grant_type=urn%%3Aietf%%3Aparams%%3Aoauth%%3Agrant-type%%3Adevice_code",
+			config.clientID,
+		)
+		expectedDeviceBody = fmt.Sprintf(
+			"audience=discovered_audience&"+
+				"client_id=%s&"+
+				"scope=openid+profile+offline_access",
+			config.clientID,
+		)
+	}
 	return []stubs.StubHTTPEndpoint{
 		{
 			Request: stubs.StubHTTPRequest{
@@ -211,22 +230,50 @@ func getAuthEndpoints(config authEndpointsConfig) []stubs.StubHTTPEndpoint {
 				URL:    constants.AuthWellKnownPath,
 			},
 			Response: stubs.StubHTTPResponse{
-				Body:        fmt.Sprintf(`{"token_endpoint":%q}`, "http://${HOST}/token"), //nolint:gosec
+				Body: fmt.Sprintf(`
+					{
+						"token_endpoint":%q,
+						"device_authorization_endpoint":%q,
+						"authorization_endpoint":%q,
+						"workbench": {
+							"spa_client_id": "discovered_spa_client_id",
+							"spa_audience": "discovered_audience",
+							"native_client_id": "discovered_native_client_id"
+						}
+					}
+					`, "http://${HOST}/token", "http://${HOST}/device", "http://${HOST}/authorization"), //nolint:gosec
 				Status:      http.StatusOK,
 				BodyOptions: []stubs.StubHTTPBodyOption{stubs.StubHTTPBodyReplaceHOST()},
 			},
 		},
 		{
 			Request: stubs.StubHTTPRequest{
-				Method: http.MethodPost,
-				URL:    "/token",
-				ExpectedBody: `audience=https%3A%2F%2Fworkbench.sas.com%2Fpostgrest&` +
-					`client_id=wLDaVQp7dck7ryFttmHpruyIVZIHVhNY&grant_type=password&` +
-					`password=pass&scope=openid+profile+offline_access&username=user`,
+				Method:       http.MethodPost,
+				URL:          "/token",
+				ExpectedBody: expectedTokenBody,
 			},
 			Response: stubs.StubHTTPResponse{
 				Body:   config.tokenBody,
 				Status: config.tokenStatus,
+			},
+		},
+		{
+			Request: stubs.StubHTTPRequest{
+				Method:       http.MethodPost,
+				URL:          "/device",
+				ExpectedBody: expectedDeviceBody,
+			},
+			Response: stubs.StubHTTPResponse{
+				Body: `
+					{
+					  "device_code": "device-code",
+					  "user_code": "user-code",
+					  "verification_uri": "verification-uri",
+					  "verification_uri_complete": "verification_uri_complete",
+                      "expires_in": 3600
+					}
+					`,
+				Status: http.StatusOK,
 			},
 		},
 		{

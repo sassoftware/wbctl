@@ -6,8 +6,8 @@ package api_test
 import (
 	"context"
 	"net/http"
+	"net/http/httptest"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/sassoftware/wbctl/internal/auth0admin"
@@ -115,9 +115,9 @@ const (
 		"\n Caused by:" +
 		"\n\t* invalid character 'i' looking for beginning of value"
 	authEndpointRequiredErr = "--endpoint must be specified"
-	apiEndpointInvalidErr   = "failed to get username/password token" +
-		"\n Caused by:" +
-		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
+	apiEndpointInvalidErr   = "failed to get device token\n" +
+		" Caused by:\n" +
+		"\t* parse \"a\\nb\": net/url: invalid control character in URL"
 )
 
 type apiInput struct {
@@ -173,6 +173,7 @@ func TestAPICommand(t *testing.T) {
 				tableStrings: []string{
 					expectedAPITable,
 				},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -191,7 +192,7 @@ func TestAPICommand(t *testing.T) {
 				},
 			}),
 			expected: apiExpected{
-				displays: []string{expectedJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, expectedJSON},
 			},
 		},
 		{
@@ -206,7 +207,7 @@ func TestAPICommand(t *testing.T) {
 				},
 			}),
 			expected: apiExpected{
-				displays: []string{apiExpectedDisplayGetWithQuery},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, apiExpectedDisplayGetWithQuery},
 			},
 		},
 		{
@@ -224,14 +225,17 @@ func TestAPICommand(t *testing.T) {
 				},
 			}),
 			expected: apiExpected{
-				displays: []string{apiExpectedDisplayPostWithData},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, apiExpectedDisplayPostWithData},
 			},
 		},
 		{
 			name:          "unsupported method returns exit error",
 			input:         apiInput{apiArg: apiArgCustom, method: http.MethodPut},
 			mockEndpoints: stubs.GetStubAuthEndpoints(), // just the auth endpoints
-			expected:      apiExpected{err: "unsupported method: PUT"},
+			expected: apiExpected{
+				err:      "unsupported method: PUT",
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+			},
 		},
 		{
 			name: "api POST with filename body",
@@ -249,20 +253,26 @@ func TestAPICommand(t *testing.T) {
 				},
 			}),
 			expected: apiExpected{
-				displays: []string{apiExpectedDisplayPostWithFile},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, apiExpectedDisplayPostWithFile},
 			},
 		},
 		{
 			name:          "invalid query returns parse error",
 			input:         apiInput{apiArg: apiArgCustom, query: "%zz"},
 			mockEndpoints: stubs.GetStubAuthEndpoints(), // just the auth endpoints
-			expected:      apiExpected{err: "invalid URL escape \"%zz\""},
+			expected: apiExpected{
+				err:      "invalid URL escape \"%zz\"",
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+			},
 		},
 		{
 			name:          "invalid data json returns unmarshal error",
 			input:         apiInput{apiArg: apiArgCustom, data: `{"name":`},
 			mockEndpoints: stubs.GetStubAuthEndpoints(), // just the auth endpoints
-			expected:      apiExpected{err: "unexpected end of JSON input"},
+			expected: apiExpected{
+				err:      "unexpected end of JSON input",
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+			},
 		},
 		{
 			name:     "endpoint required",
@@ -284,7 +294,8 @@ func TestAPICommand(t *testing.T) {
 				},
 			}),
 			expected: apiExpected{
-				err: apiExpectedInvalidRootJSONErr,
+				err:      apiExpectedInvalidRootJSONErr,
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -298,7 +309,8 @@ func TestAPICommand(t *testing.T) {
 				},
 			}),
 			expected: apiExpected{
-				err: apiExpectedInvalidJSONErr,
+				err:      apiExpectedInvalidJSONErr,
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -318,6 +330,9 @@ func TestAPICommand(t *testing.T) {
 			}),
 			expected: apiExpected{
 				err: apiExpectedInvalidRootAuth0AdminErr,
+				displays: []string{
+					stubs.ExpectedDeviceAuthDisplay,
+				},
 			},
 		},
 	}
@@ -327,8 +342,9 @@ func TestAPICommand(t *testing.T) {
 			defer viper.Reset()
 			stubUI := &stubs.StubUI{}
 
+			var srv *httptest.Server
 			if tt.input.endpoint == "" && tt.name != "endpoint required" {
-				srv, _ := stubs.NewStubHTTPServer(t, tt.mockEndpoints)
+				srv, _ = stubs.NewStubHTTPServer(t, tt.mockEndpoints)
 				defer srv.Close()
 				tt.input.endpoint = srv.URL
 			}
@@ -344,9 +360,17 @@ func TestAPICommand(t *testing.T) {
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getAPIArgs(tt))
 			err := mockCmd.Execute()
+			var replacements map[string]string
+			if srv != nil {
+				replacements = map[string]string{
+					"${PORT}": stubs.Port(t, srv.URL),
+					"${HOST}": stubs.Host(t, srv.URL),
+					"${URL}":  srv.URL,
+				}
+			}
 			if tt.expected.err != "" {
-				expectedErr := strings.ReplaceAll(tt.expected.err, "${URL}", tt.input.endpoint)
-				require.EqualError(t, err, expectedErr)
+				expectedErr, actualErr := stubs.Sanitize(tt.expected.err, err.Error(), replacements)
+				require.Equal(t, expectedErr, actualErr)
 			} else {
 				require.NoError(t, err)
 			}
@@ -357,8 +381,29 @@ func TestAPICommand(t *testing.T) {
 				require.Equal(t, 1, stubUI.Tables[i].PrintCalls)
 			}
 
-			require.Equal(t, tt.expected.displays, stubUI.Displays, strings.Join(stubUI.Displays, "\n"))
-			require.Equal(t, tt.expected.warns, stubUI.Warns, strings.Join(stubUI.Warns, "\n"))
+			expectedDisplays, actualDisplays := stubs.SanitizeSlice(
+				tt.expected.displays,
+				stubUI.Displays,
+				replacements,
+			)
+			require.Equal(t,
+				expectedDisplays,
+				actualDisplays,
+				"unexpected display messages: %v",
+				stubUI.Displays,
+			)
+
+			expectedWarns, actualWarns := stubs.SanitizeSlice(
+				tt.expected.warns,
+				stubUI.Warns,
+				replacements,
+			)
+			require.Equal(t,
+				expectedWarns,
+				actualWarns,
+				"unexpected warn messages: %v",
+				stubUI.Warns,
+			)
 		})
 	}
 }
@@ -367,10 +412,7 @@ func getAPIArgs(
 	tt apiTestCase,
 ) []string {
 	args := []string{}
-	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModePassword)
-	args = append(args, "--"+constants.ClientIDFlag, constants.OAuthClientID)
-	args = append(args, "--"+constants.PasswordFlag, "pass")
-	args = append(args, "--"+constants.UsernameFlag, "user")
+	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModeDevice)
 	if tt.input.endpoint != "" {
 		args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
 	}

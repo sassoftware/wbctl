@@ -13,7 +13,7 @@ import (
 
 func TestGetStubAuthEndpoints(t *testing.T) {
 	endpoints := stubs.GetStubAuthEndpoints()
-	require.Len(t, endpoints, 3)
+	require.Len(t, endpoints, 4)
 }
 
 func TestGetStubWorkspaceEndpoints(t *testing.T) {

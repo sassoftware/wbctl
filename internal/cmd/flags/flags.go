@@ -432,7 +432,7 @@ func AddAuthModeFlag(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringP(
 		constants.AuthModeFlag,
 		constants.AuthModeShortFlag,
-		constants.AuthModeAuto,
+		constants.AuthModeDevice,
 		i18n.Format(i18n.FlagAuthModeUsage),
 	)
 }
@@ -444,26 +444,6 @@ func AddEndpointFlag(cmd *cobra.Command) {
 		constants.EndpointShortFlag,
 		"",
 		i18n.Format(i18n.FlagEndpointUsage),
-	)
-}
-
-// AddPasswordFlag adds the persistent password flag to the command.
-func AddPasswordFlag(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringP(
-		constants.PasswordFlag,
-		constants.PasswordShortFlag,
-		"",
-		i18n.Format(i18n.FlagPasswordUsage),
-	)
-}
-
-// AddUsernameFlag adds the persistent username flag to the command.
-func AddUsernameFlag(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringP(
-		constants.UsernameFlag,
-		constants.UsernameShortFlag,
-		"",
-		i18n.Format(i18n.FlagUserUsage),
 	)
 }
 
@@ -515,15 +495,6 @@ func AddClientIDFlag(cmd *cobra.Command) {
 	)
 }
 
-// AddClientSecretFlag adds the persistent client-secret flag to the command.
-func AddClientSecretFlag(cmd *cobra.Command) {
-	cmd.PersistentFlags().String(
-		constants.ClientSecretFlag,
-		"",
-		i18n.Format(i18n.FlagClientSecretUsage),
-	)
-}
-
 // BindToViper binds all the flags to viper. This cannot be done when the flags
 // are created because multiple commands have the same flags and viper maintains
 // a flat list. This means that `viper.GetString("name")` will look in the last
@@ -540,8 +511,5 @@ func BindToViper(
 		}
 	})
 	// BindEnv can only fail if given zero arguments.
-	_ = viper.BindEnv(constants.UsernameFlag, constants.UsernameEnvVar)
-	_ = viper.BindEnv(constants.PasswordFlag, constants.PasswordEnvVar)
 	_ = viper.BindEnv(constants.ClientIDFlag, constants.ClientIDEnvVar)
-	_ = viper.BindEnv(constants.ClientSecretFlag, constants.ClientSecretEnvVar)
 }

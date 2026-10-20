@@ -34,10 +34,7 @@ func newLoginFunction(
 			authMode = v.GetString(constants.AuthModeFlag)
 		}
 		endpoint := v.GetString(constants.EndpointFlag)
-		password := v.GetString(constants.PasswordFlag)
-		username := v.GetString(constants.UsernameFlag)
 		clientID := v.GetString(constants.ClientIDFlag)
-		clientSecret := v.GetString(constants.ClientSecretFlag)
 		ingressHost := v.GetString(constants.IngressHostFlag)
 		organization := v.GetString(constants.OrganizationFlag)
 		ignoreTokenCache := v.GetBool(constants.IgnoreTokenCacheFlag)
@@ -47,10 +44,7 @@ func newLoginFunction(
 			IngressHost:          ingressHost,
 			Organization:         organization,
 			AuthMode:             authMode,
-			Username:             username,
-			Password:             password,
 			ClientID:             clientID,
-			ClientSecret:         clientSecret,
 			IgnoreTokenCache:     ignoreTokenCache,
 			NoListen:             noListen,
 		}
@@ -77,28 +71,9 @@ func promptForMissing(
 	if params.AuthMode == "" {
 		params.AuthMode = _ui.Ask(i18n.Format(i18n.LoginAuthModePrompt))
 	}
-	if params.AuthMode == constants.AuthModeClientCredentials && params.ClientID == "" {
-		params.ClientID = _ui.Ask(i18n.Format(i18n.LoginClientIDPrompt))
-	}
 	if params.ControlPlaneEndpoint == "" {
 		params.ControlPlaneEndpoint = _ui.Ask(i18n.Format(i18n.LoginEndpointPrompt))
 	}
-
 	params.AuthMode = params.NormalizedAuthMode()
-
-	switch params.AuthMode {
-	case constants.AuthModePassword:
-		if params.Username == "" {
-			params.Username = _ui.Ask(i18n.Format(i18n.LoginUsernamePrompt))
-		}
-		if params.Password == "" {
-			params.Password = _ui.AskForPassword(i18n.Format(i18n.LoginPasswordPrompt))
-		}
-	case constants.AuthModeClientCredentials:
-		if params.ClientSecret == "" {
-			params.ClientSecret = _ui.AskForPassword(i18n.Format(i18n.LoginClientSecretPrompt))
-		}
-	}
-
 	return params
 }

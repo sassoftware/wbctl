@@ -383,7 +383,7 @@ const (
         ]
     }
 }`
-	expectedInvalidEndpointErr = "failed to get username/password token" +
+	expectedInvalidEndpointErr = "failed to get device token" +
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
 	expectedInvlidDataplaneErr = "GET ${URL}/postgrest/dataplanes?id=in.%28invalid%29 failed" +
@@ -450,7 +450,7 @@ func TestCreateJobCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
-				displays:        []string{expectedCreateJobDryRunOutput},
+				displays:        []string{stubs.ExpectedDeviceAuthDisplay, expectedCreateJobDryRunOutput},
 				warns:           []string{expectedCreateJobWarn},
 				dataplanesCalls: 1,
 			},
@@ -481,6 +481,7 @@ func TestCreateJobCommand(t *testing.T) {
 				dataplanesCalls:   1,
 				applicationsCalls: 1,
 				servicesCalls:     1,
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -511,7 +512,7 @@ func TestCreateJobCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
-				displays:          []string{expectedCreateJobID},
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay, expectedCreateJobID},
 				warns:             []string{expectedCreateJobWarn},
 				createCalls:       1,
 				dataplanesCalls:   1,
@@ -548,7 +549,7 @@ func TestCreateJobCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
-				displays:          []string{expectedCreateJobID},
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay, expectedCreateJobID},
 				createCalls:       1,
 				dataplanesCalls:   1,
 				applicationsCalls: 1,
@@ -584,7 +585,7 @@ func TestCreateJobCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
-				displays:        []string{expectedCreateJobID},
+				displays:        []string{stubs.ExpectedDeviceAuthDisplay, expectedCreateJobID},
 				createCalls:     1,
 				dataplanesCalls: 1,
 				servicesCalls:   1,
@@ -619,6 +620,7 @@ func TestCreateJobCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay},
 				err:               expectedCreateJobServerErr,
 				warns:             []string{expectedCreateJobWarn},
 				createCalls:       1,
@@ -645,6 +647,7 @@ func TestCreateJobCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay},
 				err:               expectedCreateJobNameError,
 				applicationsCalls: 1,
 				dataplanesCalls:   1,
@@ -669,6 +672,7 @@ func TestCreateJobCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay},
 				err:               expectedCreateJobContextErr,
 				applicationsCalls: 1,
 				dataplanesCalls:   1,
@@ -696,6 +700,7 @@ func TestCreateJobCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay},
 				dataplanesCalls:   1,
 				err:               expectedCreateJobAppErr,
 				applicationsCalls: 1,
@@ -725,6 +730,7 @@ func TestCreateJobCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay},
 				err:               expectedCreateJobNodepoolErr,
 				applicationsCalls: 1,
 				dataplanesCalls:   1,
@@ -754,6 +760,7 @@ func TestCreateJobCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:        []string{stubs.ExpectedDeviceAuthDisplay},
 				err:             expectedInvlidDataplaneErr,
 				dataplanesCalls: 1,
 			},
@@ -772,6 +779,7 @@ func TestCreateJobCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:        []string{stubs.ExpectedDeviceAuthDisplay},
 				workspacesCalls: 1,
 				err:             expectedInvlidWorkspaceErr,
 			},
@@ -790,6 +798,7 @@ func TestCreateJobCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay},
 				applicationsCalls: 1,
 				err:               expectedInvlidApplicationErr,
 			},
@@ -817,14 +826,29 @@ func TestCreateJobCommand(t *testing.T) {
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getCreateArgs(tt))
 			err := mockCmd.Execute()
+			replacements := map[string]string{
+				"${PORT}": stubs.Port(t, srv.URL),
+				"${HOST}": stubs.Host(t, srv.URL),
+				"${URL}":  srv.URL,
+			}
 			if tt.expected.err != "" {
-				expectedErr := strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL)
-				require.EqualError(t, err, expectedErr)
+				expectedErr, actualErr := stubs.Sanitize(tt.expected.err, err.Error(), replacements)
+				require.Equal(t, expectedErr, actualErr)
 			} else {
 				require.NoError(t, err)
 			}
 
-			require.Equal(t, tt.expected.displays, stubUI.Displays, strings.Join(stubUI.Displays, "\n"))
+			expectedDisplays, actualDisplays := stubs.SanitizeSlice(
+				tt.expected.displays,
+				stubUI.Displays,
+				replacements,
+			)
+			require.Equal(t,
+				expectedDisplays,
+				actualDisplays,
+				"unexpected display messages: %v",
+				stubUI.Displays,
+			)
 			require.Equal(t, tt.expected.warns, stubUI.Warns, strings.Join(stubUI.Warns, "\n"))
 			require.Equal(
 				t,
@@ -920,7 +944,7 @@ func TestUpdateJobCommand(t *testing.T) {
 			},
 			mockEndpoints: getUpdateJobEndpoints(jobEndpointsConfig{}),
 			expected: updateExpected{
-				displays:       []string{expectedUpdateJobDryRunOutput},
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay, expectedUpdateJobDryRunOutput},
 				workspaceCalls: 1,
 			},
 		},
@@ -951,7 +975,7 @@ func TestUpdateJobCommand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
-				displays:          []string{expectedUpdateJobLongFlagsDryRunOutput},
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay, expectedUpdateJobLongFlagsDryRunOutput},
 				applicationsCalls: 1,
 				workspaceCalls:    1,
 			},
@@ -983,7 +1007,7 @@ func TestUpdateJobCommand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
-				displays:          []string{expectedUpdateJobLongFlagsDryRunOutput},
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay, expectedUpdateJobLongFlagsDryRunOutput},
 				applicationsCalls: 1,
 				workspaceCalls:    1,
 			},
@@ -996,7 +1020,8 @@ func TestUpdateJobCommand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: updateExpected{
-				err: expectedCreateImageInvalidFileErr,
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				err:      expectedCreateImageInvalidFileErr,
 			},
 		},
 		{
@@ -1012,7 +1037,7 @@ func TestUpdateJobCommand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
-				displays:    []string{"job-a", "job-b"},
+				displays:    []string{stubs.ExpectedDeviceAuthDisplay, "job-a", "job-b"},
 				updateCalls: 1,
 			},
 		},
@@ -1029,6 +1054,7 @@ func TestUpdateJobCommand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
+				displays:    []string{stubs.ExpectedDeviceAuthDisplay},
 				err:         expectedUpdateJobServerErr,
 				updateCalls: 1,
 			},
@@ -1042,7 +1068,7 @@ func TestUpdateJobCommand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: updateExpected{
-				displays: []string{expectedUpdateJobFileDryRunOutput},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, expectedUpdateJobFileDryRunOutput},
 			},
 		},
 		{
@@ -1052,7 +1078,8 @@ func TestUpdateJobCommand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: updateExpected{
-				err: expectedUpdateJobMissingIDErr,
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				err:      expectedUpdateJobMissingIDErr,
 			},
 		},
 		{
@@ -1073,7 +1100,7 @@ func TestUpdateJobCommand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
-				displays:       []string{"job-cli-1", "job-cli-2"},
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay, "job-cli-1", "job-cli-2"},
 				updateCalls:    1,
 				workspaceCalls: 1,
 			},
@@ -1107,7 +1134,7 @@ func TestUpdateJobCommand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
-				displays:          []string{"job-cli-1"},
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay, "job-cli-1"},
 				updateCalls:       1,
 				applicationsCalls: 1,
 			},
@@ -1143,14 +1170,29 @@ func TestUpdateJobCommand(t *testing.T) {
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getUpdateArgs(tt))
 			err := mockCmd.Execute()
+			replacements := map[string]string{
+				"${PORT}": stubs.Port(t, srv.URL),
+				"${HOST}": stubs.Host(t, srv.URL),
+				"${URL}":  srv.URL,
+			}
 			if tt.expected.err != "" {
-				expectedErr := strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL)
-				require.EqualError(t, err, expectedErr)
+				expectedErr, actualErr := stubs.Sanitize(tt.expected.err, err.Error(), replacements)
+				require.Equal(t, expectedErr, actualErr)
 			} else {
 				require.NoError(t, err)
 			}
 
-			require.Equal(t, tt.expected.displays, stubUI.Displays, strings.Join(stubUI.Displays, "\n"))
+			expectedDisplays, actualDisplays := stubs.SanitizeSlice(
+				tt.expected.displays,
+				stubUI.Displays,
+				replacements,
+			)
+			require.Equal(t,
+				expectedDisplays,
+				actualDisplays,
+				"unexpected display messages: %v",
+				stubUI.Displays,
+			)
 			require.Equal(t, tt.expected.warns, stubUI.Warns, strings.Join(stubUI.Warns, "\n"))
 			require.Equal(
 				t,
@@ -1190,10 +1232,7 @@ func getCreateArgs(
 	tt createJobTestCase,
 ) []string {
 	args := []string{}
-	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModePassword)
-	args = append(args, "--"+constants.ClientIDFlag, constants.OAuthClientID)
-	args = append(args, "--"+constants.PasswordFlag, "pass")
-	args = append(args, "--"+constants.UsernameFlag, "user")
+	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModeDevice)
 	if tt.input.endpoint != "" {
 		args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
 	}
@@ -1242,10 +1281,7 @@ func getUpdateArgs(
 	tt updateJobTestCase,
 ) []string {
 	args := []string{}
-	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModePassword)
-	args = append(args, "--"+constants.ClientIDFlag, constants.OAuthClientID)
-	args = append(args, "--"+constants.PasswordFlag, "pass")
-	args = append(args, "--"+constants.UsernameFlag, "user")
+	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModeDevice)
 	if tt.input.endpoint != "" {
 		args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
 	}

@@ -20,28 +20,12 @@ func TestNormalizedAuthMode(t *testing.T) {
 		{
 			name:     "empty",
 			input:    auth.GetAccessTokenParams{},
-			expected: constants.AuthModePKCE,
+			expected: constants.AuthModeDevice,
 		},
 		{
 			name:     "unknown",
 			input:    auth.GetAccessTokenParams{AuthMode: "unknown"},
 			expected: "unknown",
-		},
-		{
-			name: "auto with client secret",
-			input: auth.GetAccessTokenParams{
-				AuthMode:     constants.AuthModeAuto,
-				ClientSecret: "client-secret",
-			},
-			expected: constants.AuthModeClientCredentials,
-		},
-		{
-			name: "auto with username",
-			input: auth.GetAccessTokenParams{
-				AuthMode: constants.AuthModeAuto,
-				Username: "username",
-			},
-			expected: constants.AuthModePassword,
 		},
 	}
 	for _, tc := range testCases {
