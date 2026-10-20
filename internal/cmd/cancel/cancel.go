@@ -43,7 +43,7 @@ var cancelFunctions = []types.FunctionMetadata[cancelF]{
 	},
 }
 
-// newCancelFunction creates a new cli.ActionFunc for the stop command.
+// newCancelFunction creates a new cli.ActionFunc for the cancel command.
 func newCancelFunction(
 	ctx context.Context,
 	fsys afero.Fs,

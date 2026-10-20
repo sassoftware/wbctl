@@ -6,6 +6,8 @@ package state
 import (
 	"context"
 
+	"github.com/sassoftware/wbctl/internal/cmd/cancel"
+	"github.com/sassoftware/wbctl/internal/cmd/create/job_submission"
 	"github.com/sassoftware/wbctl/internal/cmd/flags"
 	"github.com/sassoftware/wbctl/internal/cmd/types"
 	"github.com/sassoftware/wbctl/internal/constants"
@@ -55,20 +57,31 @@ func getStopSubcommands(
 	_ui ui.UI,
 ) []*cobra.Command {
 	return []*cobra.Command{
-		{
-			Use:     constants.WorkbenchesCommandName,
-			Aliases: []string{constants.WorkbenchCommandName},
-			Args:    cobra.MinimumNArgs(1),
-			RunE:    newUpdateStateFunction(ctx, fsys, _ui, constants.WorkbenchType, constants.DesiredStateStopped),
-			Short: i18n.Format(
-				i18n.CmdStopTypeUsage,
-				i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.WorkbenchType)},
-			),
-			Long: i18n.Format(
-				i18n.CmdStopTypeDescription,
-				i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.WorkbenchType)},
-			),
-		},
+		StopWorkbenchesCommand(ctx, fsys, _ui),
+		cancel.CancelJobSubmissionCommand(ctx, fsys, _ui),
+	}
+}
+
+// StopWorkbenchesCommand returns the stop workbenches command.
+// nolint:revive
+func StopWorkbenchesCommand(
+	ctx context.Context,
+	fsys afero.Fs,
+	_ui ui.UI,
+) *cobra.Command {
+	return &cobra.Command{
+		Use:     constants.WorkbenchesCommandName,
+		Aliases: []string{constants.WorkbenchCommandName},
+		Args:    cobra.MinimumNArgs(1),
+		RunE:    newUpdateStateFunction(ctx, fsys, _ui, constants.WorkbenchType, constants.DesiredStateStopped),
+		Short: i18n.Format(
+			i18n.CmdStopTypeUsage,
+			i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.WorkbenchType)},
+		),
+		Long: i18n.Format(
+			i18n.CmdStopTypeDescription,
+			i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.WorkbenchType)},
+		),
 	}
 }
 
@@ -78,19 +91,30 @@ func getStartSubcommands(
 	_ui ui.UI,
 ) []*cobra.Command {
 	return []*cobra.Command{
-		{
-			Use:     constants.WorkbenchesCommandName,
-			Aliases: []string{constants.WorkbenchCommandName},
-			Args:    cobra.MinimumNArgs(1),
-			RunE:    newUpdateStateFunction(ctx, fsys, _ui, constants.WorkbenchType, constants.DesiredStateRunning),
-			Short: i18n.Format(
-				i18n.CmdStartTypeUsage,
-				i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.WorkbenchType)},
-			),
-			Long: i18n.Format(
-				i18n.CmdStartTypeDescription,
-				i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.WorkbenchType)},
-			),
-		},
+		StartWorkbenchesCommand(ctx, fsys, _ui),
+		job_submission.StartCommand(ctx, fsys, _ui),
+	}
+}
+
+// StartWorkbenchesCommand returns the start workbenches command.
+// nolint:revive
+func StartWorkbenchesCommand(
+	ctx context.Context,
+	fsys afero.Fs,
+	_ui ui.UI,
+) *cobra.Command {
+	return &cobra.Command{
+		Use:     constants.WorkbenchesCommandName,
+		Aliases: []string{constants.WorkbenchCommandName},
+		Args:    cobra.MinimumNArgs(1),
+		RunE:    newUpdateStateFunction(ctx, fsys, _ui, constants.WorkbenchType, constants.DesiredStateRunning),
+		Short: i18n.Format(
+			i18n.CmdStartTypeUsage,
+			i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.WorkbenchType)},
+		),
+		Long: i18n.Format(
+			i18n.CmdStartTypeDescription,
+			i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.WorkbenchType)},
+		),
 	}
 }

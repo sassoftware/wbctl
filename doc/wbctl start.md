@@ -5,6 +5,7 @@ Usage:
   wbctl start [command]
 
 Available Commands:
+  <a href='wbctl start jobs.md'>jobs</a>        Start one or many Job-Submission resources
   <a href='wbctl start workbenches.md'>workbenches</a> Start one or many Workbench resources
 
 Flags:

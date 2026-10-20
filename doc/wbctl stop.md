@@ -5,7 +5,8 @@ Usage:
   wbctl stop [command]
 
 Available Commands:
-  <a href='wbctl stop workbenches.md'>workbenches</a> Stop one or many Workbench resources
+  <a href='wbctl stop job-submission.md'>job-submission</a> Cancel one or many Job-Submission resources
+  <a href='wbctl stop workbenches.md'>workbenches</a>    Stop one or many Workbench resources
 
 Flags:
   -h, --help   help for stop
