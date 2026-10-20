@@ -490,7 +490,7 @@ func TestExportedFlags(t *testing.T) {
 			name:          "AuthModeFlagDefault",
 			call:          flags.AddAuthModeFlag,
 			viperKey:      constants.AuthModeFlag,
-			expectedValue: "auto",
+			expectedValue: "device",
 		},
 		{
 			name:          "EndpointFlag",
@@ -503,32 +503,6 @@ func TestExportedFlags(t *testing.T) {
 			name:          "EndpointFlagDefault",
 			call:          flags.AddEndpointFlag,
 			viperKey:      constants.EndpointFlag,
-			expectedValue: "",
-		},
-		{
-			name:          "UsernameFlag",
-			call:          flags.AddUsernameFlag,
-			args:          []string{"--" + constants.UsernameFlag, "username-value"},
-			viperKey:      constants.UsernameFlag,
-			expectedValue: "username-value",
-		},
-		{
-			name:          "UsernameFlagDefault",
-			call:          flags.AddUsernameFlag,
-			viperKey:      constants.UsernameFlag,
-			expectedValue: "",
-		},
-		{
-			name:          "PasswordFlag",
-			call:          flags.AddPasswordFlag,
-			args:          []string{"--" + constants.PasswordFlag, "password-value"},
-			viperKey:      constants.PasswordFlag,
-			expectedValue: "password-value",
-		},
-		{
-			name:          "PasswordFlagDefault",
-			call:          flags.AddPasswordFlag,
-			viperKey:      constants.PasswordFlag,
 			expectedValue: "",
 		},
 		{
@@ -594,19 +568,6 @@ func TestExportedFlags(t *testing.T) {
 			name:          "ClientIDFlagDefault",
 			call:          flags.AddClientIDFlag,
 			viperKey:      constants.ClientIDFlag,
-			expectedValue: "",
-		},
-		{
-			name:          "ClientSecretFlag",
-			call:          flags.AddClientSecretFlag,
-			args:          []string{"--" + constants.ClientSecretFlag, "client-secret-value"},
-			viperKey:      constants.ClientSecretFlag,
-			expectedValue: "client-secret-value",
-		},
-		{
-			name:          "ClientSecretFlagDefault",
-			call:          flags.AddClientSecretFlag,
-			viperKey:      constants.ClientSecretFlag,
 			expectedValue: "",
 		},
 	}

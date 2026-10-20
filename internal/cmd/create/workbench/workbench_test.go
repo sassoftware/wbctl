@@ -107,7 +107,7 @@ const (
         ]
     }
 }`
-	expectedCreateSnapshotInvalidEndpointErr = "failed to get username/password token" +
+	expectedCreateSnapshotInvalidEndpointErr = "failed to get device token" +
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
 	expectedInvlidDataplaneErr = "GET ${URL}/postgrest/dataplanes?id=in.%28invalid%29 failed" +
@@ -175,7 +175,7 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
-				displays:       []string{workbenchFilePrettyJSON},
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay, workbenchFilePrettyJSON},
 				warns:          []string{"no volume specified"},
 				dataplaneCalls: 1,
 			},
@@ -202,6 +202,7 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay},
 				err:               workbenchIncompleteFileErr,
 				dataplaneCalls:    1,
 				applicationsCalls: 1,
@@ -234,7 +235,7 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
-				displays:          []string{"wb-1"},
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay, "wb-1"},
 				warns:             []string{"no volume specified"},
 				createCalls:       1,
 				dataplaneCalls:    1,
@@ -268,7 +269,7 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
-				displays:          []string{"wb-2"},
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay, "wb-2"},
 				createCalls:       1,
 				dataplaneCalls:    1,
 				applicationsCalls: 1,
@@ -301,7 +302,7 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
-				displays:       []string{"wb-2"},
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay, "wb-2"},
 				createCalls:    1,
 				dataplaneCalls: 1,
 				servicesCalls:  1,
@@ -334,6 +335,7 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 				err: "POST ${URL}/postgrest/rpc/workbench_create failed\n" +
 					" Caused by:\n" +
 					"\t* 401 unauthorized",
@@ -361,6 +363,7 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay},
 				err:               "--name is required",
 				applicationsCalls: 1,
 				dataplaneCalls:    1,
@@ -387,6 +390,7 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 				err: "either --application or at least one --service is required\n" +
 					"  Valid Applications: application-1, application-2\n" +
 					"  Valid Services: service-1, service-2",
@@ -417,6 +421,7 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay},
 				err:               "--nodepool is required\n  Valid Nodepools: np-1, np-2",
 				applicationsCalls: 1,
 				dataplaneCalls:    1,
@@ -446,6 +451,7 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 				err:            expectedInvlidDataplaneErr,
 				dataplaneCalls: 1,
 			},
@@ -464,6 +470,7 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 				workspaceCalls: 1,
 				err:            expectedInvlidWorkspaceErr,
 			},
@@ -482,6 +489,7 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay},
 				applicationsCalls: 1,
 				err:               expectedInvlidApplicationErr,
 			},
@@ -509,14 +517,29 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getCreateArgs(tt))
 			err := mockCmd.Execute()
+			replacements := map[string]string{
+				"${PORT}": stubs.Port(t, srv.URL),
+				"${HOST}": stubs.Host(t, srv.URL),
+				"${URL}":  srv.URL,
+			}
 			if tt.expected.err != "" {
-				expectedErr := strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL)
-				require.EqualError(t, err, expectedErr)
+				expectedErr, actualErr := stubs.Sanitize(tt.expected.err, err.Error(), replacements)
+				require.Equal(t, expectedErr, actualErr)
 			} else {
 				require.NoError(t, err)
 			}
 
-			require.Equal(t, tt.expected.displays, stubUI.Displays, strings.Join(stubUI.Displays, "\n"))
+			expectedDisplays, actualDisplays := stubs.SanitizeSlice(
+				tt.expected.displays,
+				stubUI.Displays,
+				replacements,
+			)
+			require.Equal(t,
+				expectedDisplays,
+				actualDisplays,
+				"unexpected display messages: %v",
+				stubUI.Displays,
+			)
 			require.Equal(t, tt.expected.warns, stubUI.Warns, strings.Join(stubUI.Warns, "\n"))
 			require.Equal(
 				t,
@@ -580,7 +603,7 @@ type updateWorkbenchTestCase struct {
 	expected      updateExpected
 }
 
-func TestUpdateWorkbenchComand(t *testing.T) {
+func TestUpdateWorkbenchCommand(t *testing.T) {
 	tests := []updateWorkbenchTestCase{
 		{
 			name: "dry run with CLI ids and mapped fields",
@@ -599,7 +622,7 @@ func TestUpdateWorkbenchComand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
-				displays:          []string{workbenchUpdateDryRunOutput},
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay, workbenchUpdateDryRunOutput},
 				applicationsCalls: 1,
 			},
 		},
@@ -622,7 +645,7 @@ func TestUpdateWorkbenchComand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
-				displays:          []string{workbenchUpdateDryRunOutput},
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay, workbenchUpdateDryRunOutput},
 				applicationsCalls: 1,
 			},
 		},
@@ -644,7 +667,7 @@ func TestUpdateWorkbenchComand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
-				displays: []string{workbenchUpdateNameLabelsDryRunOutput},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, workbenchUpdateNameLabelsDryRunOutput},
 			},
 		},
 		{
@@ -664,7 +687,7 @@ func TestUpdateWorkbenchComand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
-				displays:       []string{workbenchUpdateWorkspaceDryRunOutput},
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay, workbenchUpdateWorkspaceDryRunOutput},
 				workspaceCalls: 1,
 			},
 		},
@@ -685,7 +708,7 @@ func TestUpdateWorkbenchComand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
-				displays:       []string{workbenchUpdateWorkspaceDryRunOutput},
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay, workbenchUpdateWorkspaceDryRunOutput},
 				workspaceCalls: 1,
 			},
 		},
@@ -697,7 +720,8 @@ func TestUpdateWorkbenchComand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: updateExpected{
-				err: expectedCreateImageInvalidFileErr,
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				err:      expectedCreateImageInvalidFileErr,
 			},
 		},
 		{
@@ -713,6 +737,7 @@ func TestUpdateWorkbenchComand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
+				displays:        []string{stubs.ExpectedDeviceAuthDisplay},
 				err:             workbenchBulkUpdateServerErr,
 				bulkUpdateCalls: 1,
 			},
@@ -726,7 +751,7 @@ func TestUpdateWorkbenchComand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: updateExpected{
-				displays: []string{workbenchUpdateFileDryRunOutput},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, workbenchUpdateFileDryRunOutput},
 			},
 		},
 		{
@@ -736,7 +761,8 @@ func TestUpdateWorkbenchComand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: updateExpected{
-				err: workbenchUpdateMissingIDErr,
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				err:      workbenchUpdateMissingIDErr,
 			},
 		},
 		{
@@ -752,7 +778,7 @@ func TestUpdateWorkbenchComand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
-				displays:        []string{"wb-cli-1"},
+				displays:        []string{stubs.ExpectedDeviceAuthDisplay, "wb-cli-1"},
 				bulkUpdateCalls: 1,
 			},
 		},
@@ -777,7 +803,7 @@ func TestUpdateWorkbenchComand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
-				displays:          []string{"wb-cli-1", "wb-cli-2"},
+				displays:          []string{stubs.ExpectedDeviceAuthDisplay, "wb-cli-1", "wb-cli-2"},
 				bulkUpdateCalls:   1,
 				applicationsCalls: 1,
 			},
@@ -796,7 +822,7 @@ func TestUpdateWorkbenchComand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
-				displays:        []string{"wb-cli-1"},
+				displays:        []string{stubs.ExpectedDeviceAuthDisplay, "wb-cli-1"},
 				bulkUpdateCalls: 1,
 				workspaceCalls:  1,
 			},
@@ -816,7 +842,7 @@ func TestUpdateWorkbenchComand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
-				displays:    []string{"wb-cli-1"},
+				displays:    []string{stubs.ExpectedDeviceAuthDisplay, "wb-cli-1"},
 				updateCalls: 1,
 			},
 		},
@@ -852,14 +878,29 @@ func TestUpdateWorkbenchComand(t *testing.T) {
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getUpdateArgs(tt))
 			err := mockCmd.Execute()
+			replacements := map[string]string{
+				"${PORT}": stubs.Port(t, srv.URL),
+				"${HOST}": stubs.Host(t, srv.URL),
+				"${URL}":  srv.URL,
+			}
 			if tt.expected.err != "" {
-				expectedErr := strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL)
-				require.EqualError(t, err, expectedErr)
+				expectedErr, actualErr := stubs.Sanitize(tt.expected.err, err.Error(), replacements)
+				require.Equal(t, expectedErr, actualErr)
 			} else {
 				require.NoError(t, err)
 			}
 
-			require.Equal(t, tt.expected.displays, stubUI.Displays, strings.Join(stubUI.Displays, "\n"))
+			expectedDisplays, actualDisplays := stubs.SanitizeSlice(
+				tt.expected.displays,
+				stubUI.Displays,
+				replacements,
+			)
+			require.Equal(t,
+				expectedDisplays,
+				actualDisplays,
+				"unexpected display messages: %v",
+				stubUI.Displays,
+			)
 			require.Equal(t, tt.expected.warns, stubUI.Warns, strings.Join(stubUI.Warns, "\n"))
 			require.Equal(
 				t,
@@ -911,10 +952,7 @@ func getCreateArgs(
 	tt createWorkbenchTestCase,
 ) []string {
 	args := []string{}
-	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModePassword)
-	args = append(args, "--"+constants.ClientIDFlag, constants.OAuthClientID)
-	args = append(args, "--"+constants.PasswordFlag, "pass")
-	args = append(args, "--"+constants.UsernameFlag, "user")
+	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModeDevice)
 	if tt.input.endpoint != "" {
 		args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
 	}
@@ -952,10 +990,7 @@ func getUpdateArgs(
 	tt updateWorkbenchTestCase,
 ) []string {
 	args := []string{}
-	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModePassword)
-	args = append(args, "--"+constants.ClientIDFlag, constants.OAuthClientID)
-	args = append(args, "--"+constants.PasswordFlag, "pass")
-	args = append(args, "--"+constants.UsernameFlag, "user")
+	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModeDevice)
 	if tt.input.endpoint != "" {
 		args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
 	}

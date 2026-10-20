@@ -36,7 +36,7 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 				organization: "org-1",
 				askResponses: []string{"http://example.com?code=abc"},
 			},
-			mockEndpoints: getPasswordEndpoints(passwordConfig{
+			mockEndpoints: getPKCEEndpoints(pkceConfig{
 				discoveryConfig: successfulPKCEAuthDiscovery,
 			}),
 			expected: authExpected{
@@ -70,16 +70,16 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 			name: "pkce with no listener available prompts and honors explicit clientid",
 			input: authInput{
 				authMode:           constants.AuthModePKCE,
-				clientID:           constants.OAuthClientID,
+				clientID:           "explicit_client_id",
 				noListen:           true,
 				organization:       "org-1",
 				askResponses:       []string{"http://example.com?code=abc"},
 				pkceStateValidator: func(string, string) bool { return true },
 			},
-			mockEndpoints: getPasswordEndpoints(passwordConfig{
+			mockEndpoints: getPKCEEndpoints(pkceConfig{
 				discoveryConfig: successfulPKCEAuthDiscovery,
 				tokenConfig: stubs.StubHTTPPartialPostConfig{
-					ExpectedRequestBody: `client_id=` + url.QueryEscape(constants.OAuthClientID) +
+					ExpectedRequestBody: `client_id=explicit_client_id` +
 						`&code=abc` +
 						`{SANITIZE:&code_verifier=.*?&:&code_verifier=SANITIZED&}` +
 						`grant_type=authorization_code` +
@@ -93,7 +93,7 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 					"Open this URL in your browser and complete the authorization:\n" +
 						"${URL}/authorization?" +
 						"audience=discovered_audience" +
-						"&client_id=" + url.QueryEscape(constants.OAuthClientID) +
+						"&client_id=explicit_client_id" +
 						"{SANITIZE:&code_challenge=.*?&:&code_challenge=SANITIZED&}" +
 						"code_challenge_method=S256" +
 						"&ingressHost=${HOST}%3A${PORT}" +
@@ -122,7 +122,7 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 				askResponses:       []string{"not-\x7fvalid"},
 				pkceStateValidator: func(string, string) bool { return true },
 			},
-			mockEndpoints: getPasswordEndpoints(passwordConfig{
+			mockEndpoints: getPKCEEndpoints(pkceConfig{
 				discoveryConfig: successfulPKCEAuthDiscovery,
 			}),
 			expected: authExpected{
@@ -164,7 +164,7 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 				},
 				pkceStateValidator: func(string, string) bool { return true },
 			},
-			mockEndpoints: getPasswordEndpoints(passwordConfig{
+			mockEndpoints: getPKCEEndpoints(pkceConfig{
 				discoveryConfig: successfulPKCEAuthDiscovery,
 			}),
 			expected: authExpected{
@@ -198,15 +198,15 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 			name: "pkce expected callback flow - honors explicit clientid",
 			input: authInput{
 				authMode:                  constants.AuthModePKCE,
-				clientID:                  constants.OAuthClientID,
+				clientID:                  "explicit-clientid",
 				organization:              "org-1",
 				pkceStateValidator:        func(string, string) bool { return true },
 				pkceAuthorizationResponse: "code=abc",
 			},
-			mockEndpoints: getPasswordEndpoints(passwordConfig{
+			mockEndpoints: getPKCEEndpoints(pkceConfig{
 				discoveryConfig: successfulPKCEAuthDiscovery,
 				tokenConfig: stubs.StubHTTPPartialPostConfig{
-					ExpectedRequestBody: `client_id=` + url.QueryEscape(constants.OAuthClientID) +
+					ExpectedRequestBody: `client_id=explicit-clientid` +
 						`&code=abc` +
 						`{SANITIZE:&code_verifier=.*?&:&code_verifier=SANITIZED&}` +
 						`grant_type=authorization_code` +
@@ -220,7 +220,7 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 					"Open this URL in your browser and complete the authorization:\n" +
 						"${URL}/authorization?" +
 						"audience=discovered_audience" +
-						"&client_id=" + url.QueryEscape(constants.OAuthClientID) +
+						"&client_id=explicit-clientid" +
 						"{SANITIZE:&code_challenge=.*?&:&code_challenge=SANITIZED&}" +
 						"code_challenge_method=S256" +
 						"&ingressHost=${HOST}%3A${PORT}" +
@@ -241,7 +241,7 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 				pkceAuthorizationResponse: "code=abc",
 				pkceListenPort:            20001,
 			},
-			mockEndpoints: getPasswordEndpoints(passwordConfig{
+			mockEndpoints: getPKCEEndpoints(pkceConfig{
 				discoveryConfig: successfulPKCEAuthDiscovery,
 			}),
 			expected: authExpected{
@@ -272,7 +272,7 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 				pkceAuthorizationResponse: "code=abc&error=access_denied&error_description=invalid%20parameter",
 				pkceListenPort:            20002,
 			},
-			mockEndpoints: getPasswordEndpoints(passwordConfig{
+			mockEndpoints: getPKCEEndpoints(pkceConfig{
 				discoveryConfig: successfulPKCEAuthDiscovery,
 			}),
 			expected: authExpected{
@@ -304,7 +304,7 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 				pkceListenPort:            20003,
 				pkceStateValidator:        func(string, string) bool { return true },
 			},
-			mockEndpoints: getPasswordEndpoints(passwordConfig{
+			mockEndpoints: getPKCEEndpoints(pkceConfig{
 				discoveryConfig: successfulPKCEAuthDiscovery,
 				tokenConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: `client_id=discovered_client_id` +
@@ -345,7 +345,7 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 				pkceListenPort:            20004,
 				pkceStateValidator:        func(string, string) bool { return true },
 			},
-			mockEndpoints: getPasswordEndpoints(passwordConfig{
+			mockEndpoints: getPKCEEndpoints(pkceConfig{
 				discoveryConfig: successfulPKCEAuthDiscovery,
 				tokenConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: `client_id=discovered_client_id` +
@@ -387,7 +387,7 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 				pkceListenPort:            math.MaxInt,
 				pkceStateValidator:        func(string, string) bool { return true },
 			},
-			mockEndpoints: getPasswordEndpoints(passwordConfig{
+			mockEndpoints: getPKCEEndpoints(pkceConfig{
 				discoveryConfig: successfulPKCEAuthDiscovery,
 			}),
 			expected: authExpected{
@@ -405,7 +405,7 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 				pkceListenPort:            20005,
 				pkceStateValidator:        func(string, string) bool { return true },
 			},
-			mockEndpoints: getPasswordEndpoints(passwordConfig{
+			mockEndpoints: getPKCEEndpoints(pkceConfig{
 				discoveryConfig: stubs.StubHTTPPartialGetConfig{
 					ResponseStatus: http.StatusOK,
 					ResponseBody: `
@@ -450,7 +450,7 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 				pkceStateValidator:        func(string, string) bool { return true },
 				pkceCallbackTimeout:       pointer.Ptr(0 * time.Second),
 			},
-			mockEndpoints: getPasswordEndpoints(passwordConfig{
+			mockEndpoints: getPKCEEndpoints(pkceConfig{
 				discoveryConfig: successfulPKCEAuthDiscovery,
 			}),
 			expected: authExpected{
@@ -481,7 +481,7 @@ func TestGetAccessTokenPKCE(t *testing.T) {
 				pkceStateValidator:        func(string, string) bool { return true },
 				pkceAuthorizationResponse: "code=abc",
 			},
-			mockEndpoints: getPasswordEndpoints(passwordConfig{
+			mockEndpoints: getPKCEEndpoints(pkceConfig{
 				discoveryConfig: successfulPKCEAuthDiscovery,
 				tokenConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: `client_id=discovered_client_id` +

@@ -46,7 +46,7 @@ const (
 	},{
 		"id":"wb-2"
 	}]`
-	expectedInvalidEndpointErr = "failed to get username/password token" +
+	expectedInvalidEndpointErr = "failed to get device token" +
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
 	expectedInvalidResourceErr = "" +
@@ -124,7 +124,7 @@ func TestStateCommands(t *testing.T) {
 			expected: stateExpected{
 				getCalls:  1,
 				postCalls: 1,
-				displays:  []string{stateExpectedDisplayWB1, stateExpectedDisplayWB2},
+				displays:  []string{stubs.ExpectedDeviceAuthDisplay, stateExpectedDisplayWB1, stateExpectedDisplayWB2},
 			},
 		},
 		{
@@ -148,7 +148,7 @@ func TestStateCommands(t *testing.T) {
 			expected: stateExpected{
 				getCalls:  1,
 				postCalls: 1,
-				displays:  []string{stateExpectedDisplayWB3},
+				displays:  []string{stubs.ExpectedDeviceAuthDisplay, stateExpectedDisplayWB3},
 			},
 		},
 		{
@@ -176,6 +176,7 @@ func TestStateCommands(t *testing.T) {
 				},
 			}),
 			expected: stateExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 				getCalls: 1,
 				err:      expectedInvalidResourceErr,
 			},
@@ -199,6 +200,7 @@ func TestStateCommands(t *testing.T) {
 				},
 			}),
 			expected: stateExpected{
+				displays:  []string{stubs.ExpectedDeviceAuthDisplay},
 				getCalls:  1,
 				postCalls: 1,
 				err:       expectedInvalidUpdateResponseErr,
@@ -224,15 +226,30 @@ func TestStateCommands(t *testing.T) {
 				cmd.AddRootFlags(mockCmd)
 				mockCmd.SetArgs(getStateArgs(tt))
 				err := mockCmd.Execute()
+				replacements := map[string]string{
+					"${PORT}":   stubs.Port(t, srv.URL),
+					"${HOST}":   stubs.Host(t, srv.URL),
+					"${URL}":    srv.URL,
+					"${action}": action.actionName,
+				}
 				if tt.expected.err != "" {
-					expectedErr := strings.ReplaceAll(tt.expected.err, "${action}", action.actionName)
-					expectedErr = strings.ReplaceAll(expectedErr, "${URL}", srv.URL)
-					require.EqualError(t, err, expectedErr)
+					expectedErr, actualErr := stubs.Sanitize(tt.expected.err, err.Error(), replacements)
+					require.Equal(t, expectedErr, actualErr)
 				} else {
 					require.NoError(t, err)
 				}
 
-				require.Equal(t, tt.expected.displays, stubUI.Displays, strings.Join(stubUI.Displays, "\n"))
+				expectedDisplays, actualDisplays := stubs.SanitizeSlice(
+					tt.expected.displays,
+					stubUI.Displays,
+					replacements,
+				)
+				require.Equal(t,
+					expectedDisplays,
+					actualDisplays,
+					"unexpected display messages: %v",
+					stubUI.Displays,
+				)
 				require.Equal(t, tt.expected.warns, stubUI.Warns, strings.Join(stubUI.Warns, "\n"))
 				require.Empty(t, stubUI.Tables)
 
@@ -277,10 +294,7 @@ func getStateArgs(
 ) []string {
 	args := []string{}
 	args = append(args, tt.input.resourceType)
-	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModePassword)
-	args = append(args, "--"+constants.ClientIDFlag, constants.OAuthClientID)
-	args = append(args, "--"+constants.PasswordFlag, "pass")
-	args = append(args, "--"+constants.UsernameFlag, "user")
+	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModeDevice)
 	if tt.input.endpoint != "" {
 		args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
 	}

@@ -30,10 +30,15 @@ var (
 	}
 )
 
+// ExpectedDeviceAuthDisplay is the expected display when using the stub
+// auth endpoint.
+const ExpectedDeviceAuthDisplay = "Open this URL in your browser and complete the authorization:\n" +
+	"${URL}/authorization?client_id=discovered_spa_client_id&" +
+	"redirect_uri=verification_uri_complete&response_type=code&scope=openid+profile+offline_access"
+
 // GetStubAuthEndpoints returns default endpoints that mock an authentication
 // server. Used when the auth server endpoints themselves are not under test.
 func GetStubAuthEndpoints() []StubHTTPEndpoint {
-	csrfEndpoint := postgrest.Endpoint(constants.WorkbenchEndpointRoot)
 	return []StubHTTPEndpoint{
 		{
 			Request: StubHTTPRequest{
@@ -41,7 +46,18 @@ func GetStubAuthEndpoints() []StubHTTPEndpoint {
 				URL:    constants.AuthWellKnownPath,
 			},
 			Response: StubHTTPResponse{
-				Body:   fmt.Sprintf(`{"token_endpoint":%q}`, "http://${HOST}/token"), //nolint:gosec
+				Body: fmt.Sprintf(`
+					{
+						"token_endpoint":%q,
+						"device_authorization_endpoint":%q,
+						"authorization_endpoint":%q,
+						"workbench": {
+							"spa_client_id": "discovered_spa_client_id",
+							"spa_audience": "discovered_audience",
+							"native_client_id": "discovered_native_client_id"
+						}
+					}
+					`, "http://${HOST}/token", "http://${HOST}/device", "http://${HOST}/authorization"), //nolint:gosec
 				Status: http.StatusOK,
 				BodyOptions: []StubHTTPBodyOption{
 					StubHTTPBodyReplaceHOST(),
@@ -52,9 +68,10 @@ func GetStubAuthEndpoints() []StubHTTPEndpoint {
 			Request: StubHTTPRequest{
 				Method: http.MethodPost,
 				URL:    "/token",
-				ExpectedBody: `audience=https%3A%2F%2Fworkbench.sas.com%2Fpostgrest&` +
-					`client_id=wLDaVQp7dck7ryFttmHpruyIVZIHVhNY&grant_type=password&` +
-					`password=pass&scope=openid+profile+offline_access&username=user`,
+				ExpectedBody: `audience=discovered_audience&` +
+					`client_id=discovered_native_client_id&` +
+					`device_code=device-code&` +
+					`grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code`,
 			},
 			Response: StubHTTPResponse{
 				Body:   `{"access_token":"access-token"}`,
@@ -63,8 +80,29 @@ func GetStubAuthEndpoints() []StubHTTPEndpoint {
 		},
 		{
 			Request: StubHTTPRequest{
+				Method: http.MethodPost,
+				URL:    "/device",
+				ExpectedBody: `audience=discovered_audience&` +
+					`client_id=discovered_native_client_id&` +
+					`scope=openid+profile+offline_access`,
+			},
+			Response: StubHTTPResponse{
+				Body: `
+					{
+					  "device_code": "device-code",
+					  "user_code": "user-code",
+					  "verification_uri": "verification-uri",
+					  "verification_uri_complete": "verification_uri_complete",
+                      "expires_in": 3600
+					}
+					`,
+				Status: http.StatusOK,
+			},
+		},
+		{
+			Request: StubHTTPRequest{
 				Method: http.MethodHead,
-				URL:    csrfEndpoint,
+				URL:    postgrest.Endpoint(constants.WorkbenchEndpointRoot),
 			},
 			Response: StubHTTPResponse{
 				Status: http.StatusOK,

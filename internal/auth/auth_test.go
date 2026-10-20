@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sassoftware/sas-ggdk/pkg/errors"
 	"github.com/sassoftware/wbctl/internal/auth"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/osutil"
@@ -64,20 +65,11 @@ const (
 		" Caused by:\n" +
 		"\t* GET ${URL}/auth0Admin/internal/.well-known/openid-configuration failed\n" +
 		"\t* 500 {\"error\":\"discovery\"}"
-	authTestDiscoveryFailurePasswordErrFormat = "failed to get username/password token\n" +
-		" Caused by:\n" +
-		"\t* GET ${URL}/auth0Admin/internal/.well-known/openid-configuration failed\n" +
-		"\t* 500 {\"error\":\"discovery\"}"
 	authTestGetCSRFFailureErrFormat = "failed to get CSRF token\n" +
 		" Caused by:\n" +
 		"\t* HEAD ${URL} failed\n" +
 		"\t* 500 "
-	authTestInvalidAuthModeErr            = "invalid --auth-mode: \"invalid\" (allowed: auto, password, device)"
-	authTestPasswordGrantFailureErrFormat = "failed to get username/password token\n" +
-		" Caused by:\n" +
-		"\t* POST ${URL}/token failed\n" +
-		"\t* 401 {\"error\":\"bad\"}"
-	authTestPasswordModeRequiresUsername = "--auth-mode=password requires --username" // nolint:gosec
+	authTestInvalidAuthModeErr           = "invalid --auth-mode: \"invalid\" (allowed: auto, password, device)"
 	authTestPollingAccessDeniedErrFormat = "failed to get device token\n" +
 		" Caused by:\n" +
 		"\t* POST ${URL}/token failed\n" +
@@ -89,24 +81,12 @@ const (
 	authTestDeviceAuthorizationTimeoutErr = "failed to get device token\n" +
 		" Caused by:\n" +
 		"\t* device authorization timeout"
-	authTestPasswordModeEmptyAccessTokenErr = "failed to get username/password token\n" +
-		" Caused by:\n" +
-		"\t* token response missing access_token"
 	authTestDeviceModeEmptyAccessTokenErr = "failed to get device token\n" +
 		" Caused by:\n" +
 		"\t* token response missing access_token"
-	authTestPasswordModeInvalidTokenURLErr = "failed to get username/password token\n" +
-		" Caused by:\n" +
-		"\t* parse \"a\\nb\": net/url: invalid control character in URL"
 	authTestDeviceModeInvalidDeviceURLErr = "failed to get device token\n" +
 		" Caused by:\n" +
 		"\t* parse \"a\\nb\": net/url: invalid control character in URL"
-	authTestClientCredentialsModeInvalidControlPlaneURLErr = "failed to get client credentials token\n" +
-		" Caused by:\n" +
-		"\t* parse \"a\\nb\": net/url: invalid control character in URL"
-	authTestClientCredentialsModeInvalidTokenEndpointURLErr = "failed to get client credentials token\n" +
-		" Caused by:\n" +
-		"\t* parse \"a\\x7fb\": net/url: invalid control character in URL"
 	authTestDeviceModeInvalidControlPlaneURLErr = "failed to get device token\n" +
 		" Caused by:\n" +
 		"\t* parse \"a\\nb\": net/url: invalid control character in URL"
@@ -126,22 +106,6 @@ var (
 	expectedTokenRequestBody = `audience=discovered_audience` +
 		`&client_id=discovered_native_client_id` +
 		`&device_code=dc&grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code`
-	successfulPasswordAuthDiscovery = stubs.StubHTTPPartialGetConfig{
-		ResponseStatus: http.StatusOK,
-		ResponseBody:   `{"token_endpoint":"http://${HOST}/token"}`,
-	}
-	successfulPasswordAuthDiscoveryWithClientID = stubs.StubHTTPPartialGetConfig{
-		ResponseStatus: http.StatusOK,
-		ResponseBody: `
-{
-  "token_endpoint": "http://${HOST}/token",
-  "workbench": {
-    "spa_audience": "discovered_audience",
-    "native_client_id": "discovered_client_id"
-  }
-}
-`,
-	}
 	successfulDeviceAuthDiscovery = stubs.StubHTTPPartialGetConfig{
 		ResponseStatus: http.StatusOK,
 		ResponseBody:   `{"token_endpoint":"http://${HOST}/token", "device_authorization_endpoint":"http://${HOST}/device"}`,
@@ -322,17 +286,15 @@ func TestGetCSRFTokenErrorEdges(t *testing.T) {
 }
 
 func TestGetAccessToken_EndpointRequired(t *testing.T) {
-	uiStub := &stubs.StubUI{}
+	stubUI := &stubs.StubUI{}
 	fsys := afero.NewMemMapFs()
 	_, err := auth.GetAccessToken(
 		context.Background(),
-		uiStub,
+		stubUI,
 		fsys,
 		auth.GetAccessTokenParams{
 			ControlPlaneEndpoint: "",
-			AuthMode:             constants.AuthModeAuto,
-			Username:             "user",
-			Password:             "pass",
+			AuthMode:             constants.AuthModeDevice,
 			IgnoreTokenCache:     false,
 			NoListen:             false,
 		},
@@ -349,10 +311,7 @@ const (
 type authInput struct {
 	authMode             string
 	controlPlaneEndpoint string
-	password             string
-	username             string
 	clientID             string
-	clientSecret         string
 	cache                string
 	askResponses         []string
 	readOnlyCache        bool
@@ -403,8 +362,7 @@ func TestGetAccessToken(t *testing.T) {
 		{
 			name: "invalid control plane endpoint returns discovery error",
 			input: authInput{
-				authMode:             constants.AuthModeAuto,
-				clientID:             constants.OAuthClientID,
+				authMode:             constants.AuthModePKCE,
 				controlPlaneEndpoint: authTestInvalidControlPlaneEndpoint,
 			},
 			expected: authExpected{
@@ -415,21 +373,19 @@ func TestGetAccessToken(t *testing.T) {
 			name: "invalid auth mode returns validation error",
 			input: authInput{
 				authMode: "invalid",
-				clientID: constants.OAuthClientID,
 			},
 			expected: authExpected{
 				errFormat: authTestInvalidAuthModeErr,
 			},
 		},
 		{
-			name: "valid cached token short-circuits and returns cached token - expect pkce",
+			name: "valid cached token short-circuits and returns cached token",
 			input: authInput{
-				authMode: constants.AuthModeAuto,
+				authMode: constants.AuthModePKCE,
 				cache: fmt.Sprintf(
 					`{"access_token":"cached","refresh_token":"rt","expires_at":"%s"}`,
 					time.Now().Add(time.Hour).UTC().Format(time.RFC3339Nano),
 				),
-				clientID: constants.OAuthClientID,
 			},
 			mockEndpoints: []stubs.StubHTTPEndpoint{
 				{
@@ -448,14 +404,13 @@ func TestGetAccessToken(t *testing.T) {
 			},
 		},
 		{
-			name: "refresh success returns refreshed token without pkce flow",
+			name: "refresh success returns refreshed token without device flow",
 			input: authInput{
-				authMode: constants.AuthModeAuto,
+				authMode: constants.AuthModePKCE,
 				cache: fmt.Sprintf(
 					`{"access_token":"`+encodedAccessToken+`","refresh_token":"rt","expires_at":"%s"}`,
 					time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano),
 				),
-				clientID: constants.OAuthClientID,
 			},
 			mockEndpoints: getDeviceEndpoints(deviceConfig{
 				discoveryConfig: successfulDeviceAuthDiscovery,
@@ -478,14 +433,13 @@ func TestGetAccessToken(t *testing.T) {
 			},
 		},
 		{
-			name: "discovery failure - an expired token causes pkce flow (auto mode with no username, expect pkce)",
+			name: "discovery failure - an expired token causes device flow",
 			input: authInput{
-				authMode: constants.AuthModeAuto,
+				authMode: constants.AuthModePKCE,
 				cache: fmt.Sprintf(
 					`{"access_token":"old","refresh_token":"rt","expires_at":"%s"}`,
 					time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano),
 				),
-				clientID: constants.OAuthClientID,
 			},
 			mockEndpoints: getDeviceEndpoints(deviceConfig{
 				discoveryConfig: stubs.StubHTTPPartialGetConfig{
@@ -497,40 +451,14 @@ func TestGetAccessToken(t *testing.T) {
 				errFormat: authTestDiscoveryFailureErrFormat,
 			},
 		},
-		// This is a fake token so not a security issue.
-		//nolint:gosec
-		{
-			name: "auto mode with username exercises password flow",
-			input: authInput{
-				authMode: constants.AuthModeAuto,
-				clientID: constants.OAuthClientID,
-				password: "pass",
-				username: "user",
-			},
-			mockEndpoints: getPasswordEndpoints(passwordConfig{
-				discoveryConfig: successfulPasswordAuthDiscovery,
-				tokenConfig: stubs.StubHTTPPartialPostConfig{
-					ExpectedRequestBody: `audience=` + url.QueryEscape(constants.OAuthAudience) +
-						`&client_id=` + url.QueryEscape(constants.OAuthClientID) +
-						`&grant_type=password&password=pass&scope=` + url.QueryEscape(constants.OAuthScope) +
-						`&username=user`,
-					ResponseStatus: http.StatusOK,
-					ResponseBody:   `{"access_token":"pw-auto-token"}`,
-				},
-			}),
-			expected: authExpected{
-				token: "pw-auto-token",
-			},
-		},
 		{
 			name: "refresh succeeds but token cache save fails - warns and returns refreshed token",
 			input: authInput{
-				authMode: constants.AuthModeAuto,
+				authMode: constants.AuthModePKCE,
 				cache: fmt.Sprintf(
 					`{"access_token":"`+encodedAccessToken+`","refresh_token":"rt","expires_at":"%s"}`,
 					time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano),
 				),
-				clientID:      constants.OAuthClientID,
 				readOnlyCache: true,
 			},
 			mockEndpoints: getDeviceEndpoints(deviceConfig{
@@ -551,6 +479,106 @@ func TestGetAccessToken(t *testing.T) {
 					"failed to save device token: failed to save token cache\n" +
 						" Caused by:\n" +
 						"\t* operation not permitted",
+				},
+			},
+		},
+		{
+			// saveTokenToCache failure path 1: afero.TempFile fails because
+			// OpenFile with O_EXCL returns an error. The deferred save in
+			// getAccessTokenByPassword must warn and still return the token.
+			name: "device mode save failure - temp file creation error warns and returns token",
+			input: authInput{
+				authMode: constants.AuthModeDevice,
+				openFileFunc: func(
+					base afero.Fs,
+					name string,
+					flag int,
+					perm os.FileMode,
+				) (afero.File, error) {
+					if flag&os.O_EXCL != 0 {
+						return nil, errors.New("tempfile create error")
+					}
+					return base.OpenFile(name, flag, perm)
+				},
+			},
+			mockEndpoints: stubs.GetStubAuthEndpoints(),
+			expected: authExpected{
+				token:    "access-token",
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				warns: []string{
+					"failed to save device token: failed to save token cache\n" +
+						" Caused by:\n" +
+						"\t* tempfile create error",
+				},
+			},
+		},
+		{
+			// saveTokenToCache failure path 2: afero.TempFile succeeds but the
+			// subsequent Close on the temp file returns an error. The deferred
+			// save must warn and still return the token.
+			name: "device mode save failure - temp file close error warns and returns token",
+			input: authInput{
+				authMode: constants.AuthModeDevice,
+				openFileFunc: func(
+					base afero.Fs,
+					name string,
+					flag int,
+					perm os.FileMode,
+				) (afero.File, error) {
+					f, err := base.OpenFile(name, flag, perm)
+					if err != nil || flag&os.O_EXCL == 0 {
+						return f, err
+					}
+					// Wrap the real temp file so Close returns an error.
+					return stubs.StubFile{File: f, CloseFunc: func(_ afero.File) error {
+						return errors.New("tempfile close error")
+					}}, nil
+				},
+			},
+			mockEndpoints: stubs.GetStubAuthEndpoints(),
+			expected: authExpected{
+				token:    "access-token",
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				warns: []string{
+					"failed to save device token: failed to save token cache\n" +
+						" Caused by:\n" +
+						"\t* tempfile close error",
+				},
+			},
+		},
+		{
+			// saveTokenToCache failure path 3: TempFile and Close both succeed
+			// but the subsequent jsonutils.SaveWith / afero.WriteFile call
+			// fails because OpenFile with O_TRUNC returns an error. The
+			// deferred save must warn and still return the token.
+			name: "device mode save failure - write error warns and returns token",
+			input: authInput{
+				authMode: constants.AuthModeDevice,
+				openFileFunc: func(
+					base afero.Fs,
+					name string,
+					flag int,
+					perm os.FileMode,
+				) (afero.File, error) {
+					if flag&os.O_EXCL != 0 {
+						// TempFile call – let it succeed.
+						return base.OpenFile(name, flag, perm)
+					}
+					if flag&os.O_TRUNC != 0 {
+						// WriteFile call inside jsonutils.SaveWith – fail it.
+						return nil, errors.New("tempfile write error")
+					}
+					return base.OpenFile(name, flag, perm)
+				},
+			},
+			mockEndpoints: stubs.GetStubAuthEndpoints(),
+			expected: authExpected{
+				token:    "access-token",
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				warns: []string{
+					"failed to save device token: failed to save token cache\n" +
+						" Caused by:\n" +
+						"\t* tempfile write error",
 				},
 			},
 		},
@@ -583,7 +611,7 @@ func makeAuthTestFunc(tt authTestCase) func(t *testing.T) {
 			t.Setenv(osutil.HomeEnvVar(), "")
 		}
 
-		uiStub := &stubs.StubUI{AskResponses: tt.input.askResponses}
+		stubUI := &stubs.StubUI{AskResponses: tt.input.askResponses}
 		srv, hitCounts := stubs.NewStubHTTPServer(t, tt.mockEndpoints)
 		t.Cleanup(srv.Close)
 
@@ -648,15 +676,12 @@ func makeAuthTestFunc(tt authTestCase) func(t *testing.T) {
 		}
 		res, err := auth.GetAccessToken(
 			ctx,
-			uiStub,
+			stubUI,
 			fsys,
 			auth.GetAccessTokenParams{
 				ControlPlaneEndpoint: controlPlaneEndpoint,
 				AuthMode:             tt.input.authMode,
-				Username:             tt.input.username,
-				Password:             tt.input.password,
 				ClientID:             tt.input.clientID,
-				ClientSecret:         tt.input.clientSecret,
 				NoListen:             tt.input.noListen,
 				Organization:         tt.input.organization,
 			},
@@ -683,48 +708,48 @@ func makeAuthTestFunc(tt authTestCase) func(t *testing.T) {
 			}
 		}
 		if len(tt.expected.displays) == 0 {
-			require.Empty(t, uiStub.Displays, "unexpected display messages: %v", uiStub.Displays)
+			require.Empty(t, stubUI.Displays, "unexpected display messages: %v", stubUI.Displays)
 		} else {
 			expectedDisplays, actualDisplays := stubs.SanitizeSlice(
 				tt.expected.displays,
-				uiStub.Displays,
+				stubUI.Displays,
 				replacements,
 			)
 			require.Equal(t,
 				expectedDisplays,
 				actualDisplays,
 				"unexpected display messages: %v",
-				uiStub.Displays,
+				stubUI.Displays,
 			)
 		}
 		if len(tt.expected.warns) == 0 {
-			require.Empty(t, uiStub.Warns, "unexpected warn messages: %v", uiStub.Warns)
+			require.Empty(t, stubUI.Warns, "unexpected warn messages: %v", stubUI.Warns)
 		} else {
 			expectedWarns, actualWarns := stubs.SanitizeSlice(
 				tt.expected.warns,
-				uiStub.Warns,
+				stubUI.Warns,
 				replacements,
 			)
 			require.Equal(t,
 				expectedWarns,
 				actualWarns,
 				"unexpected warn messages: %v",
-				uiStub.Warns,
+				stubUI.Warns,
 			)
 		}
 		if len(tt.expected.asks) == 0 {
-			require.Empty(t, uiStub.Asks, "unexpected asks: %v", uiStub.Asks)
+			require.Empty(t, stubUI.Asks, "unexpected asks: %v", stubUI.Asks)
 		} else {
 			expectedAsks, actualAsks := stubs.SanitizeSlice(
 				tt.expected.asks,
-				uiStub.Asks,
+				stubUI.Asks,
 				replacements,
 			)
 			require.Equal(t,
 				expectedAsks,
 				actualAsks,
 				"unexpected ask: %v",
-				uiStub.Asks,
+				stubUI.Asks,
 			)
 		}
 		// Verify all endpoints are hit the expected number of times.
@@ -830,13 +855,13 @@ func verifyTokenCacheContents(
 	}
 }
 
-type passwordConfig struct {
+type pkceConfig struct {
 	discoveryConfig stubs.StubHTTPPartialGetConfig
 	tokenConfig     stubs.StubHTTPPartialPostConfig
 }
 
-func getPasswordEndpoints(
-	config passwordConfig,
+func getPKCEEndpoints(
+	config pkceConfig,
 ) []stubs.StubHTTPEndpoint {
 	return []stubs.StubHTTPEndpoint{
 		{

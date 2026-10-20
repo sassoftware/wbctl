@@ -47,7 +47,7 @@ const (
 	cancelExpectedBulkCancelResponseBody    = `["submission-1","submission-2"]`
 	cancelExpectedBulkCancelInvalidJSONBody = `[`
 	cancelExpectedGetInvalidJSONBody        = `[`
-	expectedInvalidEndpointErr              = "failed to get username/password token" +
+	expectedInvalidEndpointErr              = "failed to get device token" +
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
 	cancelExpectedGetQuery = "controller_id=in.(controller-1,controller-2)"
@@ -110,6 +110,7 @@ func TestCancelCommand(t *testing.T) {
 			expected: cancelExpected{
 				err:      cancelTestGetJobSubmissionsErr,
 				getCalls: cancelTestOneCall,
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -127,6 +128,7 @@ func TestCancelCommand(t *testing.T) {
 				err:       cancelTestBulkCancelErr,
 				getCalls:  cancelTestOneCall,
 				postCalls: cancelTestOneCall,
+				displays:  []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -141,7 +143,7 @@ func TestCancelCommand(t *testing.T) {
 				cancelExpectedBulkCancelResponseBody,
 			),
 			expected: cancelExpected{
-				displays:  cancelExpectedDisplaysStoppedIDs,
+				displays:  append([]string{stubs.ExpectedDeviceAuthDisplay}, cancelExpectedDisplaysStoppedIDs...),
 				warns:     cancelExpectedNoWarns,
 				getCalls:  cancelTestOneCall,
 				postCalls: cancelTestOneCall,
@@ -163,9 +165,14 @@ func TestCancelCommand(t *testing.T) {
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getCancelArgs(tt))
 			err := mockCmd.Execute()
+			replacements := map[string]string{
+				"${PORT}": stubs.Port(t, srv.URL),
+				"${HOST}": stubs.Host(t, srv.URL),
+				"${URL}":  srv.URL,
+			}
 			if tt.expected.err != "" {
-				expectedErr := strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL)
-				require.EqualError(t, err, expectedErr)
+				expectedErr, actualErr := stubs.Sanitize(tt.expected.err, err.Error(), replacements)
+				require.Equal(t, expectedErr, actualErr)
 			} else {
 				require.NoError(t, err)
 			}
@@ -175,7 +182,17 @@ func TestCancelCommand(t *testing.T) {
 			require.Equal(t, tt.expected.postCalls, hitCounts.Count("POST"+
 				postgrest.Endpoint(constants.WorkbenchEndpointRPCJobRunBulkCancel)))
 
-			require.Equal(t, tt.expected.displays, stubUI.Displays, strings.Join(stubUI.Displays, "\n"))
+			expectedDisplays, actualDisplays := stubs.SanitizeSlice(
+				tt.expected.displays,
+				stubUI.Displays,
+				replacements,
+			)
+			require.Equal(t,
+				expectedDisplays,
+				actualDisplays,
+				"unexpected display messages: %v",
+				stubUI.Displays,
+			)
 			require.Equal(t, tt.expected.warns, stubUI.Warns, strings.Join(stubUI.Warns, "\n"))
 		})
 	}
@@ -186,10 +203,7 @@ func getCancelArgs(
 ) []string {
 	args := []string{}
 	args = append(args, tt.input.resourceType)
-	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModePassword)
-	args = append(args, "--"+constants.ClientIDFlag, constants.OAuthClientID)
-	args = append(args, "--"+constants.PasswordFlag, "pass")
-	args = append(args, "--"+constants.UsernameFlag, "user")
+	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModeDevice)
 	if tt.input.endpoint != "" {
 		args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
 	}

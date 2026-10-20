@@ -28,7 +28,7 @@ const (
 		{"id":"job-submission-1","log_url":"http://${HOST}/logs/job-submission-1"},
 		{"id":"job-submission-2","log_url":""}
 	]`
-	expectedInvalidEndpointErr = "failed to get username/password token" +
+	expectedInvalidEndpointErr = "failed to get device token" +
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
 )
@@ -70,9 +70,11 @@ func TestLogCommand(t *testing.T) {
 					ResponseBody:   `resource-error`,
 				},
 			}),
-			expected: logExpected{err: "GET ${URL}/postgrest/image_builds?controller_id=in.%28controller-1%29 failed\n" +
-				" Caused by:\n" +
-				"\t* 500 resource-error",
+			expected: logExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				err: "GET ${URL}/postgrest/image_builds?controller_id=in.%28controller-1%29 failed\n" +
+					" Caused by:\n" +
+					"\t* 500 resource-error",
 				resourceCalls: 1},
 		},
 		{
@@ -94,9 +96,11 @@ func TestLogCommand(t *testing.T) {
 					ResponseBody:   "forbidden",
 				},
 			}),
-			expected: logExpected{err: "GET ${URL}/logs/raw/image-build-1 failed\n" +
-				" Caused by:\n" +
-				"\t* 403 forbidden",
+			expected: logExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				err: "GET ${URL}/logs/raw/image-build-1 failed\n" +
+					" Caused by:\n" +
+					"\t* 403 forbidden",
 				rawCalls: 1, resourceCalls: 1},
 		},
 		{
@@ -113,9 +117,11 @@ func TestLogCommand(t *testing.T) {
 					ResponseBody:   "resource-error",
 				},
 			}),
-			expected: logExpected{err: "GET ${URL}/postgrest/job_runs?controller_id=in.%28controller-1%29 failed\n" +
-				" Caused by:\n" +
-				"\t* 500 resource-error",
+			expected: logExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				err: "GET ${URL}/postgrest/job_runs?controller_id=in.%28controller-1%29 failed\n" +
+					" Caused by:\n" +
+					"\t* 500 resource-error",
 				resourceCalls: 1},
 		},
 		{
@@ -137,9 +143,11 @@ func TestLogCommand(t *testing.T) {
 					ResponseBody:   "forbidden",
 				},
 			}),
-			expected: logExpected{err: "GET ${URL}/logs/raw/job-submission-1 failed\n" +
-				" Caused by:\n" +
-				"\t* 403 forbidden",
+			expected: logExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				err: "GET ${URL}/logs/raw/job-submission-1 failed\n" +
+					" Caused by:\n" +
+					"\t* 403 forbidden",
 				rawCalls: 1, resourceCalls: 1},
 		},
 		{
@@ -158,7 +166,11 @@ func TestLogCommand(t *testing.T) {
 					ResponseBody:   "image-build-log-1\n",
 				},
 			}),
-			expected: logExpected{displays: []string{"image-build-log-1\n"}, rawCalls: 1, resourceCalls: 1},
+			expected: logExpected{
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, "image-build-log-1\n"},
+				rawCalls:      1,
+				resourceCalls: 1,
+			},
 		},
 		{
 			name: "new log function prints image build logs by plural type",
@@ -180,7 +192,7 @@ func TestLogCommand(t *testing.T) {
 				},
 			}),
 			expected: logExpected{
-				displays:      []string{"image-build-log-1\n"},
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, "image-build-log-1\n"},
 				rawCalls:      1,
 				resourceCalls: 1,
 			},
@@ -201,7 +213,11 @@ func TestLogCommand(t *testing.T) {
 					ResponseBody:   "job-submission-log-1\n",
 				},
 			}),
-			expected: logExpected{displays: []string{"job-submission-log-1\n"}, rawCalls: 1, resourceCalls: 1},
+			expected: logExpected{
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, "job-submission-log-1\n"},
+				rawCalls:      1,
+				resourceCalls: 1,
+			},
 		},
 		{
 			name:  "new log function prints job submission logs by plural type",
@@ -219,7 +235,11 @@ func TestLogCommand(t *testing.T) {
 					ResponseBody:   "job-submission-log-1\n",
 				},
 			}),
-			expected: logExpected{displays: []string{"job-submission-log-1\n"}, rawCalls: 1, resourceCalls: 1},
+			expected: logExpected{
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, "job-submission-log-1\n"},
+				rawCalls:      1,
+				resourceCalls: 1,
+			},
 		},
 		{
 			name: "invalid endpoint",
@@ -248,14 +268,29 @@ func TestLogCommand(t *testing.T) {
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getLogArgs(tt))
 			err := mockCmd.Execute()
+			replacements := map[string]string{
+				"${PORT}": stubs.Port(t, srv.URL),
+				"${HOST}": stubs.Host(t, srv.URL),
+				"${URL}":  srv.URL,
+			}
 			if tt.expected.err != "" {
-				expectedErr := strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL)
-				require.EqualError(t, err, expectedErr)
+				expectedErr, actualErr := stubs.Sanitize(tt.expected.err, err.Error(), replacements)
+				require.Equal(t, expectedErr, actualErr)
 			} else {
 				require.NoError(t, err)
 			}
 
-			require.Equal(t, tt.expected.displays, stubUI.Displays, strings.Join(stubUI.Displays, "\n"))
+			expectedDisplays, actualDisplays := stubs.SanitizeSlice(
+				tt.expected.displays,
+				stubUI.Displays,
+				replacements,
+			)
+			require.Equal(t,
+				expectedDisplays,
+				actualDisplays,
+				"unexpected display messages: %v",
+				stubUI.Displays,
+			)
 			require.Equal(t, tt.expected.warns, stubUI.Warns, strings.Join(stubUI.Warns, "\n"))
 			require.Empty(t, stubUI.Tables)
 			require.Equal(
@@ -286,10 +321,7 @@ func getLogArgs(
 ) []string {
 	args := []string{}
 	args = append(args, tt.input.resourceType)
-	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModePassword)
-	args = append(args, "--"+constants.ClientIDFlag, constants.OAuthClientID)
-	args = append(args, "--"+constants.PasswordFlag, "pass")
-	args = append(args, "--"+constants.UsernameFlag, "user")
+	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModeDevice)
 	if tt.input.endpoint != "" {
 		args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
 	}

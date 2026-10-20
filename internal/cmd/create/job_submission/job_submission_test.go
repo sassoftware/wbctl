@@ -39,7 +39,7 @@ const (
 		`{"id":"ctrl-data","mountName":"data"}],` +
 		`"labels":{"team":"analytics"},"nodepool":"np-1"}}`
 	expectedCreateJobSubmissionRequestBodyNoExtras = `{"param":{"dataplane_id":"dp-1","job_id":"js-1","nodepool":"np-1"}}`
-	expectedCreateJobInvalidEndpointErr            = "failed to get username/password token" +
+	expectedCreateJobInvalidEndpointErr            = "failed to get device token" +
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
 	expectedInvlidDataplaneErr = "GET ${URL}/postgrest/dataplanes?id=in.%28invalid%29 failed" +
@@ -91,7 +91,7 @@ func TestCreateJobSubmissionCommand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: createExpected{
-				displays: []string{expectedCreateJobSubmissionDryRunOutput},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, expectedCreateJobSubmissionDryRunOutput},
 			},
 		},
 		{
@@ -103,7 +103,8 @@ func TestCreateJobSubmissionCommand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: createExpected{
-				err: expectedCreateJobSubmissionIncompleteFileErr,
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				err:      expectedCreateJobSubmissionIncompleteFileErr,
 			},
 		},
 		{
@@ -129,7 +130,7 @@ func TestCreateJobSubmissionCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
-				displays:       []string{expectedCreateJobSubmissionID},
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay, expectedCreateJobSubmissionID},
 				createCalls:    1,
 				dataplaneCalls: 1,
 				workspaceCalls: 2,
@@ -158,7 +159,7 @@ func TestCreateJobSubmissionCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
-				displays:       []string{expectedCreateJobSubmissionID},
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay, expectedCreateJobSubmissionID},
 				createCalls:    1,
 				dataplaneCalls: 1,
 				workspaceCalls: 2,
@@ -184,6 +185,7 @@ func TestCreateJobSubmissionCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 				err:            expectedCreateJobSubmissionServerErr,
 				createCalls:    1,
 				dataplaneCalls: 1,
@@ -203,6 +205,7 @@ func TestCreateJobSubmissionCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 				err:            expectedCreateJobSubmissionErr,
 				dataplaneCalls: 1,
 			},
@@ -230,6 +233,7 @@ func TestCreateJobSubmissionCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 				err:            expectedInvlidDataplaneErr,
 				dataplaneCalls: 1,
 			},
@@ -254,6 +258,7 @@ func TestCreateJobSubmissionCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 				dataplaneCalls: 1,
 				workspaceCalls: 1,
 				err:            expectedInvlidWorkspaceErr,
@@ -282,14 +287,29 @@ func TestCreateJobSubmissionCommand(t *testing.T) {
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getCreateArgs(tt))
 			err := mockCmd.Execute()
+			replacements := map[string]string{
+				"${PORT}": stubs.Port(t, srv.URL),
+				"${HOST}": stubs.Host(t, srv.URL),
+				"${URL}":  srv.URL,
+			}
 			if tt.expected.err != "" {
-				expectedErr := strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL)
-				require.EqualError(t, err, expectedErr)
+				expectedErr, actualErr := stubs.Sanitize(tt.expected.err, err.Error(), replacements)
+				require.Equal(t, expectedErr, actualErr)
 			} else {
 				require.NoError(t, err)
 			}
 
-			require.Equal(t, tt.expected.displays, stubUI.Displays, strings.Join(stubUI.Displays, "\n"))
+			expectedDisplays, actualDisplays := stubs.SanitizeSlice(
+				tt.expected.displays,
+				stubUI.Displays,
+				replacements,
+			)
+			require.Equal(t,
+				expectedDisplays,
+				actualDisplays,
+				"unexpected display messages: %v",
+				stubUI.Displays,
+			)
 			require.Equal(t, tt.expected.warns, stubUI.Warns, strings.Join(stubUI.Warns, "\n"))
 			require.Equal(
 				t,
@@ -338,7 +358,7 @@ func TestStartJobCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
-				displays:       []string{expectedCreateJobSubmissionID},
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay, expectedCreateJobSubmissionID},
 				createCalls:    1,
 				dataplaneCalls: 1,
 				workspaceCalls: 2,
@@ -367,7 +387,7 @@ func TestStartJobCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
-				displays:       []string{expectedCreateJobSubmissionID},
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay, expectedCreateJobSubmissionID},
 				createCalls:    1,
 				dataplaneCalls: 1,
 				workspaceCalls: 2,
@@ -393,6 +413,7 @@ func TestStartJobCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 				err:            expectedCreateJobSubmissionServerErr,
 				createCalls:    1,
 				dataplaneCalls: 1,
@@ -440,6 +461,7 @@ func TestStartJobCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 				err:            expectedInvlidDataplaneErr,
 				dataplaneCalls: 1,
 			},
@@ -465,6 +487,7 @@ func TestStartJobCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 				dataplaneCalls: 1,
 				workspaceCalls: 1,
 				err:            expectedInvlidWorkspaceErr,
@@ -493,14 +516,29 @@ func TestStartJobCommand(t *testing.T) {
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getStartArgs(tt))
 			err := mockCmd.Execute()
+			replacements := map[string]string{
+				"${PORT}": stubs.Port(t, srv.URL),
+				"${HOST}": stubs.Host(t, srv.URL),
+				"${URL}":  srv.URL,
+			}
 			if tt.expected.err != "" {
-				expectedErr := strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL)
-				require.EqualError(t, err, expectedErr)
+				expectedErr, actualErr := stubs.Sanitize(tt.expected.err, err.Error(), replacements)
+				require.Equal(t, expectedErr, actualErr)
 			} else {
 				require.NoError(t, err)
 			}
 
-			require.Equal(t, tt.expected.displays, stubUI.Displays, strings.Join(stubUI.Displays, "\n"))
+			expectedDisplays, actualDisplays := stubs.SanitizeSlice(
+				tt.expected.displays,
+				stubUI.Displays,
+				replacements,
+			)
+			require.Equal(t,
+				expectedDisplays,
+				actualDisplays,
+				"unexpected display messages: %v",
+				stubUI.Displays,
+			)
 			require.Equal(t, tt.expected.warns, stubUI.Warns, strings.Join(stubUI.Warns, "\n"))
 			require.Equal(
 				t,
@@ -548,10 +586,7 @@ func getCommonArgs(
 	tt createJobSubmissionTestCase,
 ) []string {
 	args := []string{}
-	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModePassword)
-	args = append(args, "--"+constants.ClientIDFlag, constants.OAuthClientID)
-	args = append(args, "--"+constants.PasswordFlag, "pass")
-	args = append(args, "--"+constants.UsernameFlag, "user")
+	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModeDevice)
 	if tt.input.endpoint != "" {
 		args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
 	}

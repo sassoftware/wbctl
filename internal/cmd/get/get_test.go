@@ -1268,7 +1268,7 @@ const (
 	getExpectedTablePluralWorkspace = "ID\tCONTROLLER_ID\tNAME\tSIZE\tHOME_DIR\tSTORAGECLASSNAME\tSTATE\tMESSAGE\tAGE\n" +
 		"ws-1\t<unknown>\tworkspace-1\t10Gi\ttrue\tstandard\tRunning\tok\t\n" +
 		"ws-2\t<unknown>\tworkspace-2\t20Gi\ttrue\tstandard\tRunning\tok\t"
-	expectedInvalidEndpointErr = "failed to get username/password token" +
+	expectedInvalidEndpointErr = "failed to get device token" +
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
 	expectedInvalidResourceErr = "" +
@@ -1323,7 +1323,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplaySingularConflictJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplaySingularConflictJSON},
 			},
 		},
 		{
@@ -1340,7 +1340,7 @@ func TestGetCommand(t *testing.T) {
 				},
 			),
 			expected: getExpected{
-				displays: []string{getExpectedDisplayApplicationJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayApplicationJSON},
 				getCalls: 1,
 			},
 		},
@@ -1358,7 +1358,7 @@ func TestGetCommand(t *testing.T) {
 				},
 			),
 			expected: getExpected{
-				displays: []string{getExpectedDisplayDataplaneJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayDataplaneJSON},
 				getCalls: 1,
 			},
 		},
@@ -1377,7 +1377,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayEventJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayEventJSON},
 			},
 		},
 		{
@@ -1395,7 +1395,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayDataplaneJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayDataplaneJSON},
 			},
 		},
 		{
@@ -1413,7 +1413,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayDataplaneJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayDataplaneJSON},
 			},
 		},
 		{
@@ -1431,7 +1431,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayInitializerJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayInitializerJSON},
 			},
 		},
 		{
@@ -1449,7 +1449,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayIDJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayIDJSON},
 			},
 		},
 		{
@@ -1467,7 +1467,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayDataplaneJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayDataplaneJSON},
 			},
 		},
 		{
@@ -1485,7 +1485,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayIDJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayIDJSON},
 			},
 		},
 		{
@@ -1503,7 +1503,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayPingJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayPingJSON},
 			},
 		},
 		{
@@ -1521,7 +1521,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayDataplaneJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayDataplaneJSON},
 			},
 		},
 		{
@@ -1539,7 +1539,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplaySnapshotJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplaySnapshotJSON},
 			},
 		},
 		{
@@ -1557,7 +1557,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayStorageclassJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayStorageclassJSON},
 			},
 		},
 		{
@@ -1575,7 +1575,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDiaplayUsersJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDiaplayUsersJSON},
 			},
 		},
 		{
@@ -1593,7 +1593,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayDataplaneJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayDataplaneJSON},
 			},
 		},
 		{
@@ -1611,7 +1611,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayWorkspaceJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayWorkspaceJSON},
 			},
 		},
 
@@ -1631,7 +1631,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayPluralApplicationJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayPluralApplicationJSON},
 			},
 		},
 		{
@@ -1649,7 +1649,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayDataplaneJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayDataplaneJSON},
 			},
 		},
 		{
@@ -1667,7 +1667,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayEventJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayEventJSON},
 			},
 		},
 		{
@@ -1685,7 +1685,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayDataplaneJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayDataplaneJSON},
 			},
 		},
 		{
@@ -1703,7 +1703,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayDataplaneJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayDataplaneJSON},
 			},
 		},
 		{
@@ -1721,7 +1721,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayInitializerJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayInitializerJSON},
 			},
 		},
 		{
@@ -1739,7 +1739,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayIDJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayIDJSON},
 			},
 		},
 		{
@@ -1757,7 +1757,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayDataplaneJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayDataplaneJSON},
 			},
 		},
 		{
@@ -1775,7 +1775,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayIDJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayIDJSON},
 			},
 		},
 		{
@@ -1793,7 +1793,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayPingJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayPingJSON},
 			},
 		},
 		{
@@ -1811,7 +1811,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayDataplaneJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayDataplaneJSON},
 			},
 		},
 		{
@@ -1829,7 +1829,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplaySnapshotJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplaySnapshotJSON},
 			},
 		},
 		{
@@ -1847,7 +1847,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayStorageclassJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayStorageclassJSON},
 			},
 		},
 		{
@@ -1865,7 +1865,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDiaplayUsersJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDiaplayUsersJSON},
 			},
 		},
 		{
@@ -1883,7 +1883,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayDataplaneJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayDataplaneJSON},
 			},
 		},
 		{
@@ -1901,7 +1901,7 @@ func TestGetCommand(t *testing.T) {
 			),
 			expected: getExpected{
 				getCalls: 1,
-				displays: []string{getExpectedDisplayWorkspaceJSON},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, getExpectedDisplayWorkspaceJSON},
 			},
 		},
 
@@ -1921,6 +1921,7 @@ func TestGetCommand(t *testing.T) {
 			expected: getExpected{
 				getCalls:     1,
 				tableStrings: []string{getExpectedTablePluralConflict},
+				displays:     []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -1938,6 +1939,7 @@ func TestGetCommand(t *testing.T) {
 			expected: getExpected{
 				getCalls:     1,
 				tableStrings: []string{getExpectedTablePluralApplication},
+				displays:     []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -1955,6 +1957,7 @@ func TestGetCommand(t *testing.T) {
 			expected: getExpected{
 				getCalls:     1,
 				tableStrings: []string{getExpectedTablePluralDataplane},
+				displays:     []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -1972,6 +1975,7 @@ func TestGetCommand(t *testing.T) {
 			expected: getExpected{
 				getCalls:     1,
 				tableStrings: []string{getExpectedTablePluralEvent},
+				displays:     []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -1989,6 +1993,7 @@ func TestGetCommand(t *testing.T) {
 			expected: getExpected{
 				getCalls:     1,
 				tableStrings: []string{getExpectedTablePluralImageBuild},
+				displays:     []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -2006,6 +2011,7 @@ func TestGetCommand(t *testing.T) {
 			expected: getExpected{
 				getCalls:     1,
 				tableStrings: []string{getExpectedTablePluralImage},
+				displays:     []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -2023,6 +2029,7 @@ func TestGetCommand(t *testing.T) {
 			expected: getExpected{
 				getCalls:     1,
 				tableStrings: []string{getExpectedTablePluralInitializer},
+				displays:     []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -2040,6 +2047,7 @@ func TestGetCommand(t *testing.T) {
 			expected: getExpected{
 				getCalls:     1,
 				tableStrings: []string{getExpectedTablePluralJobSubmission},
+				displays:     []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -2057,6 +2065,7 @@ func TestGetCommand(t *testing.T) {
 			expected: getExpected{
 				getCalls:     1,
 				tableStrings: []string{getExpectedTablePluralJob},
+				displays:     []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -2074,6 +2083,7 @@ func TestGetCommand(t *testing.T) {
 			expected: getExpected{
 				getCalls:     1,
 				tableStrings: []string{getExpectedTablePluralNodepool},
+				displays:     []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -2091,6 +2101,7 @@ func TestGetCommand(t *testing.T) {
 			expected: getExpected{
 				getCalls:     1,
 				tableStrings: []string{getExpectedTablePluralPing},
+				displays:     []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -2108,6 +2119,7 @@ func TestGetCommand(t *testing.T) {
 			expected: getExpected{
 				getCalls:     1,
 				tableStrings: []string{getExpectedTablePluralService},
+				displays:     []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -2125,6 +2137,7 @@ func TestGetCommand(t *testing.T) {
 			expected: getExpected{
 				getCalls:     1,
 				tableStrings: []string{getExpectedTablePluralSnapshot},
+				displays:     []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -2142,6 +2155,7 @@ func TestGetCommand(t *testing.T) {
 			expected: getExpected{
 				getCalls:     1,
 				tableStrings: []string{getExpectedTablePluralStorageclass},
+				displays:     []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -2159,6 +2173,7 @@ func TestGetCommand(t *testing.T) {
 			expected: getExpected{
 				getCalls:     1,
 				tableStrings: []string{getExpectedTablePluralUser},
+				displays:     []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -2176,6 +2191,7 @@ func TestGetCommand(t *testing.T) {
 			expected: getExpected{
 				getCalls:     1,
 				tableStrings: []string{getExpectedTablePluralWorkbench},
+				displays:     []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -2193,6 +2209,7 @@ func TestGetCommand(t *testing.T) {
 			expected: getExpected{
 				getCalls:     1,
 				tableStrings: []string{getExpectedTablePluralWorkspace},
+				displays:     []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -2220,6 +2237,7 @@ func TestGetCommand(t *testing.T) {
 			expected: getExpected{
 				getCalls: 1,
 				err:      expectedInvalidResourceErr,
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 	}
@@ -2238,9 +2256,14 @@ func TestGetCommand(t *testing.T) {
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getGetArgs(tt))
 			err := mockCmd.Execute()
+			replacements := map[string]string{
+				"${PORT}": stubs.Port(t, srv.URL),
+				"${HOST}": stubs.Host(t, srv.URL),
+				"${URL}":  srv.URL,
+			}
 			if tt.expected.err != "" {
-				expectedErr := strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL)
-				require.EqualError(t, err, expectedErr)
+				expectedErr, actualErr := stubs.Sanitize(tt.expected.err, err.Error(), replacements)
+				require.Equal(t, expectedErr, actualErr)
 			} else {
 				require.NoError(t, err)
 			}
@@ -2252,7 +2275,17 @@ func TestGetCommand(t *testing.T) {
 				require.Equal(t, 1, stubUI.Tables[i].PrintCalls)
 			}
 
-			require.Equal(t, tt.expected.displays, stubUI.Displays, strings.Join(stubUI.Displays, "\n"))
+			expectedDisplays, actualDisplays := stubs.SanitizeSlice(
+				tt.expected.displays,
+				stubUI.Displays,
+				replacements,
+			)
+			require.Equal(t,
+				expectedDisplays,
+				actualDisplays,
+				"unexpected display messages: %v",
+				stubUI.Displays,
+			)
 			require.Equal(t, tt.expected.warns, stubUI.Warns, strings.Join(stubUI.Warns, "\n"))
 			expectedCallEndpointPrefix := "GET" + constants.PostgrestAPIEndpoint
 			if tt.input.resourceType == constants.UsersType || tt.input.resourceType == constants.UserType {
@@ -2310,10 +2343,7 @@ func getGetArgs(
 ) []string {
 	args := []string{}
 	args = append(args, tt.input.resourceType)
-	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModePassword)
-	args = append(args, "--"+constants.ClientIDFlag, constants.OAuthClientID)
-	args = append(args, "--"+constants.PasswordFlag, "pass")
-	args = append(args, "--"+constants.UsernameFlag, "user")
+	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModeDevice)
 	if tt.input.endpoint != "" {
 		args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
 	}

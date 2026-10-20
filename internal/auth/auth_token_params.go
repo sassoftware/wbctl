@@ -16,30 +16,17 @@ type GetAccessTokenParams struct {
 	IngressHost          string
 	Organization         string
 	AuthMode             string
-	Username             string
-	Password             string
 	ClientID             string
-	ClientSecret         string
 	IgnoreTokenCache     bool
 	NoListen             bool
 }
 
-// NormalizedAuthMode returns the normalized auth mode. If the auth mode is
-// "auto", it will be determined based on the presence of client ID and
-// username.
+// NormalizedAuthMode returns the normalized auth mode. Anything other than pkce
+// is returned as device.
 func (p *GetAccessTokenParams) NormalizedAuthMode() string {
 	authMode := strings.ToLower(strings.TrimSpace(p.AuthMode))
 	if authMode == "" {
-		authMode = constants.AuthModeAuto
-	}
-	if authMode == constants.AuthModeAuto {
-		if p.Username != "" {
-			return constants.AuthModePassword
-		}
-		if p.ClientSecret != "" {
-			return constants.AuthModeClientCredentials
-		}
-		return constants.AuthModePKCE
+		return constants.AuthModeDevice
 	}
 	return authMode
 }

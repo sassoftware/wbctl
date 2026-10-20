@@ -115,7 +115,7 @@ const (
         "sub_path": "src"
     }
 }`
-	expectedInvalidEndpointErr = "failed to get username/password token" +
+	expectedInvalidEndpointErr = "failed to get device token" +
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
 	expectedInvlidDataplaneErr = "GET ${URL}/postgrest/dataplanes?id=in.%28invalid%29 failed" +
@@ -172,7 +172,7 @@ func TestCreateImageCommand(t *testing.T) {
 				dataplanesResponseBody:   `[{"id":"dp-1"}]`,
 			}),
 			expected: createExpected{
-				displays:       []string{expectedCreateImageDryRunOutput},
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay, expectedCreateImageDryRunOutput},
 				dataplaneCalls: 1,
 			},
 		},
@@ -189,7 +189,7 @@ func TestCreateImageCommand(t *testing.T) {
 			}),
 			expected: createExpected{
 				dataplaneCalls: 1,
-				displays:       []string{expectedCreateImageDryRunOutput},
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay, expectedCreateImageDryRunOutput},
 			},
 		},
 		{
@@ -206,6 +206,7 @@ func TestCreateImageCommand(t *testing.T) {
 			expected: createExpected{
 				dataplaneCalls: 1,
 				err:            expectedCreateImageIncompleteFileErr,
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -217,7 +218,8 @@ func TestCreateImageCommand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: createExpected{
-				err: expectedCreateImageInvalidFileErr,
+				err:      expectedCreateImageInvalidFileErr,
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -238,7 +240,7 @@ func TestCreateImageCommand(t *testing.T) {
 				imageCreateResponseBody:        `{"id":"img-1"}`,
 			}),
 			expected: createExpected{
-				displays:       []string{expectedCreateImageID},
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay, expectedCreateImageID},
 				createCalls:    1,
 				dataplaneCalls: 1,
 			},
@@ -262,7 +264,7 @@ func TestCreateImageCommand(t *testing.T) {
 				imageCreateResponseBody:        `{"id":"img-1"}`,
 			}),
 			expected: createExpected{
-				displays:       []string{expectedCreateImageID},
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay, expectedCreateImageID},
 				createCalls:    1,
 				dataplaneCalls: 1,
 			},
@@ -288,7 +290,7 @@ func TestCreateImageCommand(t *testing.T) {
 				imageCreateResponseBody:        `{"id":"img-1"}`,
 			}),
 			expected: createExpected{
-				displays:       []string{expectedCreateImageID},
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay, expectedCreateImageID},
 				createCalls:    1,
 				dataplaneCalls: 1,
 			},
@@ -314,6 +316,7 @@ func TestCreateImageCommand(t *testing.T) {
 				err:            expectedCreateImageServerErr,
 				createCalls:    1,
 				dataplaneCalls: 1,
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -328,6 +331,7 @@ func TestCreateImageCommand(t *testing.T) {
 			}),
 			expected: createExpected{
 				dataplaneCalls: 1,
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 				err:            expectedCreateImageNameError,
 			},
 		},
@@ -344,6 +348,7 @@ func TestCreateImageCommand(t *testing.T) {
 			expected: createExpected{
 				err:            expectedCreateImageContextErr,
 				dataplaneCalls: 1,
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 		{
@@ -368,6 +373,7 @@ func TestCreateImageCommand(t *testing.T) {
 			}),
 			expected: createExpected{
 				err:            expectedInvlidDataplaneErr,
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 				dataplaneCalls: 1,
 			},
 		},
@@ -397,14 +403,29 @@ func TestCreateImageCommand(t *testing.T) {
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getCreateArgs(tt))
 			err := mockCmd.Execute()
+			replacements := map[string]string{
+				"${PORT}": stubs.Port(t, srv.URL),
+				"${HOST}": stubs.Host(t, srv.URL),
+				"${URL}":  srv.URL,
+			}
 			if tt.expected.err != "" {
-				expectedErr := strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL)
-				require.EqualError(t, err, expectedErr)
+				expectedErr, actualErr := stubs.Sanitize(tt.expected.err, err.Error(), replacements)
+				require.Equal(t, expectedErr, actualErr)
 			} else {
 				require.NoError(t, err)
 			}
 
-			require.Equal(t, tt.expected.displays, stubUI.Displays, strings.Join(stubUI.Displays, "\n"))
+			expectedDisplays, actualDisplays := stubs.SanitizeSlice(
+				tt.expected.displays,
+				stubUI.Displays,
+				replacements,
+			)
+			require.Equal(t,
+				expectedDisplays,
+				actualDisplays,
+				"unexpected display messages: %v",
+				stubUI.Displays,
+			)
 			require.Equal(t, tt.expected.warns, stubUI.Warns, strings.Join(stubUI.Warns, "\n"))
 			require.Equal(t, tt.expected.createCalls,
 				hitCounts.Count("POST"+postgrest.Endpoint(constants.WorkbenchEndpointRPCImageCreate)),
@@ -418,10 +439,7 @@ func TestCreateImageCommand(t *testing.T) {
 
 func getCreateArgs(tt createImageTestCase) []string {
 	args := []string{}
-	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModePassword)
-	args = append(args, "--"+constants.ClientIDFlag, constants.OAuthClientID)
-	args = append(args, "--"+constants.PasswordFlag, "pass")
-	args = append(args, "--"+constants.UsernameFlag, "user")
+	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModeDevice)
 	if tt.input.endpoint != "" {
 		args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
 	}
@@ -497,7 +515,7 @@ func TestUpdateImageCommand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: updateExpected{
-				displays: []string{expectedUpdateImageDryRunOutput},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, expectedUpdateImageDryRunOutput},
 			},
 		},
 		{
@@ -517,7 +535,7 @@ func TestUpdateImageCommand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: updateExpected{
-				displays: []string{expectedUpdateImageLongFlagsDryRunOutput},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, expectedUpdateImageLongFlagsDryRunOutput},
 			},
 		},
 		{
@@ -529,7 +547,7 @@ func TestUpdateImageCommand(t *testing.T) {
 				`[{"id":"img-a"},{"id":"img-b"}]`,
 			),
 			expected: updateExpected{
-				displays:    []string{"img-a", "img-b"},
+				displays:    []string{stubs.ExpectedDeviceAuthDisplay, "img-a", "img-b"},
 				updateCalls: 1,
 			},
 		},
@@ -543,6 +561,7 @@ func TestUpdateImageCommand(t *testing.T) {
 			),
 			expected: updateExpected{
 				err:         expectedUpdateImageServerErr,
+				displays:    []string{stubs.ExpectedDeviceAuthDisplay},
 				updateCalls: 1,
 			},
 		},
@@ -555,14 +574,17 @@ func TestUpdateImageCommand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: updateExpected{
-				displays: []string{expectedUpdateImageFileDryRunOutput},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, expectedUpdateImageFileDryRunOutput},
 			},
 		},
 		{
 			name:          "error when no ID source",
 			input:         updateInput{description: "image update desc"},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
-			expected:      updateExpected{err: expectedUpdateImageMissingIDErr},
+			expected: updateExpected{
+				err:      expectedUpdateImageMissingIDErr,
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+			},
 		},
 		{
 			name:  "ids only with empty body accepted",
@@ -573,7 +595,7 @@ func TestUpdateImageCommand(t *testing.T) {
 				`[{"id":"img-cli-1"}]`,
 			),
 			expected: updateExpected{
-				displays:    []string{"img-cli-1"},
+				displays:    []string{stubs.ExpectedDeviceAuthDisplay, "img-cli-1"},
 				updateCalls: 1,
 			},
 		},
@@ -593,7 +615,7 @@ func TestUpdateImageCommand(t *testing.T) {
 				`[{"id":"img-cli-1"},{"id":"img-cli-2"}]`,
 			),
 			expected: updateExpected{
-				displays:    []string{"img-cli-1", "img-cli-2"},
+				displays:    []string{stubs.ExpectedDeviceAuthDisplay, "img-cli-1", "img-cli-2"},
 				updateCalls: 1,
 			},
 		},
@@ -615,7 +637,7 @@ func TestUpdateImageCommand(t *testing.T) {
 				`[{"id":"img-cli-1"}]`,
 			),
 			expected: updateExpected{
-				displays:    []string{"img-cli-1"},
+				displays:    []string{stubs.ExpectedDeviceAuthDisplay, "img-cli-1"},
 				updateCalls: 1,
 			},
 		},
@@ -637,7 +659,8 @@ func TestUpdateImageCommand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: updateExpected{
-				err: expectedInvalidSpecErr,
+				err:      expectedInvalidSpecErr,
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 			},
 		},
 	}
@@ -663,14 +686,29 @@ func TestUpdateImageCommand(t *testing.T) {
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getUpdateArgs(tt))
 			err := mockCmd.Execute()
+			replacements := map[string]string{
+				"${PORT}": stubs.Port(t, srv.URL),
+				"${HOST}": stubs.Host(t, srv.URL),
+				"${URL}":  srv.URL,
+			}
 			if tt.expected.err != "" {
-				expectedErr := strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL)
-				require.EqualError(t, err, expectedErr)
+				expectedErr, actualErr := stubs.Sanitize(tt.expected.err, err.Error(), replacements)
+				require.Equal(t, expectedErr, actualErr)
 			} else {
 				require.NoError(t, err)
 			}
 
-			require.Equal(t, tt.expected.displays, stubUI.Displays, strings.Join(stubUI.Displays, "\n"))
+			expectedDisplays, actualDisplays := stubs.SanitizeSlice(
+				tt.expected.displays,
+				stubUI.Displays,
+				replacements,
+			)
+			require.Equal(t,
+				expectedDisplays,
+				actualDisplays,
+				"unexpected display messages: %v",
+				stubUI.Displays,
+			)
 			require.Equal(t, tt.expected.warns, stubUI.Warns, strings.Join(stubUI.Warns, "\n"))
 			require.Equal(
 				t,
@@ -725,10 +763,7 @@ func getUpdateArgs(
 	tt updateImageTestCase,
 ) []string {
 	args := []string{}
-	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModePassword)
-	args = append(args, "--"+constants.ClientIDFlag, constants.OAuthClientID)
-	args = append(args, "--"+constants.PasswordFlag, "pass")
-	args = append(args, "--"+constants.UsernameFlag, "user")
+	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModeDevice)
 	if tt.input.endpoint != "" {
 		args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
 	}

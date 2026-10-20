@@ -81,7 +81,7 @@ const (
         }
     }
 }`
-	expectedCreateSnapshotInvalidEndpointErr = "failed to get username/password token" +
+	expectedCreateSnapshotInvalidEndpointErr = "failed to get device token" +
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
 	expectedInvlidDataplaneErr = "GET ${URL}/postgrest/dataplanes?id=in.%28invalid%29 failed" +
@@ -136,7 +136,7 @@ func TestCreateSnapshotCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
-				displays:       []string{snapshotFilePrettyJSON},
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay, snapshotFilePrettyJSON},
 				dataplaneCalls: 1,
 			},
 		},
@@ -166,7 +166,7 @@ func TestCreateSnapshotCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
-				displays:       []string{`snapshot-1`},
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay, `snapshot-1`},
 				createCalls:    1,
 				dataplaneCalls: 1,
 				workspaceCalls: 1,
@@ -198,6 +198,7 @@ func TestCreateSnapshotCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 				err: "POST ${URL}/postgrest/rpc/snapshot_create failed\n" +
 					" Caused by:\n" +
 					"\t* 401 unauthorized",
@@ -223,6 +224,7 @@ func TestCreateSnapshotCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 				err:            "--name is required",
 				workspaceCalls: 1,
 				dataplaneCalls: 1,
@@ -240,6 +242,7 @@ func TestCreateSnapshotCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 				err:            "--volume is required",
 				dataplaneCalls: 1,
 			},
@@ -260,6 +263,7 @@ func TestCreateSnapshotCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 				err:            "failed to get volume missing: no elements found",
 				workspaceCalls: 1,
 			},
@@ -280,6 +284,7 @@ func TestCreateSnapshotCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 				err:            expectedInvalidVolumeErr,
 				workspaceCalls: 1,
 			},
@@ -307,6 +312,7 @@ func TestCreateSnapshotCommand(t *testing.T) {
 				},
 			}),
 			expected: createExpected{
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 				err:            expectedInvlidDataplaneErr,
 				dataplaneCalls: 1,
 			},
@@ -334,14 +340,29 @@ func TestCreateSnapshotCommand(t *testing.T) {
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getCreateArgs(tt))
 			err := mockCmd.Execute()
+			replacements := map[string]string{
+				"${PORT}": stubs.Port(t, srv.URL),
+				"${HOST}": stubs.Host(t, srv.URL),
+				"${URL}":  srv.URL,
+			}
 			if tt.expected.err != "" {
-				expectedErr := strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL)
-				require.EqualError(t, err, expectedErr, expectedErr)
+				expectedErr, actualErr := stubs.Sanitize(tt.expected.err, err.Error(), replacements)
+				require.Equal(t, expectedErr, actualErr)
 			} else {
 				require.NoError(t, err)
 			}
 
-			require.Equal(t, tt.expected.displays, stubUI.Displays, strings.Join(stubUI.Displays, "\n"))
+			expectedDisplays, actualDisplays := stubs.SanitizeSlice(
+				tt.expected.displays,
+				stubUI.Displays,
+				replacements,
+			)
+			require.Equal(t,
+				expectedDisplays,
+				actualDisplays,
+				"unexpected display messages: %v",
+				stubUI.Displays,
+			)
 			require.Equal(t, tt.expected.warns, stubUI.Warns, strings.Join(stubUI.Warns, "\n"))
 			require.Equal(
 				t,
@@ -403,7 +424,7 @@ func TestUpdateSnapshotCommand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: updateExpected{
-				displays: []string{snapshotUpdateFileDryRunOutput},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, snapshotUpdateFileDryRunOutput},
 			},
 		},
 		{
@@ -425,7 +446,7 @@ func TestUpdateSnapshotCommand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
-				displays:       []string{snapshotUpdateLongFlagsDryRunOutput},
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay, snapshotUpdateLongFlagsDryRunOutput},
 				workspaceCalls: 1,
 			},
 		},
@@ -437,7 +458,8 @@ func TestUpdateSnapshotCommand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: updateExpected{
-				err: expectedCreateImageInvalidFileErr,
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				err:      expectedCreateImageInvalidFileErr,
 			},
 		},
 		{
@@ -453,7 +475,7 @@ func TestUpdateSnapshotCommand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
-				displays:    []string{"snap-a", "snap-b"},
+				displays:    []string{stubs.ExpectedDeviceAuthDisplay, "snap-a", "snap-b"},
 				updateCalls: 1,
 			},
 		},
@@ -470,6 +492,7 @@ func TestUpdateSnapshotCommand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
+				displays:    []string{stubs.ExpectedDeviceAuthDisplay},
 				err:         snapshotUpdateServerErr,
 				updateCalls: 1,
 			},
@@ -483,7 +506,7 @@ func TestUpdateSnapshotCommand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: updateExpected{
-				displays: []string{snapshotUpdateFileDryRunOutput},
+				displays: []string{stubs.ExpectedDeviceAuthDisplay, snapshotUpdateFileDryRunOutput},
 			},
 		},
 		{
@@ -493,7 +516,8 @@ func TestUpdateSnapshotCommand(t *testing.T) {
 			},
 			mockEndpoints: stubs.GetStubAuthEndpoints(),
 			expected: updateExpected{
-				err: snapshotUpdateMissingIDErr,
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
+				err:      snapshotUpdateMissingIDErr,
 			},
 		},
 		{
@@ -509,7 +533,7 @@ func TestUpdateSnapshotCommand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
-				displays:    []string{"snap-cli-1"},
+				displays:    []string{stubs.ExpectedDeviceAuthDisplay, "snap-cli-1"},
 				updateCalls: 1,
 			},
 		},
@@ -534,7 +558,7 @@ func TestUpdateSnapshotCommand(t *testing.T) {
 				},
 			}),
 			expected: updateExpected{
-				displays:       []string{"snap-cli-1"},
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay, "snap-cli-1"},
 				updateCalls:    1,
 				workspaceCalls: 1,
 			},
@@ -545,7 +569,7 @@ func TestUpdateSnapshotCommand(t *testing.T) {
 				endpoint: "a\nb",
 			},
 			expected: updateExpected{
-				err: "failed to get username/password token" +
+				err: "failed to get device token" +
 					"\n Caused by:" +
 					"\n\t* parse \"a\\nb\": net/url: invalid control character in URL",
 			},
@@ -573,14 +597,29 @@ func TestUpdateSnapshotCommand(t *testing.T) {
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getUpdateArgs(tt))
 			err := mockCmd.Execute()
+			replacements := map[string]string{
+				"${PORT}": stubs.Port(t, srv.URL),
+				"${HOST}": stubs.Host(t, srv.URL),
+				"${URL}":  srv.URL,
+			}
 			if tt.expected.err != "" {
-				expectedErr := strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL)
-				require.EqualError(t, err, expectedErr, expectedErr)
+				expectedErr, actualErr := stubs.Sanitize(tt.expected.err, err.Error(), replacements)
+				require.Equal(t, expectedErr, actualErr)
 			} else {
 				require.NoError(t, err)
 			}
 
-			require.Equal(t, tt.expected.displays, stubUI.Displays, strings.Join(stubUI.Displays, "\n"))
+			expectedDisplays, actualDisplays := stubs.SanitizeSlice(
+				tt.expected.displays,
+				stubUI.Displays,
+				replacements,
+			)
+			require.Equal(t,
+				expectedDisplays,
+				actualDisplays,
+				"unexpected display messages: %v",
+				stubUI.Displays,
+			)
 			require.Equal(t, tt.expected.warns, stubUI.Warns, strings.Join(stubUI.Warns, "\n"))
 			require.Equal(
 				t,
@@ -602,10 +641,7 @@ func getCreateArgs(
 	tt createSnapshotTestCase,
 ) []string {
 	args := []string{}
-	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModePassword)
-	args = append(args, "--"+constants.ClientIDFlag, constants.OAuthClientID)
-	args = append(args, "--"+constants.PasswordFlag, "pass")
-	args = append(args, "--"+constants.UsernameFlag, "user")
+	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModeDevice)
 	if tt.input.endpoint != "" {
 		args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
 	}
@@ -634,10 +670,7 @@ func getUpdateArgs(
 	tt updateSnapshotTestCase,
 ) []string {
 	args := []string{}
-	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModePassword)
-	args = append(args, "--"+constants.ClientIDFlag, constants.OAuthClientID)
-	args = append(args, "--"+constants.PasswordFlag, "pass")
-	args = append(args, "--"+constants.UsernameFlag, "user")
+	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModeDevice)
 	if tt.input.endpoint != "" {
 		args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
 	}

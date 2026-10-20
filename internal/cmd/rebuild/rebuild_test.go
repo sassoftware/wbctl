@@ -24,7 +24,7 @@ const (
 	{"id":"image-1"},
 	{"id":"image-2"}
 ]`
-	expectedInvalidEndpointErr = "failed to get username/password token" +
+	expectedInvalidEndpointErr = "failed to get device token" +
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
 	expectedInvalidResourceErr = "" +
@@ -70,7 +70,11 @@ func TestRebuildCommand(t *testing.T) {
 					{ExpectedRequestBody: `{"id":"image-2"}`, ResponseStatus: http.StatusOK, ResponseBody: "true"},
 				},
 			}),
-			expected: rebuildExpected{displays: []string{"image-1", "image-2"}, getCalls: 1, postCalls: 2},
+			expected: rebuildExpected{
+				displays:  []string{stubs.ExpectedDeviceAuthDisplay, "image-1", "image-2"},
+				getCalls:  1,
+				postCalls: 2,
+			},
 		},
 		{
 			name:  "rebuild images by plural type",
@@ -86,7 +90,11 @@ func TestRebuildCommand(t *testing.T) {
 					{ExpectedRequestBody: `{"id":"image-2"}`, ResponseStatus: http.StatusOK, ResponseBody: "true"},
 				},
 			}),
-			expected: rebuildExpected{displays: []string{"image-1", "image-2"}, getCalls: 1, postCalls: 2},
+			expected: rebuildExpected{
+				displays:  []string{stubs.ExpectedDeviceAuthDisplay, "image-1", "image-2"},
+				getCalls:  1,
+				postCalls: 2,
+			},
 		},
 		{
 			name:  "returns error when rebuild call fails",
@@ -102,6 +110,7 @@ func TestRebuildCommand(t *testing.T) {
 				},
 			}),
 			expected: rebuildExpected{
+				displays:  []string{stubs.ExpectedDeviceAuthDisplay},
 				err:       "POST ${URL}/postgrest/rpc/image_rebuild failed\n Caused by:\n\t* 400 ",
 				getCalls:  1,
 				postCalls: 1,
@@ -132,6 +141,7 @@ func TestRebuildCommand(t *testing.T) {
 				},
 			}),
 			expected: rebuildExpected{
+				displays: []string{stubs.ExpectedDeviceAuthDisplay},
 				getCalls: 1,
 				err:      expectedInvalidResourceErr,
 			},
@@ -152,14 +162,29 @@ func TestRebuildCommand(t *testing.T) {
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getRebuildArgs(tt))
 			err := mockCmd.Execute()
+			replacements := map[string]string{
+				"${PORT}": stubs.Port(t, srv.URL),
+				"${HOST}": stubs.Host(t, srv.URL),
+				"${URL}":  srv.URL,
+			}
 			if tt.expected.err != "" {
-				expectedErr := strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL)
-				require.EqualError(t, err, expectedErr)
+				expectedErr, actualErr := stubs.Sanitize(tt.expected.err, err.Error(), replacements)
+				require.Equal(t, expectedErr, actualErr)
 			} else {
 				require.NoError(t, err)
 			}
 
-			require.Equal(t, tt.expected.displays, stubUI.Displays, strings.Join(stubUI.Displays, "\n"))
+			expectedDisplays, actualDisplays := stubs.SanitizeSlice(
+				tt.expected.displays,
+				stubUI.Displays,
+				replacements,
+			)
+			require.Equal(t,
+				expectedDisplays,
+				actualDisplays,
+				"unexpected display messages: %v",
+				stubUI.Displays,
+			)
 			require.Equal(t, tt.expected.warns, stubUI.Warns, strings.Join(stubUI.Warns, "\n"))
 			require.Empty(t, stubUI.Tables)
 
@@ -188,10 +213,7 @@ func getRebuildArgs(
 ) []string {
 	args := []string{}
 	args = append(args, tt.input.resourceType)
-	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModePassword)
-	args = append(args, "--"+constants.ClientIDFlag, constants.OAuthClientID)
-	args = append(args, "--"+constants.PasswordFlag, "pass")
-	args = append(args, "--"+constants.UsernameFlag, "user")
+	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModeDevice)
 	if tt.input.endpoint != "" {
 		args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
 	}

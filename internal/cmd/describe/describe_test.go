@@ -528,7 +528,7 @@ Modified At:     2025-01-01T00:00:00Z (127d ago)
 State:           
 Phase:           
 `
-	expectedInvalidEndpointErr = "failed to get username/password token" +
+	expectedInvalidEndpointErr = "failed to get device token" +
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
 )
@@ -576,7 +576,7 @@ func TestDescribeCommand(t *testing.T) {
 			),
 			expected: describeExpected{
 				describeCalls: 1,
-				displays:      []string{describeDataplaneExpectedDisplay},
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, describeDataplaneExpectedDisplay},
 			},
 		},
 		{
@@ -595,7 +595,7 @@ func TestDescribeCommand(t *testing.T) {
 			),
 			expected: describeExpected{
 				describeCalls: 1,
-				displays:      []string{describeImageBuildExpectedDisplay},
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, describeImageBuildExpectedDisplay},
 			},
 		},
 		{
@@ -614,7 +614,7 @@ func TestDescribeCommand(t *testing.T) {
 			),
 			expected: describeExpected{
 				describeCalls: 1,
-				displays:      []string{describeImageExpectedDisplay},
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, describeImageExpectedDisplay},
 			},
 		},
 		{
@@ -633,7 +633,7 @@ func TestDescribeCommand(t *testing.T) {
 			),
 			expected: describeExpected{
 				describeCalls: 1,
-				displays:      []string{describeJobSubmissionExpectedDisplay},
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, describeJobSubmissionExpectedDisplay},
 			},
 		},
 		{
@@ -652,7 +652,7 @@ func TestDescribeCommand(t *testing.T) {
 			),
 			expected: describeExpected{
 				describeCalls: 1,
-				displays:      []string{describeJobExpectedDisplay},
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, describeJobExpectedDisplay},
 			},
 		},
 		{
@@ -671,7 +671,7 @@ func TestDescribeCommand(t *testing.T) {
 			),
 			expected: describeExpected{
 				describeCalls: 1,
-				displays:      []string{describeSnapshotExpectedDisplay},
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, describeSnapshotExpectedDisplay},
 			},
 		},
 		{
@@ -690,7 +690,7 @@ func TestDescribeCommand(t *testing.T) {
 			),
 			expected: describeExpected{
 				describeCalls: 1,
-				displays:      []string{describeUserExpectedDisplay},
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, describeUserExpectedDisplay},
 			},
 		},
 		{
@@ -709,7 +709,7 @@ func TestDescribeCommand(t *testing.T) {
 			),
 			expected: describeExpected{
 				describeCalls: 1,
-				displays:      []string{describeWorkbenchExpectedDisplay},
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, describeWorkbenchExpectedDisplay},
 			},
 		},
 		{
@@ -728,7 +728,7 @@ func TestDescribeCommand(t *testing.T) {
 			),
 			expected: describeExpected{
 				describeCalls: 1,
-				displays:      []string{describeWorkspaceExpectedDisplay},
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, describeWorkspaceExpectedDisplay},
 			},
 		},
 		{
@@ -747,7 +747,7 @@ func TestDescribeCommand(t *testing.T) {
 			),
 			expected: describeExpected{
 				describeCalls: 1,
-				displays:      []string{describeConflictExpectedDisplay},
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, describeConflictExpectedDisplay},
 			},
 		},
 
@@ -766,7 +766,7 @@ func TestDescribeCommand(t *testing.T) {
 			),
 			expected: describeExpected{
 				describeCalls: 1,
-				displays:      []string{describeDataplaneExpectedDisplay},
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, describeDataplaneExpectedDisplay},
 			},
 		},
 		{
@@ -783,7 +783,7 @@ func TestDescribeCommand(t *testing.T) {
 			),
 			expected: describeExpected{
 				describeCalls: 1,
-				displays:      []string{describeImageBuildExpectedDisplay},
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, describeImageBuildExpectedDisplay},
 			},
 		},
 		{
@@ -800,7 +800,7 @@ func TestDescribeCommand(t *testing.T) {
 			),
 			expected: describeExpected{
 				describeCalls: 1,
-				displays:      []string{describeImageExpectedDisplay},
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, describeImageExpectedDisplay},
 			},
 		},
 		{
@@ -817,7 +817,7 @@ func TestDescribeCommand(t *testing.T) {
 			),
 			expected: describeExpected{
 				describeCalls: 1,
-				displays:      []string{describeJobSubmissionExpectedDisplay},
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, describeJobSubmissionExpectedDisplay},
 			},
 		},
 		{
@@ -834,7 +834,7 @@ func TestDescribeCommand(t *testing.T) {
 			),
 			expected: describeExpected{
 				describeCalls: 1,
-				displays:      []string{describeJobExpectedDisplay},
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, describeJobExpectedDisplay},
 			},
 		},
 		{
@@ -851,7 +851,7 @@ func TestDescribeCommand(t *testing.T) {
 			),
 			expected: describeExpected{
 				describeCalls: 1,
-				displays:      []string{describeSnapshotExpectedDisplay},
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, describeSnapshotExpectedDisplay},
 			},
 		},
 		{
@@ -868,7 +868,7 @@ func TestDescribeCommand(t *testing.T) {
 			),
 			expected: describeExpected{
 				describeCalls: 1,
-				displays:      []string{describeUserExpectedDisplay},
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, describeUserExpectedDisplay},
 			},
 		},
 		{
@@ -885,7 +885,7 @@ func TestDescribeCommand(t *testing.T) {
 			),
 			expected: describeExpected{
 				describeCalls: 1,
-				displays:      []string{describeWorkbenchExpectedDisplay},
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, describeWorkbenchExpectedDisplay},
 			},
 		},
 		{
@@ -902,7 +902,7 @@ func TestDescribeCommand(t *testing.T) {
 			),
 			expected: describeExpected{
 				describeCalls: 1,
-				displays:      []string{describeWorkspaceExpectedDisplay},
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, describeWorkspaceExpectedDisplay},
 			},
 		},
 		{
@@ -919,7 +919,7 @@ func TestDescribeCommand(t *testing.T) {
 			),
 			expected: describeExpected{
 				describeCalls: 1,
-				displays:      []string{describeConflictsPluralExpectedDisplay},
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay, describeConflictsPluralExpectedDisplay},
 			},
 		},
 		{
@@ -946,6 +946,7 @@ func TestDescribeCommand(t *testing.T) {
 				},
 			),
 			expected: describeExpected{
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay},
 				describeCalls: 1,
 				err: "" +
 					"GET ${URL}/postgrest/dataplanes failed" +
@@ -966,6 +967,7 @@ func TestDescribeCommand(t *testing.T) {
 				},
 			),
 			expected: describeExpected{
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay},
 				describeCalls: 1,
 				err: "" +
 					"GET ${URL}/postgrest/workspaces failed" +
@@ -986,6 +988,7 @@ func TestDescribeCommand(t *testing.T) {
 				},
 			),
 			expected: describeExpected{
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay},
 				describeCalls: 1,
 				err: "" +
 					"GET ${URL}/postgrest/workbenches failed" +
@@ -1006,6 +1009,7 @@ func TestDescribeCommand(t *testing.T) {
 				},
 			),
 			expected: describeExpected{
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay},
 				describeCalls: 1,
 				err: "" +
 					"GET ${URL}/postgrest/images failed" +
@@ -1026,6 +1030,7 @@ func TestDescribeCommand(t *testing.T) {
 				},
 			),
 			expected: describeExpected{
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay},
 				describeCalls: 1,
 				err: "" +
 					"GET ${URL}/postgrest/image_builds failed" +
@@ -1046,6 +1051,7 @@ func TestDescribeCommand(t *testing.T) {
 				},
 			),
 			expected: describeExpected{
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay},
 				describeCalls: 1,
 				err: "" +
 					"GET ${URL}/postgrest/jobs failed" +
@@ -1066,6 +1072,7 @@ func TestDescribeCommand(t *testing.T) {
 				},
 			),
 			expected: describeExpected{
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay},
 				describeCalls: 1,
 				err: "" +
 					"GET ${URL}/postgrest/job_runs failed" +
@@ -1086,6 +1093,7 @@ func TestDescribeCommand(t *testing.T) {
 				},
 			),
 			expected: describeExpected{
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay},
 				describeCalls: 1,
 				err: "" +
 					"GET ${URL}/postgrest/snapshots failed" +
@@ -1106,6 +1114,7 @@ func TestDescribeCommand(t *testing.T) {
 				},
 			),
 			expected: describeExpected{
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay},
 				describeCalls: 1,
 				err: "" +
 					"GET ${URL}/auth0Admin/users failed" +
@@ -1126,6 +1135,7 @@ func TestDescribeCommand(t *testing.T) {
 				},
 			),
 			expected: describeExpected{
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay},
 				describeCalls: 1,
 				err: "" +
 					"GET ${URL}/postgrest/workspace_conflicts failed" +
@@ -1149,14 +1159,29 @@ func TestDescribeCommand(t *testing.T) {
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getDescribeArgs(tt))
 			err := mockCmd.Execute()
+			replacements := map[string]string{
+				"${PORT}": stubs.Port(t, srv.URL),
+				"${HOST}": stubs.Host(t, srv.URL),
+				"${URL}":  srv.URL,
+			}
 			if tt.expected.err != "" {
-				expectedErr := strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL)
-				require.EqualError(t, err, expectedErr)
+				expectedErr, actualErr := stubs.Sanitize(tt.expected.err, err.Error(), replacements)
+				require.Equal(t, expectedErr, actualErr)
 			} else {
 				require.NoError(t, err)
 			}
 
-			require.Equal(t, tt.expected.displays, stubUI.Displays, strings.Join(stubUI.Displays, "\n"))
+			expectedDisplays, actualDisplays := stubs.SanitizeSlice(
+				tt.expected.displays,
+				stubUI.Displays,
+				replacements,
+			)
+			require.Equal(t,
+				expectedDisplays,
+				actualDisplays,
+				"unexpected display messages: %v",
+				stubUI.Displays,
+			)
 			require.Equal(t, tt.expected.warns, stubUI.Warns, strings.Join(stubUI.Warns, "\n"))
 			require.Empty(t, stubUI.Tables)
 			expectedCallEndpointPrefix := "GET" + constants.PostgrestAPIEndpoint
@@ -1208,10 +1233,7 @@ func getDescribeArgs(
 ) []string {
 	args := []string{}
 	args = append(args, tt.input.resourceType)
-	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModePassword)
-	args = append(args, "--"+constants.ClientIDFlag, constants.OAuthClientID)
-	args = append(args, "--"+constants.PasswordFlag, "pass")
-	args = append(args, "--"+constants.UsernameFlag, "user")
+	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModeDevice)
 	if tt.input.endpoint != "" {
 		args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
 	}
