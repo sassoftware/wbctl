@@ -28,13 +28,20 @@ const (
     "nodepool": "np-file",
     "state": "RUNNING"
 }`
-	workbenchIncompleteFileJSON    = `{"name":"wb-file","nodepool":"np-file","state":"RUNNING"}`
-	workbenchIncompleteFileErr     = `either --application or at least one --service is required`
+	workbenchIncompleteFileJSON = `{"name":"wb-file","nodepool":"np-file","state":"RUNNING"}`
+	workbenchIncompleteFileErr  = "either --application or at least one --service is required\n" +
+		"  Valid Applications: application-1, application-2\n" +
+		"  Valid Services: service-1, service-2"
 	workbenchNoWorkspaceCreateBody = `{"param":{"application_id":"app-1", "dataplane_id":"dp-1","name":"wb-1",` +
 		`"services":[{"id":"svc-a"},{"id":"svc-b"}],"nodepool":"np-1","state":"STOPPED"}}`
 	workbenchWithWorkspaceCreateBody = `{"param":{"application_id":"app-1", "dataplane_id":"dp-1","name":"wb-2",` +
 		`"services":[{"id":"svc-a","env":{"DEFAULT_MOUNTNAME":"data"}},` +
 		`{"id":"svc-b","env":{"DEFAULT_MOUNTNAME":"data"}}],` +
+		`"workspaces":[{"id":"ctrl-home","mountName":"sas"},{"id":"ctrl-data",` +
+		`"mountName":"data"}],"nodepool":"np-2","state":"STOPPED"}}`
+	workbenchWithServicesCreateBody = `{"param":{"dataplane_id":"dp-1","name":"wb-2",` +
+		`"services":[{"id":"service-1","env":{"DEFAULT_MOUNTNAME":"data"}},` +
+		`{"id":"service-2","env":{"DEFAULT_MOUNTNAME":"data"}}],` +
 		`"workspaces":[{"id":"ctrl-home","mountName":"sas"},{"id":"ctrl-data",` +
 		`"mountName":"data"}],"nodepool":"np-2","state":"STOPPED"}}`
 	workbenchUpdateDryRunOutput = `{
@@ -112,8 +119,10 @@ const (
 	expectedInvlidApplicationErr = "GET ${URL}/postgrest/dataplane_workbench_applications?id=in.%28invalid%29 failed" +
 		"\n Caused by:" +
 		"\n\t* 400 error"
-	expectedApplicationQuery          = "id=in.(app-1)"
-	applicationResponseBody           = `[{"id":"app-1","services":["svc-a","svc-b"]}]`
+	expectedApplicationQuery = "id=in.(app-1)"
+	applicationResponseBody  = `[{"id":"app-1","services":["svc-a","svc-b"]}]`
+	servicesResponseBody     = `[{"id":"service-1","name":"service 1"},` +
+		`{"id":"service-2","name":"service 2"}]`
 	expectedCreateImageInvalidFileErr = "unexpected end of JSON input"
 )
 
@@ -138,6 +147,8 @@ type createExpected struct {
 	createCalls       int
 	dataplaneCalls    int
 	applicationsCalls int
+	servicesCalls     int
+	nodepoolCalls     int
 	workspaceCalls    int
 }
 
@@ -181,10 +192,20 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   `[{"id":"dp-1"}]`,
 				},
+				applicationsConfig: stubs.StubHTTPPartialGetConfig{
+					ResponseBody:   `[{"id": "application-1"}, {"id": "application-2"}]`,
+					ResponseStatus: http.StatusOK,
+				},
+				servicesConfig: stubs.StubHTTPPartialGetConfig{
+					ResponseBody:   `[{"id": "service-1"}, {"id": "service-2"}]`,
+					ResponseStatus: http.StatusOK,
+				},
 			}),
 			expected: createExpected{
-				err:            workbenchIncompleteFileErr,
-				dataplaneCalls: 1,
+				err:               workbenchIncompleteFileErr,
+				dataplaneCalls:    1,
+				applicationsCalls: 1,
+				servicesCalls:     1,
 			},
 		},
 		{
@@ -206,7 +227,7 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   applicationResponseBody,
 				},
-				workbenchConfig: stubs.StubHTTPPartialPostConfig{
+				workbenchesConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: workbenchNoWorkspaceCreateBody,
 					ResponseStatus:      http.StatusOK,
 					ResponseBody:        `{"id":"wb-1"}`,
@@ -240,7 +261,7 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   applicationResponseBody,
 				},
-				workbenchConfig: stubs.StubHTTPPartialPostConfig{
+				workbenchesConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: workbenchWithWorkspaceCreateBody,
 					ResponseStatus:      http.StatusOK,
 					ResponseBody:        `{"id":"wb-2"}`,
@@ -252,6 +273,39 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 				dataplaneCalls:    1,
 				applicationsCalls: 1,
 				workspaceCalls:    2,
+			},
+		},
+		{
+			name: "create success with services",
+			input: createInput{
+				dataplane:  "dp-1",
+				name:       "wb-2",
+				services:   []string{"service-1", "service-2"},
+				nodepool:   "np-2",
+				workspaces: []string{"ws-home", "ws-data"},
+			},
+			mockEndpoints: getCreateWorkbenchEndpoints(workbenchEndpointsConfig{
+				dataplaneConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  `id=in.(dp-1)`,
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   `[{"id":"dp-1"}]`,
+				},
+				servicesConfig: stubs.StubHTTPPartialGetConfig{
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   servicesResponseBody,
+				},
+				workbenchesConfig: stubs.StubHTTPPartialPostConfig{
+					ExpectedRequestBody: workbenchWithServicesCreateBody,
+					ResponseStatus:      http.StatusOK,
+					ResponseBody:        `{"id":"wb-2"}`,
+				},
+			}),
+			expected: createExpected{
+				displays:       []string{"wb-2"},
+				createCalls:    1,
+				dataplaneCalls: 1,
+				servicesCalls:  1,
+				workspaceCalls: 2,
 			},
 		},
 		{
@@ -273,7 +327,7 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   applicationResponseBody,
 				},
-				workbenchConfig: stubs.StubHTTPPartialPostConfig{
+				workbenchesConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: workbenchNoWorkspaceCreateBody,
 					ResponseStatus:      http.StatusUnauthorized,
 					ResponseBody:        `unauthorized`,
@@ -323,10 +377,22 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   `[{"id":"dp-1"}]`,
 				},
+				applicationsConfig: stubs.StubHTTPPartialGetConfig{
+					ResponseBody:   `[{"id": "application-1"}, {"id": "application-2"}]`,
+					ResponseStatus: http.StatusOK,
+				},
+				servicesConfig: stubs.StubHTTPPartialGetConfig{
+					ResponseBody:   `[{"id": "service-1"}, {"id": "service-2"}]`,
+					ResponseStatus: http.StatusOK,
+				},
 			}),
 			expected: createExpected{
-				err:            "either --application or at least one --service is required",
-				dataplaneCalls: 1,
+				err: "either --application or at least one --service is required\n" +
+					"  Valid Applications: application-1, application-2\n" +
+					"  Valid Services: service-1, service-2",
+				dataplaneCalls:    1,
+				applicationsCalls: 1,
+				servicesCalls:     1,
 			},
 		},
 		{
@@ -345,11 +411,16 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   applicationResponseBody,
 				},
+				nodepoolsConfig: stubs.StubHTTPPartialGetConfig{
+					ResponseBody:   `[{"id": "np-1"}, {"id": "np-2"}]`,
+					ResponseStatus: http.StatusOK,
+				},
 			}),
 			expected: createExpected{
-				err:               "--nodepool is required",
+				err:               "--nodepool is required\n  Valid Nodepools: np-1, np-2",
 				applicationsCalls: 1,
 				dataplaneCalls:    1,
+				nodepoolCalls:     1,
 			},
 		},
 		{
@@ -386,7 +457,7 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 				workspaces: []string{"invalid"},
 			},
 			mockEndpoints: getCreateWorkbenchEndpoints(workbenchEndpointsConfig{
-				workspaceConfig: stubs.StubHTTPPartialGetConfig{
+				workspacesConfig: stubs.StubHTTPPartialGetConfig{
 					ExpectedQuery:  `controller_id=in.(invalid)`,
 					ResponseStatus: http.StatusBadRequest,
 					ResponseBody:   `error`,
@@ -497,6 +568,8 @@ type updateExpected struct {
 	updateCalls       int
 	bulkUpdateCalls   int
 	applicationsCalls int
+	servicesCalls     int
+	nodepoolsCalls    int
 	workspaceCalls    int
 }
 
@@ -633,7 +706,7 @@ func TestUpdateWorkbenchComand(t *testing.T) {
 				args: []string{"wb-cli-1"},
 			},
 			mockEndpoints: getBulkUpdateWorkbenchEndpoints(workbenchEndpointsConfig{
-				workbenchConfig: stubs.StubHTTPPartialPostConfig{
+				workbenchesConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: workbenchUpdateRequestBodyIDsOnly,
 					ResponseStatus:      http.StatusUnauthorized,
 					ResponseBody:        `unauthorized`,
@@ -672,7 +745,7 @@ func TestUpdateWorkbenchComand(t *testing.T) {
 				args: []string{"wb-cli-1"},
 			},
 			mockEndpoints: getBulkUpdateWorkbenchEndpoints(workbenchEndpointsConfig{
-				workbenchConfig: stubs.StubHTTPPartialPostConfig{
+				workbenchesConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: workbenchUpdateRequestBodyIDsOnly,
 					ResponseStatus:      http.StatusOK,
 					ResponseBody:        `[{"id":"wb-cli-1"}]`,
@@ -697,7 +770,7 @@ func TestUpdateWorkbenchComand(t *testing.T) {
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   applicationResponseBody,
 				},
-				workbenchConfig: stubs.StubHTTPPartialPostConfig{
+				workbenchesConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: workbenchUpdateRequestBodyMapping,
 					ResponseStatus:      http.StatusOK,
 					ResponseBody:        `[{"id":"wb-cli-1"},{"id":"wb-cli-2"}]`,
@@ -716,7 +789,7 @@ func TestUpdateWorkbenchComand(t *testing.T) {
 				args:       []string{"wb-cli-1"},
 			},
 			mockEndpoints: getBulkUpdateWorkbenchEndpoints(workbenchEndpointsConfig{
-				workbenchConfig: stubs.StubHTTPPartialPostConfig{
+				workbenchesConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: workbenchUpdateRequestBodyWorkspace,
 					ResponseStatus:      http.StatusOK,
 					ResponseBody:        `[{"id":"wb-cli-1"}]`,
@@ -736,7 +809,7 @@ func TestUpdateWorkbenchComand(t *testing.T) {
 				args:   []string{"wb-cli-1"},
 			},
 			mockEndpoints: getUpdateWorkbenchEndpoints(workbenchEndpointsConfig{
-				workbenchConfig: stubs.StubHTTPPartialPostConfig{
+				workbenchesConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: workbenchUpdateRequestBodyNameLabels,
 					ResponseStatus:      http.StatusOK,
 					ResponseBody:        `{"id":"wb-cli-1"}`,
@@ -804,13 +877,25 @@ func TestUpdateWorkbenchComand(t *testing.T) {
 				t,
 				tt.expected.applicationsCalls,
 				hitCounts.Count("GET"+postgrest.Endpoint(constants.WorkbenchEndpointDataplaneWorkbenchApplications)),
-				"application calls",
+				"applications calls",
+			)
+			require.Equal(
+				t,
+				tt.expected.servicesCalls,
+				hitCounts.Count("GET"+postgrest.Endpoint(constants.WorkbenchEndpointDataplaneWorkbenchServices)),
+				"services calls",
+			)
+			require.Equal(
+				t,
+				tt.expected.nodepoolsCalls,
+				hitCounts.Count("GET"+postgrest.Endpoint(constants.WorkbenchEndpointDataplaneNodepools)),
+				"nodepools calls",
 			)
 			require.Equal(
 				t,
 				tt.expected.workspaceCalls,
 				hitCounts.Count("GET"+postgrest.Endpoint(constants.WorkbenchEndpointWorkspaces)),
-				"workspace calls",
+				"workspaces calls",
 			)
 			require.Equal(
 				t,
@@ -906,17 +991,21 @@ func getUpdateArgs(
 type workbenchEndpointsConfig struct {
 	dataplaneConfig    stubs.StubHTTPPartialGetConfig
 	applicationsConfig stubs.StubHTTPPartialGetConfig
-	workspaceConfig    stubs.StubHTTPPartialGetConfig
-	workbenchConfig    stubs.StubHTTPPartialPostConfig
+	servicesConfig     stubs.StubHTTPPartialGetConfig
+	nodepoolsConfig    stubs.StubHTTPPartialGetConfig
+	workspacesConfig   stubs.StubHTTPPartialGetConfig
+	workbenchesConfig  stubs.StubHTTPPartialPostConfig
 }
 
 func getWorkbenchEndpoints(
 	urlUnderTest string,
 	config workbenchEndpointsConfig,
 ) []stubs.StubHTTPEndpoint {
-	endpoints := append(stubs.GetStubAuthEndpoints(), stubs.GetStubWorkspaceEndpoints(config.workspaceConfig)...)
+	endpoints := append(stubs.GetStubAuthEndpoints(), stubs.GetStubWorkspaceEndpoints(config.workspacesConfig)...)
 	endpoints = append(endpoints, stubs.GetStubDataplaneEndpoints(config.dataplaneConfig)...)
-	endpoints = append(endpoints, stubs.GetStubApplicationEndpoints(config.applicationsConfig)...)
+	endpoints = append(endpoints, stubs.GetStubApplicationsEndpoints(config.applicationsConfig)...)
+	endpoints = append(endpoints, stubs.GetStubServicesEndpoints(config.servicesConfig)...)
+	endpoints = append(endpoints, stubs.GetStubNodepoolsEndpoints(config.nodepoolsConfig)...)
 	return append(endpoints,
 		[]stubs.StubHTTPEndpoint{
 			{
@@ -924,11 +1013,11 @@ func getWorkbenchEndpoints(
 					Method:          http.MethodPost,
 					URL:             urlUnderTest,
 					ExpectedHeaders: stubs.StubAuthHeaders,
-					ExpectedBody:    config.workbenchConfig.ExpectedRequestBody,
+					ExpectedBody:    config.workbenchesConfig.ExpectedRequestBody,
 				},
 				Response: stubs.StubHTTPResponse{
-					Status: config.workbenchConfig.ResponseStatus,
-					Body:   config.workbenchConfig.ResponseBody,
+					Status: config.workbenchesConfig.ResponseStatus,
+					Body:   config.workbenchesConfig.ResponseBody,
 				},
 			},
 		}...)

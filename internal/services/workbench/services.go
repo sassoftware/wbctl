@@ -5,6 +5,7 @@ package workbench
 
 import (
 	"context"
+	"slices"
 
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/constants"
@@ -25,6 +26,23 @@ func GetServices(
 	return result.Split(Get[types.Services](
 		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointDataplaneWorkbenchServices), IDsQuery(ids, sortSpec),
 	))
+}
+
+// GetServiceIDs returns all service IDs present in the WorkbenchService.
+func GetServiceIDs(
+	ctx context.Context,
+	s *WorkbenchService,
+) ([]string, error) {
+	services, err := GetServices(ctx, s, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]string, 0, len(services))
+	for _, service := range services {
+		ids = append(ids, service.ID)
+	}
+	slices.Sort(ids)
+	return ids, nil
 }
 
 // PrintServices returns a function that prints the given services.

@@ -204,6 +204,65 @@ func TestGetServices(t *testing.T) {
 	}
 }
 
+func TestGetAllServiceIds(t *testing.T) {
+	tests := []getTestCase[[]string]{
+		{
+			name: "get service ids success",
+			mockEndpoints: getServicesGetEndpoints(
+				"",
+				http.StatusOK,
+				servicesGetTwoResponseJSON,
+			),
+			expected: getExpected[[]string]{
+				result: []string{"id-a", "id-b"},
+			},
+		},
+		{
+			name: "get service ids invalid json response",
+			mockEndpoints: getServicesGetEndpoints(
+				"",
+				http.StatusOK,
+				`[`,
+			),
+			expected: getExpected[[]string]{
+				err: "GET ${URL}/postgrest/dataplane_workbench_services failed\n" +
+					" Caused by:\n" +
+					"\t* unexpected EOF",
+			},
+		},
+		{
+			name: "get service ids non-200 from server",
+			mockEndpoints: getServicesGetEndpoints(
+				"",
+				http.StatusUnauthorized,
+				`unauthorized`,
+			),
+			expected: getExpected[[]string]{
+				err: "GET ${URL}/postgrest/dataplane_workbench_services failed\n" +
+					" Caused by:\n" +
+					"\t* 401 unauthorized",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			srv, _ := stubs.NewStubHTTPServer(t, tt.mockEndpoints)
+			defer srv.Close()
+			svc := workbench.NewWorkbenchService(srv.URL, "access-token", "csrf-token")
+
+			actual, err := workbench.GetServiceIDs(context.Background(), svc)
+			if tt.expected.err != "" {
+				require.EqualError(t, err, strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL))
+				return
+			}
+
+			require.NoError(t, err)
+			require.Equal(t, tt.expected.result, actual)
+		})
+	}
+}
+
 func TestPrintServices(t *testing.T) {
 	tests := []struct {
 		name               string

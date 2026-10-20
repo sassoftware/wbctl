@@ -124,6 +124,7 @@ const (
 	FlagMethodUsage                      = BundleID + ".flag.method.usage.msg"
 	FlagNameUsage                        = BundleID + ".flag.name.usage.msg"
 	FlagNoListenUsage                    = BundleID + ".flag.no.listen.usage.msg"
+	FlagNodepoolIsRequired               = BundleID + ".flag.nodepool.is.required.msg"
 	FlagNodepoolUsage                    = BundleID + ".flag.nodepool.usage.msg"
 	FlagOrganizationUsage                = BundleID + ".flag.organization.usage.msg"
 	FlagOutputUsage                      = BundleID + ".flag.output.usage.msg"
