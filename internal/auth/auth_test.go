@@ -633,6 +633,62 @@ func TestGetAccessToken(t *testing.T) {
 	}
 }
 
+type removeInput struct {
+	endpoint     string
+	cacheContent string
+}
+
+type removeExpected struct {
+	cacheContent string
+}
+
+type removeTestCase struct {
+	name     string
+	input    removeInput
+	expected removeExpected
+}
+
+func TestRemoveAccessToken(t *testing.T) {
+	tests := []removeTestCase{
+		{
+			name: "simple success",
+			input: removeInput{
+				endpoint:     "https://example.com",
+				cacheContent: `{"https://example.com": {}}`,
+			},
+			expected: removeExpected{
+				cacheContent: `{}`,
+			},
+		},
+		{
+			name: "no op",
+			input: removeInput{
+				endpoint:     "https://does not exist",
+				cacheContent: `{"https://example.com": {}}`,
+			},
+			expected: removeExpected{
+				cacheContent: `{"https://example.com": {}}`,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fsys := stubs.StubFS{Fs: afero.NewMemMapFs()}
+			home, err := afero.TempDir(fsys, "", "")
+			require.NoError(t, err)
+			t.Setenv(osutil.HomeEnvVar(), home)
+			tokenFilePath := filepath.Join(home, constants.DefaultTokenFileName)
+			err = afero.WriteFile(fsys, tokenFilePath, []byte(tt.input.cacheContent), 0644)
+			require.NoError(t, err)
+			err = auth.RemoveAccessToken(fsys, tt.input.endpoint)
+			require.NoError(t, err)
+			actual, err := afero.ReadFile(fsys, tokenFilePath)
+			require.NoError(t, err)
+			require.Equal(t, tt.expected.cacheContent, string(actual))
+		})
+	}
+}
+
 func makeAuthTestFunc(tt authTestCase) func(t *testing.T) {
 	return func(t *testing.T) {
 		fsys := stubs.StubFS{Fs: afero.NewMemMapFs()}

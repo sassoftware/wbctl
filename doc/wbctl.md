@@ -14,6 +14,7 @@ Available Commands:
   <a href='wbctl get.md'>get</a>         Display Workbench resources
   help        Help about any command
   <a href='wbctl login.md'>login</a>       Authenticate and cache an access token
+  <a href='wbctl logout.md'>logout</a>      Remove cached access token
   <a href='wbctl logs.md'>logs</a>        Fetch the logs of Workbench resources
   <a href='wbctl rebuild.md'>rebuild</a>     Rebuild Workbench image
   <a href='wbctl settings.md'>settings</a>    Manage user settings

@@ -73,6 +73,34 @@ func getCachedTokenFor(fsys afero.Fs, endpoint string) (cachedToken, error) {
 // saveTokenToCache converts the given token to the cached representation and saves
 // that cached representation to ~/.wbctl/token.json.
 func saveTokenToCache(fsys afero.Fs, endpoint string, responseToken tokenResponse) error {
+	endpoint = normalizeEndpoint(endpoint)
+	ct := cachedToken{
+		AccessToken:  responseToken.AccessToken,
+		RefreshToken: responseToken.RefreshToken,
+		TokenType:    responseToken.TokenType,
+		ExpiresAt:    timeNow().UTC().Add(time.Duration(responseToken.ExpiresIn) * time.Second),
+	}
+	return updateTokenCache(fsys, func(cache tokenCache) (tokenCache, bool) {
+		cache[endpoint] = ct
+		return cache, true
+	})
+}
+
+// removeTokenFromCache removes the cached token for the given endpoint from
+// ~/.wbctl/token.json.
+func removeTokenFromCache(fsys afero.Fs, endpoint string) error {
+	endpoint = normalizeEndpoint(endpoint)
+	return updateTokenCache(fsys, func(cache tokenCache) (tokenCache, bool) {
+		_, present := cache[endpoint]
+		if !present {
+			return cache, false
+		}
+		delete(cache, endpoint)
+		return cache, true
+	})
+}
+
+func updateTokenCache(fsys afero.Fs, updater func(tokenCache) (tokenCache, bool)) error {
 	path, err := getTokenCachePath()
 	if err != nil {
 		return errors.Wrap(err, i18n.Format(i18n.FailedToSaveTokenCache))
@@ -81,14 +109,10 @@ func saveTokenToCache(fsys afero.Fs, endpoint string, responseToken tokenRespons
 	if err != nil {
 		return errors.Wrap(err, i18n.Format(i18n.FailedToSaveTokenCache))
 	}
-	ct := cachedToken{
-		AccessToken:  responseToken.AccessToken,
-		RefreshToken: responseToken.RefreshToken,
-		TokenType:    responseToken.TokenType,
-		ExpiresAt:    timeNow().UTC().Add(time.Duration(responseToken.ExpiresIn) * time.Second),
+	cache, updated := updater(cache)
+	if !updated {
+		return nil
 	}
-	endpoint = normalizeEndpoint(endpoint)
-	cache[endpoint] = ct
 	dir := filepath.Dir(path)
 	err = fsys.MkdirAll(dir, 0o700)
 	if err != nil {

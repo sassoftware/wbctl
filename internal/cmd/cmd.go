@@ -19,6 +19,7 @@ import (
 	"github.com/sassoftware/wbctl/internal/cmd/get"
 	"github.com/sassoftware/wbctl/internal/cmd/log"
 	"github.com/sassoftware/wbctl/internal/cmd/login"
+	"github.com/sassoftware/wbctl/internal/cmd/logout"
 	"github.com/sassoftware/wbctl/internal/cmd/rebuild"
 	"github.com/sassoftware/wbctl/internal/cmd/settings"
 	"github.com/sassoftware/wbctl/internal/cmd/state"
@@ -132,6 +133,7 @@ func createCommands(
 		create.UpdateCommand(ctx, fsys, _ui),
 		edit.Command(ctx, fsys, _ui),
 		login.Command(ctx, fsys, _ui),
+		logout.Command(ctx, fsys, _ui),
 		log.Command(ctx, fsys, _ui),
 		state.StartCommand(ctx, fsys, _ui),
 		state.StopCommand(ctx, fsys, _ui),

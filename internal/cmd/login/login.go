@@ -69,10 +69,10 @@ func promptForMissing(
 	params auth.GetAccessTokenParams,
 ) auth.GetAccessTokenParams {
 	if params.AuthMode == "" {
-		params.AuthMode = _ui.Ask(i18n.Format(i18n.LoginAuthModePrompt))
+		params.AuthMode = _ui.Ask(i18n.Format(i18n.AuthModePrompt))
 	}
 	if params.ControlPlaneEndpoint == "" {
-		params.ControlPlaneEndpoint = _ui.Ask(i18n.Format(i18n.LoginEndpointPrompt))
+		params.ControlPlaneEndpoint = _ui.Ask(i18n.Format(i18n.EndpointPrompt))
 	}
 	params.AuthMode = params.NormalizedAuthMode()
 	return params
