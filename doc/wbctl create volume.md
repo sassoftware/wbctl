@@ -21,8 +21,7 @@ Flags:
       --storageclass string   The storage class to use for the volume.
 
 Global Flags:
-  -m, --auth-mode string      Authentication mode. One of: auto, pkce, client-credentials, password, device. (default "device")
-      --client-id string      The client-id to authenticate with the Workbench API ($WBCLIENTID).
+  -m, --auth-mode string      Authentication mode. One of: device, pkce. (default "device")
   -e, --endpoint string       The Workbench API endpoint URL.
       --ignore-token-cache    Ignore token cache.
       --no-listen             Do not open a local port to listen for PKCE authentication.

@@ -493,6 +493,9 @@ func AddClientIDFlag(cmd *cobra.Command) {
 		"",
 		i18n.Format(i18n.FlagClientIDUsage),
 	)
+	// MarkHidden can only fail if the flag does not exist, but we just added
+	// the flag so the error can be ignored.
+	_ = cmd.PersistentFlags().MarkHidden(constants.ClientIDFlag)
 }
 
 // BindToViper binds all the flags to viper. This cannot be done when the flags
