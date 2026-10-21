@@ -121,13 +121,14 @@ const (
 )
 
 type apiInput struct {
-	apiArg   string
-	data     string
-	filename string
-	method   string
-	output   string
-	query    string
-	endpoint string
+	apiArg       string
+	data         string
+	endpoint     string
+	filename     string
+	method       string
+	organization string
+	output       string
+	query        string
 }
 
 type apiExpected struct {
@@ -155,7 +156,8 @@ type apiEndpointsConfig struct {
 func TestAPICommand(t *testing.T) {
 	tests := []apiTestCase{
 		{
-			name: "no api arg prints sorted API table",
+			name:  "no api arg prints sorted API table",
+			input: apiInput{organization: "org-1"},
 			mockEndpoints: getAPIEndpoints([]apiEndpointsConfig{
 				{
 					expectedMethod: http.MethodGet,
@@ -178,7 +180,7 @@ func TestAPICommand(t *testing.T) {
 		},
 		{
 			name:  "no api arg with json output avoids table output",
-			input: apiInput{output: constants.JSONOutputValue},
+			input: apiInput{organization: "org-1", output: constants.JSONOutputValue},
 			mockEndpoints: getAPIEndpoints([]apiEndpointsConfig{
 				{
 					expectedMethod: http.MethodGet,
@@ -197,7 +199,7 @@ func TestAPICommand(t *testing.T) {
 		},
 		{
 			name:  "api GET with query uses default method",
-			input: apiInput{apiArg: apiArgCustom, query: "a=1&a=2&b=x"},
+			input: apiInput{apiArg: apiArgCustom, query: "a=1&a=2&b=x", organization: "org-1"},
 			mockEndpoints: getAPIEndpoints([]apiEndpointsConfig{
 				{
 					expectedMethod: http.MethodGet,
@@ -215,6 +217,7 @@ func TestAPICommand(t *testing.T) {
 			input: apiInput{
 				apiArg: "/submit",
 				method: http.MethodPost, data: `{"name":"alpha"}`,
+				organization: "org-1",
 			},
 			mockEndpoints: getAPIEndpoints([]apiEndpointsConfig{
 				{
@@ -230,7 +233,7 @@ func TestAPICommand(t *testing.T) {
 		},
 		{
 			name:          "unsupported method returns exit error",
-			input:         apiInput{apiArg: apiArgCustom, method: http.MethodPut},
+			input:         apiInput{apiArg: apiArgCustom, method: http.MethodPut, organization: "org-1"},
 			mockEndpoints: stubs.GetStubAuthEndpoints(), // just the auth endpoints
 			expected: apiExpected{
 				err:      "unsupported method: PUT",
@@ -240,9 +243,10 @@ func TestAPICommand(t *testing.T) {
 		{
 			name: "api POST with filename body",
 			input: apiInput{
-				apiArg:   "/submit-file",
-				method:   http.MethodPost,
-				filename: `{"count":3}`,
+				apiArg:       "/submit-file",
+				method:       http.MethodPost,
+				filename:     `{"count":3}`,
+				organization: "org-1",
 			},
 			mockEndpoints: getAPIEndpoints([]apiEndpointsConfig{
 				{
@@ -258,7 +262,7 @@ func TestAPICommand(t *testing.T) {
 		},
 		{
 			name:          "invalid query returns parse error",
-			input:         apiInput{apiArg: apiArgCustom, query: "%zz"},
+			input:         apiInput{apiArg: apiArgCustom, query: "%zz", organization: "org-1"},
 			mockEndpoints: stubs.GetStubAuthEndpoints(), // just the auth endpoints
 			expected: apiExpected{
 				err:      "invalid URL escape \"%zz\"",
@@ -267,7 +271,7 @@ func TestAPICommand(t *testing.T) {
 		},
 		{
 			name:          "invalid data json returns unmarshal error",
-			input:         apiInput{apiArg: apiArgCustom, data: `{"name":`},
+			input:         apiInput{apiArg: apiArgCustom, data: `{"name":`, organization: "org-1"},
 			mockEndpoints: stubs.GetStubAuthEndpoints(), // just the auth endpoints
 			expected: apiExpected{
 				err:      "unexpected end of JSON input",
@@ -276,16 +280,17 @@ func TestAPICommand(t *testing.T) {
 		},
 		{
 			name:     "endpoint required",
-			input:    apiInput{apiArg: apiArgCustom, endpoint: ""},
+			input:    apiInput{apiArg: apiArgCustom, endpoint: "", organization: "org-1"},
 			expected: apiExpected{err: authEndpointRequiredErr},
 		},
 		{
 			name:     "invalid endpoint",
-			input:    apiInput{endpoint: "a\nb"},
+			input:    apiInput{endpoint: "a\nb", organization: "org-1"},
 			expected: apiExpected{err: apiEndpointInvalidErr},
 		},
 		{
-			name: "no api arg invalid response returns decode error",
+			name:  "no api arg invalid response returns decode error",
+			input: apiInput{organization: "org-1"},
 			mockEndpoints: getAPIEndpoints([]apiEndpointsConfig{
 				{
 					expectedMethod: http.MethodGet,
@@ -300,7 +305,7 @@ func TestAPICommand(t *testing.T) {
 		},
 		{
 			name:  "api GET invalid workbench response returns decode error",
-			input: apiInput{apiArg: apiArgCustom},
+			input: apiInput{apiArg: apiArgCustom, organization: "org-1"},
 			mockEndpoints: getAPIEndpoints([]apiEndpointsConfig{
 				{
 					expectedMethod: http.MethodGet,
@@ -315,7 +320,7 @@ func TestAPICommand(t *testing.T) {
 		},
 		{
 			name:  "api GET invalid auth0Admin response returns decode error",
-			input: apiInput{},
+			input: apiInput{organization: "org-1"},
 			mockEndpoints: getAPIEndpoints([]apiEndpointsConfig{
 				{
 					expectedMethod: http.MethodGet,
@@ -430,6 +435,9 @@ func getAPIArgs(
 	}
 	if tt.input.query != "" {
 		args = append(args, "--"+constants.QueryFlag, tt.input.query)
+	}
+	if tt.input.organization != "" {
+		args = append(args, "--"+constants.OrganizationFlag, tt.input.organization)
 	}
 	if tt.input.apiArg != "" {
 		args = append(args, tt.input.apiArg)

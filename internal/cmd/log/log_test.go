@@ -322,6 +322,7 @@ func getLogArgs(
 	args := []string{}
 	args = append(args, tt.input.resourceType)
 	args = append(args, "--"+constants.AuthModeFlag, constants.AuthModeDevice)
+	args = append(args, "--"+constants.OrganizationFlag, "org-1")
 	if tt.input.endpoint != "" {
 		args = append(args, "--"+constants.EndpointFlag, tt.input.endpoint)
 	}

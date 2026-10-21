@@ -90,6 +90,9 @@ const (
 	authTestDeviceModeInvalidControlPlaneURLErr = "failed to get device token\n" +
 		" Caused by:\n" +
 		"\t* parse \"a\\nb\": net/url: invalid control character in URL"
+	authTestDeviceModeMissingOrganizationErr = "failed to get device token\n" +
+		" Caused by:\n" +
+		"\t* --authmode=device requires --organization"
 	authTestPKCEModeInvalidControlPlaneURLErr = "failed to get pkce token\n" +
 		" Caused by:\n" +
 		"\t* parse \"a\\nb\": net/url: invalid control character in URL"
@@ -141,7 +144,7 @@ var (
 	successfulDevice = stubs.StubHTTPPartialPostConfig{
 		ExpectedRequestBody: `audience=discovered_audience` +
 			`&client_id=discovered_native_client_id` +
-			`&scope=` + url.QueryEscape(constants.OAuthScope),
+			`&scope=` + url.QueryEscape(constants.OAuthScope) + `+organization%3Aorg-1`,
 		ResponseStatus: http.StatusOK,
 		ResponseBody:   authTestDeviceAuthorizationBody,
 	}
@@ -488,7 +491,8 @@ func TestGetAccessToken(t *testing.T) {
 			// getAccessTokenByPassword must warn and still return the token.
 			name: "device mode save failure - temp file creation error warns and returns token",
 			input: authInput{
-				authMode: constants.AuthModeDevice,
+				authMode:     constants.AuthModeDevice,
+				organization: "org-1",
 				openFileFunc: func(
 					base afero.Fs,
 					name string,
@@ -518,7 +522,8 @@ func TestGetAccessToken(t *testing.T) {
 			// save must warn and still return the token.
 			name: "device mode save failure - temp file close error warns and returns token",
 			input: authInput{
-				authMode: constants.AuthModeDevice,
+				authMode:     constants.AuthModeDevice,
+				organization: "org-1",
 				openFileFunc: func(
 					base afero.Fs,
 					name string,
@@ -553,7 +558,8 @@ func TestGetAccessToken(t *testing.T) {
 			// deferred save must warn and still return the token.
 			name: "device mode save failure - write error warns and returns token",
 			input: authInput{
-				authMode: constants.AuthModeDevice,
+				authMode:     constants.AuthModeDevice,
+				organization: "org-1",
 				openFileFunc: func(
 					base afero.Fs,
 					name string,

@@ -32,9 +32,10 @@ const (
 )
 
 type authInput struct {
-	authMode string
-	clientID string
-	endpoint string
+	authMode     string
+	clientID     string
+	endpoint     string
+	organization string
 }
 
 type authEndpointsConfig struct {
@@ -76,7 +77,8 @@ func TestGetAccessTokens(t *testing.T) {
 		{
 			name: "csrf request failure",
 			input: authInput{
-				authMode: constants.AuthModeDevice,
+				authMode:     constants.AuthModeDevice,
+				organization: "org-1",
 			},
 			mockEndpoints: getAuthEndpoints(
 				authEndpointsConfig{
@@ -88,7 +90,8 @@ func TestGetAccessTokens(t *testing.T) {
 				accessToken: "at",
 				err:         cmdAuthExpectedCSRFFailureErrFormat,
 				displays: []string{"Open this URL in your browser and complete the authorization:\n" +
-					"${URL}/authorization?client_id=discovered_spa_client_id&redirect_uri=verification_uri_complete&" +
+					"${URL}/authorization?client_id=discovered_spa_client_id&" +
+					"organization=org-1&redirect_uri=verification_uri_complete&" +
 					"response_type=code&scope=openid+profile+offline_access"},
 			},
 		},
@@ -104,8 +107,9 @@ func TestGetAccessTokens(t *testing.T) {
 		{
 			name: "explicit client id honored",
 			input: authInput{
-				authMode: constants.AuthModeDevice,
-				clientID: "explicit_client_id",
+				authMode:     constants.AuthModeDevice,
+				clientID:     "explicit_client_id",
+				organization: "org-1",
 			},
 			mockEndpoints: getAuthEndpoints(
 				authEndpointsConfig{
@@ -194,6 +198,9 @@ func bindFlags(
 	if tt.input.clientID != "" {
 		args = append(args, "--"+constants.ClientIDFlag, tt.input.clientID)
 	}
+	if tt.input.organization != "" {
+		args = append(args, "--"+constants.OrganizationFlag, tt.input.organization)
+	}
 	require.NoError(t, mockCmd.ParseFlags(args))
 	flags.BindToViper(mockCmd, args)
 	return mockCmd
@@ -207,7 +214,7 @@ func getAuthEndpoints(config authEndpointsConfig) []stubs.StubHTTPEndpoint {
 		`grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code`
 	expectedDeviceBody := `audience=discovered_audience&` +
 		`client_id=discovered_native_client_id&` +
-		`scope=openid+profile+offline_access`
+		`scope=openid+profile+offline_access+organization%3Aorg-1`
 	if config.clientID != "" {
 		expectedTokenBody = fmt.Sprintf(
 			"audience=discovered_audience&"+
@@ -219,7 +226,7 @@ func getAuthEndpoints(config authEndpointsConfig) []stubs.StubHTTPEndpoint {
 		expectedDeviceBody = fmt.Sprintf(
 			"audience=discovered_audience&"+
 				"client_id=%s&"+
-				"scope=openid+profile+offline_access",
+				"scope=openid+profile+offline_access+organization%%3Aorg-1",
 			config.clientID,
 		)
 	}

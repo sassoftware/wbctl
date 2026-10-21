@@ -27,6 +27,10 @@ func getAccessTokenByDeviceGrant(
 	fsys afero.Fs,
 	params GetAccessTokenParams,
 ) (string, error) {
+	if params.Organization == "" {
+		err := errors.New(i18n.Format(i18n.AuthModeDeviceRequiresOrganization))
+		return "", errors.Wrap(err, i18n.Format(i18n.FailedToGetDeviceToken))
+	}
 	var tokenResp tokenResponse
 	var accessToken string
 	var err error

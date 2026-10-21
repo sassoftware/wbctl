@@ -33,7 +33,7 @@ var (
 // ExpectedDeviceAuthDisplay is the expected display when using the stub
 // auth endpoint.
 const ExpectedDeviceAuthDisplay = "Open this URL in your browser and complete the authorization:\n" +
-	"${URL}/authorization?client_id=discovered_spa_client_id&" +
+	"${URL}/authorization?client_id=discovered_spa_client_id&organization=org-1&" +
 	"redirect_uri=verification_uri_complete&response_type=code&scope=openid+profile+offline_access"
 
 // GetStubAuthEndpoints returns default endpoints that mock an authentication
@@ -84,7 +84,7 @@ func GetStubAuthEndpoints() []StubHTTPEndpoint {
 				URL:    "/device",
 				ExpectedBody: `audience=discovered_audience&` +
 					`client_id=discovered_native_client_id&` +
-					`scope=openid+profile+offline_access`,
+					`scope=openid+profile+offline_access+organization%3Aorg-1`,
 			},
 			Response: StubHTTPResponse{
 				Body: `
