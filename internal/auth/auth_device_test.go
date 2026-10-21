@@ -61,7 +61,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				clientID:     "explicit_client_id",
 				organization: "org-1",
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: `audience=discovered_audience` +
@@ -93,7 +93,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				clientID:     "explicit_client_id",
 				organization: "org-1",
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: `audience=discovered_audience` +
@@ -125,7 +125,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				organization: "org-1",
 				clientID:     "explicit_client_id",
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
 					ExpectedRequestBody: `audience=discovered_audience` +
@@ -156,7 +156,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				authMode:     constants.AuthModeDevice,
 				organization: "org-1",
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig:    successfulDeviceWithOrg,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
@@ -185,7 +185,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 					time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano),
 				),
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig:    successfulDevice,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{
@@ -226,7 +226,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 					time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano),
 				),
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig:    successfulDevice,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{
@@ -267,7 +267,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 					time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano),
 				),
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
 					ExpectedRequestBody: `audience=discovered_audience` +
@@ -297,7 +297,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				authMode:     constants.AuthModeDevice,
 				organization: "org-1",
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig:    successfulDevice,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
@@ -320,7 +320,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				authMode:     constants.AuthModeDevice,
 				organization: "org-1",
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
 					ExpectedRequestBody: expectedTokenRequestBody,
@@ -352,7 +352,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				authMode:     constants.AuthModeDevice,
 				organization: "org-1",
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig:    successfulDevice,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
@@ -378,7 +378,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				authMode:     constants.AuthModeDevice,
 				organization: "org-1",
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig:    successfulDevice,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
@@ -402,7 +402,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				authMode:     constants.AuthModeDevice,
 				organization: "org-1",
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig:    successfulDevice,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
@@ -427,7 +427,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				organization:  "org-1",
 				cancelContext: true,
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: `audience=discovered_audience` +
@@ -459,7 +459,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				organization:  "org-1",
 				cancelContext: true,
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: stubs.StubHTTPPartialGetConfig{
 					ResponseStatus: http.StatusOK,
 					ResponseBody: `{
@@ -489,7 +489,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				authMode:     constants.AuthModeDevice,
 				organization: "org-1",
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: `audience=discovered_audience` +
@@ -520,7 +520,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				authMode:     constants.AuthModeDevice,
 				organization: "org-1",
 			},
-			mockEndpoints: getLegacyDeviceEndpoints(deviceConfig{
+			mockEndpoints: getLegacyAuthEndpoints(authConfig{
 				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig:    successfulDevice,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
@@ -546,7 +546,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				organization: "org-1",
 				home:         homeAsFile,
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig:    successfulDevice,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
@@ -579,7 +579,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				organization: "org-1",
 				home:         homeAsUnset,
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig:    successfulDevice,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
@@ -607,7 +607,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				authMode:     constants.AuthModeDevice,
 				organization: "org-1",
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: stubs.StubHTTPPartialGetConfig{
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   `{"device_authorization_endpoint":"a\nb"}`,
@@ -623,7 +623,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				authMode:     constants.AuthModeDevice,
 				organization: "org-1",
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig:    successfulDevice,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
@@ -650,7 +650,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 					time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano),
 				),
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: stubs.StubHTTPPartialGetConfig{
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   `{"token_endpoint":"a\nb"}`,
@@ -669,7 +669,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				authMode:     constants.AuthModeDevice,
 				organization: "org-1",
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: successfulDeviceAuthDiscoveryWithClientID,
 				deviceConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: `audience=discovered_audience` +

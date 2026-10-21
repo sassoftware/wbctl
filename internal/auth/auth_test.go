@@ -65,11 +65,20 @@ const (
 		" Caused by:\n" +
 		"\t* GET ${URL}/auth0Admin/internal/.well-known/openid-configuration failed\n" +
 		"\t* 500 {\"error\":\"discovery\"}"
+	authTestDiscoveryFailurePasswordErrFormat = "failed to get username/password token\n" +
+		" Caused by:\n" +
+		"\t* GET ${URL}/auth0Admin/internal/.well-known/openid-configuration failed\n" +
+		"\t* 500 {\"error\":\"discovery\"}"
 	authTestGetCSRFFailureErrFormat = "failed to get CSRF token\n" +
 		" Caused by:\n" +
 		"\t* HEAD ${URL} failed\n" +
 		"\t* 500 "
-	authTestInvalidAuthModeErr           = "invalid --auth-mode: \"invalid\" (allowed: auto, password, device)"
+	authTestInvalidAuthModeErr            = "invalid --auth-mode: \"invalid\" (allowed: auto, password, device)"
+	authTestPasswordGrantFailureErrFormat = "failed to get username/password token\n" +
+		" Caused by:\n" +
+		"\t* POST ${URL}/token failed\n" +
+		"\t* 401 {\"error\":\"bad\"}"
+	authTestPasswordModeRequiresUsername = "--auth-mode=password requires --username" // nolint:gosec
 	authTestPollingAccessDeniedErrFormat = "failed to get device token\n" +
 		" Caused by:\n" +
 		"\t* POST ${URL}/token failed\n" +
@@ -81,12 +90,24 @@ const (
 	authTestDeviceAuthorizationTimeoutErr = "failed to get device token\n" +
 		" Caused by:\n" +
 		"\t* device authorization timeout"
+	authTestPasswordModeEmptyAccessTokenErr = "failed to get username/password token\n" +
+		" Caused by:\n" +
+		"\t* token response missing access_token"
 	authTestDeviceModeEmptyAccessTokenErr = "failed to get device token\n" +
 		" Caused by:\n" +
 		"\t* token response missing access_token"
+	authTestPasswordModeInvalidTokenURLErr = "failed to get username/password token\n" +
+		" Caused by:\n" +
+		"\t* parse \"a\\nb\": net/url: invalid control character in URL"
 	authTestDeviceModeInvalidDeviceURLErr = "failed to get device token\n" +
 		" Caused by:\n" +
 		"\t* parse \"a\\nb\": net/url: invalid control character in URL"
+	authTestClientCredentialsModeInvalidControlPlaneURLErr = "failed to get client credentials token\n" +
+		" Caused by:\n" +
+		"\t* parse \"a\\nb\": net/url: invalid control character in URL"
+	authTestClientCredentialsModeInvalidTokenEndpointURLErr = "failed to get client credentials token\n" +
+		" Caused by:\n" +
+		"\t* parse \"a\\x7fb\": net/url: invalid control character in URL"
 	authTestDeviceModeInvalidControlPlaneURLErr = "failed to get device token\n" +
 		" Caused by:\n" +
 		"\t* parse \"a\\nb\": net/url: invalid control character in URL"
@@ -109,6 +130,22 @@ var (
 	expectedTokenRequestBody = `audience=discovered_audience` +
 		`&client_id=discovered_native_client_id` +
 		`&device_code=dc&grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code`
+	successfulPasswordAuthDiscovery = stubs.StubHTTPPartialGetConfig{
+		ResponseStatus: http.StatusOK,
+		ResponseBody:   `{"token_endpoint":"http://${HOST}/token"}`,
+	}
+	successfulPasswordAuthDiscoveryWithClientID = stubs.StubHTTPPartialGetConfig{
+		ResponseStatus: http.StatusOK,
+		ResponseBody: `
+{
+  "token_endpoint": "http://${HOST}/token",
+  "workbench": {
+    "spa_audience": "discovered_audience",
+    "native_client_id": "discovered_client_id"
+  }
+}
+`,
+	}
 	successfulDeviceAuthDiscovery = stubs.StubHTTPPartialGetConfig{
 		ResponseStatus: http.StatusOK,
 		ResponseBody:   `{"token_endpoint":"http://${HOST}/token", "device_authorization_endpoint":"http://${HOST}/device"}`,
@@ -315,6 +352,7 @@ type authInput struct {
 	authMode             string
 	controlPlaneEndpoint string
 	clientID             string
+	clientSecret         string
 	cache                string
 	askResponses         []string
 	readOnlyCache        bool
@@ -415,7 +453,7 @@ func TestGetAccessToken(t *testing.T) {
 					time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano),
 				),
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: successfulDeviceAuthDiscovery,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
 					ExpectedRequestBody: `audience=` + url.QueryEscape(constants.OAuthAudience) +
@@ -444,7 +482,7 @@ func TestGetAccessToken(t *testing.T) {
 					time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano),
 				),
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: stubs.StubHTTPPartialGetConfig{
 					ResponseStatus: http.StatusInternalServerError,
 					ResponseBody:   `{"error":"discovery"}`,
@@ -464,7 +502,7 @@ func TestGetAccessToken(t *testing.T) {
 				),
 				readOnlyCache: true,
 			},
-			mockEndpoints: getDeviceEndpoints(deviceConfig{
+			mockEndpoints: getAuthEndpoints(authConfig{
 				discoveryConfig: successfulDeviceAuthDiscovery,
 				tokenConfigs: []stubs.StubHTTPPartialPostConfig{{
 					ExpectedRequestBody: `audience=` + url.QueryEscape(constants.OAuthAudience) +
@@ -688,6 +726,7 @@ func makeAuthTestFunc(tt authTestCase) func(t *testing.T) {
 				ControlPlaneEndpoint: controlPlaneEndpoint,
 				AuthMode:             tt.input.authMode,
 				ClientID:             tt.input.clientID,
+				ClientSecret:         tt.input.clientSecret,
 				NoListen:             tt.input.noListen,
 				Organization:         tt.input.organization,
 			},
@@ -898,7 +937,7 @@ func getPKCEEndpoints(
 	}
 }
 
-type deviceConfig struct {
+type authConfig struct {
 	discoveryConfig stubs.StubHTTPPartialGetConfig
 	tokenConfigs    []stubs.StubHTTPPartialPostConfig
 	deviceConfig    stubs.StubHTTPPartialPostConfig
@@ -906,7 +945,7 @@ type deviceConfig struct {
 
 func getDeviceAuthEndpoints(
 	authURL string,
-	config deviceConfig,
+	config authConfig,
 ) []stubs.StubHTTPEndpoint {
 	endpoints := make([]stubs.StubHTTPEndpoint, 0, len(config.tokenConfigs)+2)
 	endpoints = append(endpoints, []stubs.StubHTTPEndpoint{
@@ -955,14 +994,14 @@ func getDeviceAuthEndpoints(
 	return endpoints
 }
 
-func getDeviceEndpoints(
-	config deviceConfig,
+func getAuthEndpoints(
+	config authConfig,
 ) []stubs.StubHTTPEndpoint {
 	return getDeviceAuthEndpoints(constants.AuthWellKnownPath, config)
 }
 
-func getLegacyDeviceEndpoints(
-	config deviceConfig,
+func getLegacyAuthEndpoints(
+	config authConfig,
 ) []stubs.StubHTTPEndpoint {
 	return getDeviceAuthEndpoints(constants.AuthLegacyWellKnownPath, config)
 }

@@ -17,6 +17,7 @@ type GetAccessTokenParams struct {
 	Organization         string
 	AuthMode             string
 	ClientID             string
+	ClientSecret         string
 	IgnoreTokenCache     bool
 	NoListen             bool
 }

@@ -115,6 +115,7 @@ func AddRootFlags(cmd *cobra.Command) {
 	flags.AddIngressHostFlag(cmd)
 	flags.AddOrganizationFlag(cmd)
 	flags.AddClientIDFlag(cmd)
+	flags.AddClientSecretFlag(cmd)
 }
 
 func createCommands(

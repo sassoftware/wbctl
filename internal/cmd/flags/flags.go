@@ -498,6 +498,18 @@ func AddClientIDFlag(cmd *cobra.Command) {
 	_ = cmd.PersistentFlags().MarkHidden(constants.ClientIDFlag)
 }
 
+// AddClientSecretFlag adds the persistent client-secret flag to the command.
+func AddClientSecretFlag(cmd *cobra.Command) {
+	cmd.PersistentFlags().String(
+		constants.ClientSecretFlag,
+		"",
+		i18n.Format(i18n.FlagClientSecretUsage),
+	)
+	// MarkHidden can only fail if the flag does not exist, but we just added
+	// the flag so the error can be ignored.
+	_ = cmd.PersistentFlags().MarkHidden(constants.ClientSecretFlag)
+}
+
 // BindToViper binds all the flags to viper. This cannot be done when the flags
 // are created because multiple commands have the same flags and viper maintains
 // a flat list. This means that `viper.GetString("name")` will look in the last
@@ -515,4 +527,5 @@ func BindToViper(
 	})
 	// BindEnv can only fail if given zero arguments.
 	_ = viper.BindEnv(constants.ClientIDFlag, constants.ClientIDEnvVar)
+	_ = viper.BindEnv(constants.ClientSecretFlag, constants.ClientSecretEnvVar)
 }
