@@ -22,8 +22,7 @@ Available Commands:
   <a href='wbctl update.md'>update</a>      Update Workbench resources
 
 Flags:
-  -m, --auth-mode string      Authentication mode. One of: auto, pkce, client-credentials, password, device. (default "device")
-      --client-id string      The client-id to authenticate with the Workbench API ($WBCLIENTID).
+  -m, --auth-mode string      Authentication mode. One of: device, pkce. (default "device")
   -e, --endpoint string       The Workbench API endpoint URL.
   -h, --help                  help for wbctl
       --ignore-token-cache    Ignore token cache.
