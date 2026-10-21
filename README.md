@@ -59,47 +59,29 @@ in this file as a top level field. For example:
 ```
 {
   "auth-mode": "pkce",
-  "client-id": "myclientid",
   "endpoint": "https://workbench.sas.com",
   "organization": "myorganization",
   "output": "json"
 }
 ```
 
-This file is loaded with [viper](https://github.com/spf13/viper). It and can be
-any of the file formats supported by viper.
-
 ## Authentication
 
-`wbctl` supports four OAuth authentication methods selected by `--auth-mode`:
+`wbctl` supports two OAuth authentication methods selected by `--auth-mode`:
 
-1. **PKCE flow**:
+1. **Device authorization flow**:
+    - Set `--auth-mode device`
+    - Open the displayed url in your browser to authorize the device with the
+      displayed device code
+    - Example: `wbctl --auth-mode device -e https://workbench.sas.com get workbenches`
+
+2. **PKCE flow**:
    - Set `--auth-mode pkce`
-   - Use `--client-id` from the Workbench UI.
    - Open the displayed url in your browser to authorize with your
      username/password
-   - Example: `wbctl --auth-mode pkce --client-id myworkbenchclientid -e https://workbench.sas.com get workbeches`
+   - Example: `wbctl --auth-mode pkce -e https://workbench.sas.com get workbeches`
 
-2. **Client credentials flow**:
-   - Set `--auth-mode client-credentials`
-   - Use `--client-id` and `--client-secret` (or env vars `WBCLIENTID` and
-     `WBCLIENTSECRET`)
-
-3. **Resource owner password credentials**:
-   - Set `--auth-mode password`
-   - Use `--username` and `--password` (or env vars `WBUSERNAME` and
-     `WBPASSWORD`)
-   - Example: `wbctl --auth-mode password -u myuser -p mypass -e https://workbench.sas.com get workbenches`
-
-4. **Device authorization flow**:
-   - Set `--auth-mode device`
-   - Open the displayed url in your browser to authorize the device with the
-     displayed device code
-   - Example: `wbctl --auth-mode device -e https://workbench.sas.com get workbenches`
-
-`--auth-mode auto` is the default. In `auto`, `wbctl` uses password grant when
-`--username` is provided, client credentials when `--client-secret` is provided,
-and otherwise it uses PKCE flow. Device flow must be selected explicitly.
+`--auth-mode device` is the default.
 
 ## Examples
 
@@ -417,11 +399,8 @@ Authenticate once and cache the token so subsequent commands do not require
 repeated authorization:
 
 ```shell
-# Password grant
-> ./wbctl --auth-mode password -u myuser -p mypass -e https://workbench.sas.com login
-
 # PKCE grant (presents login url)
-> ./wbctl --auth-mode pkce --client-id c02CN89N2kDsYtRFkm49x6gsPmF6NB5Y -e https://workbench.sas.com login
+> ./wbctl --auth-mode pkce -e https://workbench.sas.com login
 ```
 
 ### Create Job
