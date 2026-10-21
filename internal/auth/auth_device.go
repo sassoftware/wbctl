@@ -187,12 +187,13 @@ func displayDeviceInstructions(
 	// If we have been given a client ID then assume the user wants normal device auth.
 	if clientID != "" {
 		if d.VerificationURIComplete != "" {
-			_ui.Display(i18n.Format(i18n.OpenThisURLInYourBrowser, i18n.A{
-				constants.I18nArgKeyURL: d.VerificationURIComplete,
+			_ui.Display(i18n.Format(i18n.DeviceOpenThisURLInYourBrowser, i18n.A{
+				constants.I18nArgKeyURL:  d.VerificationURIComplete,
+				constants.I18nArgKeyCode: d.UserCode,
 			}))
 			return
 		}
-		_ui.Display(i18n.Format(i18n.OpenURLAndEnterCode, i18n.A{
+		_ui.Display(i18n.Format(i18n.DeviceOpenURLAndEnterCode, i18n.A{
 			constants.I18nArgKeyURL:  d.VerificationURI,
 			constants.I18nArgKeyCode: d.UserCode,
 		}))
@@ -209,12 +210,13 @@ func displayDeviceInstructions(
 	}
 	if d.VerificationURIComplete != "" {
 		data.Set(constants.QueryParameterRedirectURI, d.VerificationURIComplete)
-		msg = i18n.Format(i18n.OpenThisURLInYourBrowser, i18n.A{
-			constants.I18nArgKeyURL: cfg.AuthorizationEndpoint + "?" + data.Encode(),
+		msg = i18n.Format(i18n.DeviceOpenThisURLInYourBrowser, i18n.A{
+			constants.I18nArgKeyURL:  cfg.AuthorizationEndpoint + "?" + data.Encode(),
+			constants.I18nArgKeyCode: d.UserCode,
 		})
 	} else {
 		data.Set(constants.QueryParameterRedirectURI, d.VerificationURI)
-		msg = i18n.Format(i18n.OpenURLAndEnterCode, i18n.A{
+		msg = i18n.Format(i18n.DeviceOpenURLAndEnterCode, i18n.A{
 			constants.I18nArgKeyURL:  cfg.AuthorizationEndpoint + "?" + data.Encode(),
 			constants.I18nArgKeyCode: d.UserCode,
 		})

@@ -32,7 +32,8 @@ var (
 
 // ExpectedDeviceAuthDisplay is the expected display when using the stub
 // auth endpoint.
-const ExpectedDeviceAuthDisplay = "Open this URL in your browser and complete the authorization:\n" +
+const ExpectedDeviceAuthDisplay = "Open this URL in your browser," +
+	" complete the authorization, and verify the code 'user-code':\n" +
 	"${URL}/authorization?client_id=discovered_spa_client_id&organization=org-1&" +
 	"redirect_uri=verification_uri_complete&response_type=code&scope=openid+profile+offline_access"
 

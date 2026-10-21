@@ -114,7 +114,7 @@ func getCodeFromPKCEManualFlow(
 ) (string, error) {
 	authState.callbackURL = constants.PKCECallbackURL
 	authURL := cfg.AuthorizationEndpoint + "?" + buildPKCELoopbackValues(authState, cfg).Encode()
-	msg := i18n.Format(i18n.OpenThisURLInYourBrowser, i18n.A{
+	msg := i18n.Format(i18n.PKCEOpenThisURLInYourBrowser, i18n.A{
 		constants.I18nArgKeyURL: authURL,
 	})
 	_ui.Display(msg)
@@ -154,7 +154,7 @@ func getCodeFromPKCELoopbackFlow(
 	}
 	authURL := cfg.AuthorizationEndpoint + "?" + buildPKCELoopbackValues(authState, cfg).Encode()
 
-	msg := i18n.Format(i18n.OpenThisURLInYourBrowser, i18n.A{
+	msg := i18n.Format(i18n.PKCEOpenThisURLInYourBrowser, i18n.A{
 		constants.I18nArgKeyURL: authURL,
 	})
 	_ui.Display(msg)

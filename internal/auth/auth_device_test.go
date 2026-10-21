@@ -80,7 +80,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			}),
 			expected: authExpected{
 				token:    "device",
-				displays: []string{"Open https://verify and enter code: uc"},
+				displays: []string{"Open https://verify in your browser and enter code: uc"},
 				cachedToken: &expectedTokenCache{
 					accessToken: "device",
 				},
@@ -112,7 +112,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			}),
 			expected: authExpected{
 				token:    "device",
-				displays: []string{"Open https://verify and enter code: uc"},
+				displays: []string{"Open https://verify in your browser and enter code: uc"},
 				cachedToken: &expectedTokenCache{
 					accessToken: "device",
 				},
@@ -145,7 +145,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			expected: authExpected{
 				token: "device-verify-complete",
 				displays: []string{
-					"Open this URL in your browser and complete the authorization:\n" +
+					"Open this URL in your browser, complete the authorization, and verify the code 'uc':\n" +
 						"https://verify.complete",
 				},
 			},
@@ -169,7 +169,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				token: "device",
 				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
 					"organization=org-1&redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
-					"scope=openid+profile+offline_access and enter code: uc"},
+					"scope=openid+profile+offline_access in your browser and enter code: uc"},
 				cachedToken: &expectedTokenCache{
 					accessToken: "device",
 				},
@@ -207,7 +207,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
 					"organization=org-1&" +
 					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
-					"scope=openid+profile+offline_access and enter code: uc"},
+					"scope=openid+profile+offline_access in your browser and enter code: uc"},
 				warns: []string{"falling back to full reauthorization"},
 				cachedToken: &expectedTokenCache{
 					accessToken:  "device-ok",
@@ -248,7 +248,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
 					"organization=org-1&" +
 					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
-					"scope=openid+profile+offline_access and enter code: uc"},
+					"scope=openid+profile+offline_access in your browser and enter code: uc"},
 				cachedToken: &expectedTokenCache{
 					accessToken:  "device2",
 					refreshToken: "d2",
@@ -311,7 +311,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
 					"organization=org-1&" +
 					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
-					"scope=openid+profile+offline_access and enter code: uc"},
+					"scope=openid+profile+offline_access in your browser and enter code: uc"},
 			},
 		},
 		{
@@ -338,7 +338,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			expected: authExpected{
 				token: "device-verify-complete",
 				displays: []string{
-					"Open this URL in your browser and complete the authorization:\n" +
+					"Open this URL in your browser, complete the authorization, and verify the code 'uc':\n" +
 						"${URL}/authorization?client_id=discovered_spa_client_id&" +
 						"organization=org-1&" +
 						"redirect_uri=https%3A%2F%2Fverify.complete&response_type=code&" +
@@ -367,7 +367,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
 					"organization=org-1&" +
 					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
-					"scope=openid+profile+offline_access and enter code: uc"},
+					"scope=openid+profile+offline_access in your browser and enter code: uc"},
 			},
 		},
 		{
@@ -393,7 +393,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
 					"organization=org-1&" +
 					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
-					"scope=openid+profile+offline_access and enter code: uc"},
+					"scope=openid+profile+offline_access in your browser and enter code: uc"},
 			},
 		},
 		{
@@ -417,7 +417,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
 					"organization=org-1&" +
 					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
-					"scope=openid+profile+offline_access and enter code: uc"},
+					"scope=openid+profile+offline_access in your browser and enter code: uc"},
 			},
 		},
 		{
@@ -449,7 +449,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
 					"organization=org-1&" +
 					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
-					"scope=openid+profile+offline_access and enter code: uc"},
+					"scope=openid+profile+offline_access in your browser and enter code: uc"},
 			},
 		},
 		{
@@ -480,7 +480,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
 					"organization=org-1&" +
 					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
-					"scope=openid+profile+offline_access and enter code: uc"},
+					"scope=openid+profile+offline_access in your browser and enter code: uc"},
 			},
 		},
 		{
@@ -510,7 +510,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 					"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
 						"organization=org-1&" +
 						"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
-						"scope=openid+profile+offline_access and enter code: uc",
+						"scope=openid+profile+offline_access in your browser and enter code: uc",
 				},
 			},
 		},
@@ -534,7 +534,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
 					"organization=org-1&" +
 					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
-					"scope=openid+profile+offline_access and enter code: uc"},
+					"scope=openid+profile+offline_access in your browser and enter code: uc"},
 				modernDiscoveryHits: 1,
 				legacyDiscoveryHits: 1,
 			},
@@ -560,7 +560,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
 					"organization=org-1&" +
 					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
-					"scope=openid+profile+offline_access and enter code: uc"},
+					"scope=openid+profile+offline_access in your browser and enter code: uc"},
 				warns: []string{
 					"failed to load token cache" +
 						"\n Caused by:" +
@@ -593,7 +593,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
 					"organization=org-1&" +
 					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
-					"scope=openid+profile+offline_access and enter code: uc"},
+					"scope=openid+profile+offline_access in your browser and enter code: uc"},
 				warns: []string{
 					osutil.HomeEnvVarName() + " is not defined",
 					"failed to save device token: failed to save token cache\n Caused by:\n\t* " +
@@ -637,7 +637,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
 					"organization=org-1&" +
 					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
-					"scope=openid+profile+offline_access and enter code: uc"},
+					"scope=openid+profile+offline_access in your browser and enter code: uc"},
 			},
 		},
 		{
@@ -691,7 +691,7 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				displays: []string{"Open ${URL}/authorization?client_id=discovered_spa_client_id&" +
 					"organization=org-1&" +
 					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
-					"scope=openid+profile+offline_access and enter code: uc"},
+					"scope=openid+profile+offline_access in your browser and enter code: uc"},
 				cachedToken: &expectedTokenCache{
 					accessToken: "device",
 				},

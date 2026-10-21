@@ -89,7 +89,8 @@ func TestGetAccessTokens(t *testing.T) {
 			expected: authExpected{
 				accessToken: "at",
 				err:         cmdAuthExpectedCSRFFailureErrFormat,
-				displays: []string{"Open this URL in your browser and complete the authorization:\n" +
+				displays: []string{"Open this URL in your browser," +
+					" complete the authorization, and verify the code 'user-code':\n" +
 					"${URL}/authorization?client_id=discovered_spa_client_id&" +
 					"organization=org-1&redirect_uri=verification_uri_complete&" +
 					"response_type=code&scope=openid+profile+offline_access"},
@@ -120,7 +121,8 @@ func TestGetAccessTokens(t *testing.T) {
 				}),
 			expected: authExpected{
 				accessToken: "at",
-				displays: []string{"Open this URL in your browser and complete the authorization:\n" +
+				displays: []string{"Open this URL in your browser, " +
+					"complete the authorization, and verify the code 'user-code':\n" +
 					"verification_uri_complete"},
 			},
 		},
