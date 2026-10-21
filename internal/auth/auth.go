@@ -115,6 +115,8 @@ func GetAccessToken(
 		return getAccessTokenByDeviceGrant(ctx, _ui, fsys, params)
 	case constants.AuthModePKCE:
 		return getAccessTokenByPKCE(ctx, _ui, fsys, params)
+	case constants.AuthModeClientCredentials:
+		return getAccessTokenByClientSecret(ctx, _ui, fsys, params)
 	default:
 		return "", errors.New(i18n.Format(i18n.InvalidAuthMode, i18n.A{
 			constants.I18nArgKeyAuthMode: authMode,

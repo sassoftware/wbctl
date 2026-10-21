@@ -570,6 +570,19 @@ func TestExportedFlags(t *testing.T) {
 			viperKey:      constants.ClientIDFlag,
 			expectedValue: "",
 		},
+		{
+			name:          "ClientSecretFlag",
+			call:          flags.AddClientSecretFlag,
+			args:          []string{"--" + constants.ClientSecretFlag, "client-secret-value"},
+			viperKey:      constants.ClientSecretFlag,
+			expectedValue: "client-secret-value",
+		},
+		{
+			name:          "ClientSecretFlagDefault",
+			call:          flags.AddClientSecretFlag,
+			viperKey:      constants.ClientSecretFlag,
+			expectedValue: "",
+		},
 	}
 
 	for _, tt := range tests {
