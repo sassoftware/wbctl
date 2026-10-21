@@ -4,6 +4,7 @@
 package auth
 
 import (
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -66,7 +67,7 @@ func getCachedTokenFor(fsys afero.Fs, endpoint string) (cachedToken, error) {
 	if err != nil {
 		return cachedToken{}, err
 	}
-	return getTokenFromCacheFunc(endpoint, cache), nil
+	return getTokenFromCache(endpoint, cache), nil
 }
 
 // saveTokenToCache converts the given token to the cached representation and saves
@@ -86,6 +87,7 @@ func saveTokenToCache(fsys afero.Fs, endpoint string, responseToken tokenRespons
 		TokenType:    responseToken.TokenType,
 		ExpiresAt:    timeNow().UTC().Add(time.Duration(responseToken.ExpiresIn) * time.Second),
 	}
+	endpoint = normalizeEndpoint(endpoint)
 	cache[endpoint] = ct
 	dir := filepath.Dir(path)
 	err = fsys.MkdirAll(dir, 0o700)
@@ -147,13 +149,25 @@ func saveCache(
 	return nil
 }
 
-func getTokenFromCacheFunc(
+func getTokenFromCache(
 	endpoint string,
 	cache tokenCache,
 ) cachedToken {
+	endpoint = normalizeEndpoint(endpoint)
 	found, present := cache[endpoint]
 	if !present {
 		return cachedToken{}
 	}
 	return found
+}
+
+func normalizeEndpoint(endpoint string) string {
+	parsedEndpoint, err := url.Parse(endpoint)
+	if err == nil {
+		parsedEndpoint.Path = ""
+		parsedEndpoint.RawQuery = ""
+		parsedEndpoint.Fragment = ""
+		endpoint = parsedEndpoint.String()
+	}
+	return endpoint
 }
