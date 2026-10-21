@@ -17,15 +17,7 @@ import (
 )
 
 const (
-	loginEndpointRequiredErr     = "--endpoint must be specified"
-	loginPasswordGrantFailureErr = "failed to get username/password token\n" +
-		" Caused by:\n" +
-		"\t* GET ignored-endpoint/auth0Admin/internal/.well-known/openid-configuration failed\n" +
-		"\t* Get \"ignored-endpoint/auth0Admin/internal/.well-known/openid-configuration\": unsupported protocol scheme \"\""
-	loginClientCredentialsGrantFailureErr = "failed to get client credentials token\n" +
-		" Caused by:\n" +
-		"\t* GET ignored-endpoint/auth0Admin/internal/.well-known/openid-configuration failed\n" +
-		"\t* Get \"ignored-endpoint/auth0Admin/internal/.well-known/openid-configuration\": unsupported protocol scheme \"\""
+	loginEndpointRequiredErr = "--endpoint must be specified"
 )
 
 type loginInput struct {
@@ -54,11 +46,11 @@ type loginTestCase struct {
 func TestLoginCommand(t *testing.T) {
 	tests := []loginTestCase{
 		{
-			name: "nothing provided by user, assumes pkce",
+			name: "nothing provided by user, assumes device",
 			expected: loginExpected{
 				err: loginEndpointRequiredErr,
 				asks: []string{
-					"Authentication mode: pkce, client_id, password, or device (default \"pkce\")",
+					"Authentication mode: device or password (default \"device\")",
 					"Endpoint URL",
 				},
 			},

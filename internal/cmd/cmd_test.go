@@ -43,6 +43,7 @@ func TestCreateRoot(t *testing.T) {
 		constants.EditCommandName,
 		constants.APICommandName,
 		constants.LoginCommandName,
+		constants.LogoutCommandName,
 		constants.LogCommandName,
 		constants.StopCommandName,
 		constants.StartCommandName,

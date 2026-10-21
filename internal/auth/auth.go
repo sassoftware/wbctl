@@ -99,7 +99,8 @@ func GetCSRFToken(
 	return "", nil
 }
 
-// GetAccessToken retrieves an access token using the configured auth mode.
+// GetAccessToken retrieves an access token. The cache is checked first and, if
+// a valid token is not found, the specified auth mode is used to create one.
 func GetAccessToken(
 	ctx context.Context,
 	_ui ui.UI,
@@ -122,6 +123,14 @@ func GetAccessToken(
 			constants.I18nArgKeyAuthMode: authMode,
 		}))
 	}
+}
+
+// RemoveAccessToken removes an access token from the token cache.
+func RemoveAccessToken(
+	fsys afero.Fs,
+	controlPlaneEndpoint string,
+) error {
+	return removeTokenFromCache(fsys, controlPlaneEndpoint)
 }
 
 func deferSaveTokenToCache(
