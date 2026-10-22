@@ -26,15 +26,17 @@ Available Commands:
   delete      Delete Workbench resources
   describe    Describe Workbench resources in detail
   edit        Edit Workbench resources
-  get         Display Workbench resources
+  get         Print Workbench resources
   help        Help about any command
   login       Authenticate and cache an access token
+  logout      Remove cached access token
   logs        Fetch the logs of Workbench resources
   rebuild     Rebuild Workbench image
   settings    Manage user settings
   start       Start stopped Workbench resources
   stop        Stop running Workbench resources
   update      Update Workbench resources
+  version     Print version information
 
 Flags:
   -m, --auth-mode string      Authentication mode. One of: device, pkce. (default "device")

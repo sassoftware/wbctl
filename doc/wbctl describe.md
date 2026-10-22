@@ -1,5 +1,5 @@
 <pre>
-Prints a detailed description of one or many Workbench resources.
+Print a detailed description of one or many Workbench resources.
 
 Usage:
   wbctl describe [command]

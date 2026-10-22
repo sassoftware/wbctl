@@ -23,6 +23,7 @@ import (
 	"github.com/sassoftware/wbctl/internal/cmd/rebuild"
 	"github.com/sassoftware/wbctl/internal/cmd/settings"
 	"github.com/sassoftware/wbctl/internal/cmd/state"
+	"github.com/sassoftware/wbctl/internal/cmd/version"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/i18n"
 	"github.com/sassoftware/wbctl/internal/ui"
@@ -140,5 +141,6 @@ func createCommands(
 		cancel.Command(ctx, fsys, _ui),
 		rebuild.Command(ctx, fsys, _ui),
 		settings.Command(ctx, fsys, _ui),
+		version.Command(ctx, fsys, _ui),
 	}
 }
