@@ -311,6 +311,7 @@ const (
 	UsersType                                       = "users"
 	ValueFlag                                       = "value"
 	ValueUnknown                                    = "<unknown>"
+	VersionCommandName                              = "version"
 	VolumeCommandName                               = "volume"
 	VolumeConflictCommandName                       = "volume-conflict"
 	VolumeConflictType                              = "volume-conflict"

@@ -11,7 +11,7 @@ Available Commands:
   <a href='wbctl delete.md'>delete</a>      Delete Workbench resources
   <a href='wbctl describe.md'>describe</a>    Describe Workbench resources in detail
   <a href='wbctl edit.md'>edit</a>        Edit Workbench resources
-  <a href='wbctl get.md'>get</a>         Display Workbench resources
+  <a href='wbctl get.md'>get</a>         Print Workbench resources
   help        Help about any command
   <a href='wbctl login.md'>login</a>       Authenticate and cache an access token
   <a href='wbctl logout.md'>logout</a>      Remove cached access token
@@ -21,6 +21,7 @@ Available Commands:
   <a href='wbctl start.md'>start</a>       Start stopped Workbench resources
   <a href='wbctl stop.md'>stop</a>        Stop running Workbench resources
   <a href='wbctl update.md'>update</a>      Update Workbench resources
+  <a href='wbctl version.md'>version</a>     Print version information
 
 Flags:
   -m, --auth-mode string      Authentication mode. One of: device, pkce. (default "device")

@@ -1,5 +1,5 @@
 <pre>
-Prints detailed information about the Job-Submission resources identified by an optional list of resource ids. All resources printed if no ids provided.
+Print detailed information about the Job-Submission resources identified by an optional list of resource ids. All resources printed if no ids provided.
 
 Usage:
   wbctl describe job-submissions [flags]

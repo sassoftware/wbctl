@@ -1,5 +1,5 @@
 <pre>
-Prints a table of basic information about one or many Workbench resources.
+Print a table of basic information about one or many Workbench resources.
 
 Usage:
   wbctl get [command]

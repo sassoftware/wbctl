@@ -1,5 +1,5 @@
 <pre>
-Prints a table of basic information about the Snapshot resources identified by an optional list of resource ids. All resources printed if no ids provided.
+Print a table of basic information about the Snapshot resources identified by an optional list of resource ids. All resources printed if no ids provided.
 
 Usage:
   wbctl get snapshots [flags]
