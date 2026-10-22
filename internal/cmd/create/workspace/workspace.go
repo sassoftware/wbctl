@@ -465,7 +465,7 @@ func validateCreateOptions(
 				if sc.Properties[constants.DefaultKey] == true {
 					storageClass = sc.ID
 					v.Set(constants.StorageClassFlag, storageClass)
-					_ui.Warn(i18n.Format(i18n.WarningDeafultStorageClass, i18n.A{"storageclass": storageClass}))
+					_ui.Warn(i18n.Format(i18n.WarningDefaultStorageClass, i18n.A{"storageclass": storageClass}))
 					break
 				}
 			}

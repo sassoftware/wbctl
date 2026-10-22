@@ -174,4 +174,5 @@ var wbctlMessages = "\n" +
 	"wbctl-cli-icu.unsupported.type.msg=unsupported type: {type}\n" +
 	"wbctl-cli-icu.warning.deafult.storage.class.msg=defaulting to '{storageclass}' storage class\n" +
 	"wbctl-cli-icu.warning.no.volume.specified.msg=no volume specified\n" +
+	"wbctl-cli-icu.version.display.msg={version}\n" +
 	""
