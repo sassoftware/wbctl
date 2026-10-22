@@ -181,7 +181,8 @@ const (
 	UnsupportedMethod                    = BundleID + ".unsupported.method.msg"
 	UnsupportedSortKeys                  = BundleID + ".unsupported.sort.keys.msg"
 	UnsupportedType                      = BundleID + ".unsupported.type.msg"
-	WarningDeafultStorageClass           = BundleID + ".warning.deafult.storage.class.msg"
+	VersionDisplay                       = BundleID + ".version.display.msg"
+	WarningDefaultStorageClass           = BundleID + ".warning.deafult.storage.class.msg"
 	WarningNoVolumeSpecified             = BundleID + ".warning.no.volume.specified.msg"
 )
 

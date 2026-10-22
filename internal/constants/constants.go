@@ -23,6 +23,9 @@ const (
 	AuthWellKnownPath                               = "/auth0Admin/internal/.well-known/openid-configuration"
 	AuthenticationCompleteHTML                      = "<html><body>Authentication complete. You can close this tab.</body></html>" // nolint:lll
 	AuthorizationHeaderKey                          = "Authorization"
+	BuildSettingGOARCHKey                           = "GOARCH"
+	BuildSettingGOOSKey                             = "GOOS"
+	BuildSettingVCSRevisionKey                      = "vcs.revision"
 	CancelCommandName                               = "cancel"
 	ClientIDEnvVar                                  = "WBCLIENTID"
 	ClientIDFlag                                    = "client-id"

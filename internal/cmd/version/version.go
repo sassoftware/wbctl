@@ -8,6 +8,8 @@ import (
 
 	cmdtypes "github.com/sassoftware/wbctl/internal/cmd/types"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/debugutil"
+	"github.com/sassoftware/wbctl/internal/i18n"
 	"github.com/sassoftware/wbctl/internal/ui"
 	"github.com/sassoftware/wbctl/internal/wbctljson"
 	"github.com/spf13/cobra"
@@ -15,7 +17,14 @@ import (
 )
 
 type version struct {
-	Version string `json:"version"`
+	ClientVersion clientVersion `json:"clientVersion"`
+}
+
+type clientVersion struct {
+	Version   string `json:"version"`
+	GitCommit string `json:"gitCommit"`
+	GoVersion string `json:"goVersion"`
+	Platform  string `json:"platform"`
 }
 
 // newVersionFunction creates a command action that prints the current version
@@ -33,7 +42,13 @@ func newVersionFunction(
 			buildInfo = actualBuildInfo
 		}
 		ver := version{
-			Version: buildInfo.Main.Version,
+			ClientVersion: clientVersion{
+				Version:   buildInfo.Main.Version,
+				GitCommit: debugutil.GetSetting(buildInfo.Settings, constants.BuildSettingVCSRevisionKey),
+				GoVersion: buildInfo.GoVersion,
+				Platform: debugutil.GetSetting(buildInfo.Settings, constants.BuildSettingGOOSKey) + "/" +
+					debugutil.GetSetting(buildInfo.Settings, constants.BuildSettingGOARCHKey),
+			},
 		}
 		if constants.JSONOutputValue == viper.GetString(constants.OutputFlag) {
 			response, err := wbctljson.MakeMarshaler[version](wbctljson.ViewOptions)(ver)
@@ -42,7 +57,7 @@ func newVersionFunction(
 			}
 			return err
 		}
-		_ui.Display(ver.Version)
+		_ui.Display(i18n.Format(i18n.VersionDisplay, i18n.A{"version": ver.ClientVersion.Version}))
 		return nil
 	}
 }

@@ -5,12 +5,14 @@ package version_test
 
 import (
 	"context"
+	"fmt"
 	"runtime/debug"
 	"testing"
 
 	"github.com/sassoftware/wbctl/internal/cmd"
 	"github.com/sassoftware/wbctl/internal/cmd/version"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/debugutil"
 	"github.com/sassoftware/wbctl/internal/stubs"
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
@@ -36,6 +38,15 @@ type versionTestCase struct {
 	expected versionExpected
 }
 
+const versionJSONOutput = `{
+    "clientVersion": {
+        "version": "%s",
+        "gitCommit": "%s",
+        "goVersion": "%s",
+        "platform": "%s"
+    }
+}`
+
 func TestVersionCommand(t *testing.T) {
 	buildInfo, ok := debug.ReadBuildInfo()
 	require.True(t, ok)
@@ -49,12 +60,17 @@ func TestVersionCommand(t *testing.T) {
 		{
 			name: "json",
 			input: versionInput{
-				outputFormat: "json",
+				outputFormat: constants.JSONOutputValue,
 			},
 			expected: versionExpected{
-				displays: []string{`{
-    "version": "` + buildInfo.Main.Version + `"
-}`},
+				displays: []string{fmt.Sprintf(
+					versionJSONOutput,
+					buildInfo.Main.Version,
+					debugutil.GetSetting(buildInfo.Settings, constants.BuildSettingVCSRevisionKey),
+					buildInfo.GoVersion,
+					debugutil.GetSetting(buildInfo.Settings, constants.BuildSettingGOOSKey)+"/"+
+						debugutil.GetSetting(buildInfo.Settings, constants.BuildSettingGOARCHKey),
+				)},
 			},
 		},
 	}
