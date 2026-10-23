@@ -14,6 +14,7 @@ import (
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/i18n"
 	"github.com/sassoftware/wbctl/internal/jsonutil"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/maputil"
 	"github.com/sassoftware/wbctl/internal/services/workbench"
 	"github.com/sassoftware/wbctl/internal/types"
@@ -306,7 +307,9 @@ func getCreateJobRequestBody(
 		)
 	}
 	if len(job.Workspaces) == 0 {
-		_ui.Warn(i18n.Format(i18n.WarningNoVolumeSpecified))
+		warning := i18n.Format(i18n.WarningNoVolumeSpecified)
+		logutil.GetLogger().Warn(warning)
+		_ui.Warn(warning)
 	}
 	return job, nil
 }

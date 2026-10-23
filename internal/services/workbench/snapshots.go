@@ -12,6 +12,7 @@ import (
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/auth"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/printutil"
 	"github.com/sassoftware/wbctl/internal/sliceutil"
@@ -29,6 +30,7 @@ func GetSnapshots(
 	ids []string,
 	sortSpec string,
 ) (types.Snapshots, error) {
+	logutil.GetLogger().Info("getting snapshots", "ids", ids, "sort", sortSpec)
 	sortSpec = normalizeSortSpec(sortSpec, map[string][]string{
 		constants.SortKeyAge:    {constants.SortKeyCreatedAt},
 		constants.SortKeySource: {constants.SortKeySpecSourcePVCName},
@@ -42,6 +44,7 @@ func GetSnapshots(
 
 // BulkDeleteSnapshots deletes the snapshot with the given id.
 func BulkDeleteSnapshots(ctx context.Context, s *WorkbenchService, ids []string) ([]string, error) {
+	logutil.GetLogger().Info("deleting snapshots", "ids", ids)
 	return result.Split(Post[[]string](
 		ctx,
 		s,
@@ -56,6 +59,7 @@ func CreateSnapshot(
 	s *WorkbenchService,
 	body types.Snapshot,
 ) (types.Snapshot, error) {
+	logutil.GetLogger().Info("creating snapshot", "body", body)
 	return result.Split(Post[types.Snapshot](
 		ctx,
 		s,
@@ -72,6 +76,7 @@ func BulkUpdateSnapshots(
 	ids []string,
 	body types.Snapshot,
 ) (types.Snapshots, error) {
+	logutil.GetLogger().Info("updating snapshots", "ids", ids, "body", body)
 	return result.Split(Post[types.Snapshots](
 		ctx,
 		s,

@@ -16,6 +16,7 @@ import (
 	"github.com/sassoftware/wbctl/internal/auth0admin"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/i18n"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/printutil"
 	"github.com/sassoftware/wbctl/internal/timeutil"
 	"github.com/sassoftware/wbctl/internal/types"
@@ -31,6 +32,7 @@ func GetUsers(
 	ids []string,
 	sortSpec string,
 ) (types.Auth0UserList, error) {
+	logutil.GetLogger().Info("getting users", "ids", ids, "sort", sortSpec)
 	sortSpec = strings.ToLower(sortSpec)
 	unsupportedSortKeys := make([]string, 0, 2)
 	if strings.Contains(sortSpec, constants.SortKeyRoles) {

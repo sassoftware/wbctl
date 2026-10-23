@@ -9,6 +9,7 @@ import (
 
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/types"
 	"github.com/sassoftware/wbctl/internal/ui"
@@ -23,6 +24,7 @@ func GetNodepools(
 	ids []string,
 	sortSpec string,
 ) (types.Nodepools, error) {
+	logutil.GetLogger().Info("getting nodepools", "ids", ids, "sort", sortSpec)
 	sortSpec = normalizeSortSpec(sortSpec, map[string][]string{
 		constants.SortKeyName: {constants.SortKeyDisplayName},
 	})

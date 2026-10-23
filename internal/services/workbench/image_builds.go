@@ -9,6 +9,7 @@ import (
 
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/printutil"
 	"github.com/sassoftware/wbctl/internal/sliceutil"
@@ -26,6 +27,7 @@ func GetImageBuilds(
 	ids []string,
 	sortSpec string,
 ) (types.ImageBuilds, error) {
+	logutil.GetLogger().Info("getting image-builds", "ids", ids, "sort", sortSpec)
 	sortSpec = normalizeSortSpec(sortSpec, map[string][]string{
 		constants.SortKeyAge: {constants.SortKeyCreatedAt},
 	})

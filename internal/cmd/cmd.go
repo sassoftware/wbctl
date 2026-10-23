@@ -7,8 +7,10 @@ import (
 	"context"
 	"os"
 	"path"
+	"slices"
 
 	"github.com/sassoftware/sas-ggdk/pkg/errors"
+	"github.com/sassoftware/sas-ggdk/pkg/httputils"
 	"github.com/sassoftware/wbctl/internal/cmd/api"
 	"github.com/sassoftware/wbctl/internal/cmd/cancel"
 	"github.com/sassoftware/wbctl/internal/cmd/create"
@@ -26,6 +28,7 @@ import (
 	"github.com/sassoftware/wbctl/internal/cmd/version"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/i18n"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/ui"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -49,7 +52,7 @@ func CreateApp(
 			_ *cobra.Command,
 			_ []string,
 		) error {
-			return loadConfigFile(fsys)
+			return configureApplication(fsys)
 		},
 		SilenceUsage:  true,
 		SilenceErrors: true,
@@ -59,9 +62,38 @@ func CreateApp(
 	return app
 }
 
+// configureApplication handles the configuration of the application including
+// loading any config file and setting up logging.
+func configureApplication(
+	fsys afero.Fs,
+) error {
+	err := loadConfigFile(fsys)
+	if err != nil {
+		return err
+	}
+	configureLogging()
+	return nil
+}
+
+func configureLogging() {
+	verbosityLevel := logutil.AsLevel(viper.Get(constants.VerboseFlag))
+	// Log level set by command line is already handled but if the log level was
+	// set by config file then logutil does not know about it and must be told.
+	logutil.SetLevel(verbosityLevel)
+	switch {
+	case verbosityLevel < 0 && verbosityLevel > -5:
+		httputils.SetDebug("true")
+	case verbosityLevel <= -5:
+		httputils.SetDebug("full")
+	}
+	viper.SetOptions(viper.WithLogger(logutil.GetLogger()))
+}
+
 // loadConfigFile loads values from the config file specified in the
 // WBCONFIG env var.
-func loadConfigFile(fsys afero.Fs) error {
+func loadConfigFile(
+	fsys afero.Fs,
+) error {
 	ignoreMissing := false
 	configPath := os.Getenv(constants.ConfigFileEnvVar)
 	if configPath == "" {
@@ -100,12 +132,7 @@ func isKnownViperType(configPath string) bool {
 		return false
 	}
 	ext = ext[1:] // remove the dot
-	for _, _type := range viper.SupportedExts {
-		if ext == _type {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(viper.SupportedExts, ext)
 }
 
 // AddRootFlags adds the root flags common to all commands.
@@ -118,6 +145,7 @@ func AddRootFlags(cmd *cobra.Command) {
 	flags.AddOrganizationFlag(cmd)
 	flags.AddClientIDFlag(cmd)
 	flags.AddClientSecretFlag(cmd)
+	flags.AddVerboseFlag(cmd)
 }
 
 func createCommands(

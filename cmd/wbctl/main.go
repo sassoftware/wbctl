@@ -11,6 +11,7 @@ import (
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/exiter"
 	"github.com/sassoftware/wbctl/internal/i18n"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/ui"
 	"github.com/spf13/afero"
 )
@@ -21,7 +22,9 @@ func main() {
 	app := cmd.CreateApp(ctx, afero.NewOsFs(), _ui)
 	err := app.ExecuteContext(ctx)
 	if err != nil {
-		_ui.Error(i18n.Format(i18n.Error, i18n.A{constants.I18nArgKeyError: err.Error()}))
+		errorMsg := i18n.Format(i18n.Error, i18n.A{constants.I18nArgKeyError: err.Error()})
+		logutil.GetLogger().Error(errorMsg)
+		_ui.Error(errorMsg)
 		exiter.OsExiter(1)
 	} else {
 		exiter.OsExiter(0)

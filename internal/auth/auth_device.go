@@ -15,6 +15,7 @@ import (
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/i18n"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/sliceutil"
 	"github.com/sassoftware/wbctl/internal/ui"
 	"github.com/spf13/afero"
@@ -27,6 +28,10 @@ func getAccessTokenByDeviceGrant(
 	fsys afero.Fs,
 	params GetAccessTokenParams,
 ) (string, error) {
+	logutil.GetLogger().Info(
+		"getting access token by device grant",
+		"params", params,
+	)
 	if params.Organization == "" {
 		err := errors.New(i18n.Format(i18n.AuthModeDeviceRequiresOrganization))
 		return "", errors.Wrap(err, i18n.Format(i18n.FailedToGetDeviceToken))
@@ -45,7 +50,6 @@ func getAccessTokenByDeviceGrant(
 	if !params.IgnoreTokenCache {
 		tokenResp, accessToken = getCachedOrRefreshedToken(
 			ctx,
-			_ui,
 			cfg,
 			fsys,
 			params.ControlPlaneEndpoint,
@@ -57,6 +61,7 @@ func getAccessTokenByDeviceGrant(
 	}
 
 	// Fall back to device authorization
+	logutil.GetLogger().Info("falling back to full authorization")
 	deviceAuthResponse, err := startDeviceAuthorizationAtEndpoint(ctx, params.ClientID, params.Organization, cfg)
 	if err != nil {
 		return "", errors.Wrap(err, i18n.Format(i18n.FailedToGetDeviceToken))

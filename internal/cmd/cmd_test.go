@@ -5,6 +5,7 @@ package cmd_test
 
 import (
 	"context"
+	"log/slog"
 	"path"
 	"slices"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/sassoftware/sas-ggdk/pkg/pointer"
 	"github.com/sassoftware/wbctl/internal/cmd"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/osutil"
 	"github.com/sassoftware/wbctl/internal/stubs"
 	"github.com/spf13/afero"
@@ -68,12 +70,14 @@ type cmdTestCase struct {
 	expectedBeforeError string
 	noHomeDir           bool
 	fileExtension       *string
+	expectedLogLevel    slog.Level
 }
 
 func TestRootCommand(t *testing.T) {
 	tests := []cmdTestCase{
 		{
-			name: "no config",
+			name:             "no config",
+			expectedLogLevel: logutil.LevelSilent,
 		},
 		{
 			name:             "invalid config",
@@ -82,11 +86,13 @@ func TestRootCommand(t *testing.T) {
 			expectedBeforeError: "Failed to read config file '${HOME}/.wbctl/config.json'\n" +
 				" Caused by:\n" +
 				"\t* While parsing config: unexpected end of JSON input",
+			expectedLogLevel: logutil.LevelSilent,
 		},
 		{
 			name:             "empty config",
 			passConfigOption: true,
 			configContent:    `{}`,
+			expectedLogLevel: logutil.LevelSilent,
 		},
 		{
 			name:             "full config",
@@ -96,9 +102,10 @@ func TestRootCommand(t *testing.T) {
 "user": "user",
 "password": "password"
 }`,
-			endpoint: "http://example.com",
-			user:     "user",
-			password: "password",
+			endpoint:         "http://example.com",
+			user:             "user",
+			password:         "password",
+			expectedLogLevel: logutil.LevelSilent,
 		},
 		{
 			name: "default config (no --config option)",
@@ -107,13 +114,15 @@ func TestRootCommand(t *testing.T) {
 "user": "user",
 "password": "password"
 }`,
-			endpoint: "http://example.com",
-			user:     "user",
-			password: "password",
+			endpoint:         "http://example.com",
+			user:             "user",
+			password:         "password",
+			expectedLogLevel: logutil.LevelSilent,
 		},
 		{
-			name:      "no home dir",
-			noHomeDir: true,
+			name:             "no home dir",
+			noHomeDir:        true,
+			expectedLogLevel: logutil.LevelSilent,
 		},
 		{
 			name:             "unknown extension",
@@ -124,9 +133,10 @@ func TestRootCommand(t *testing.T) {
 "user": "user",
 "password": "password"
 }`,
-			endpoint: "http://example.com",
-			user:     "user",
-			password: "password",
+			endpoint:         "http://example.com",
+			user:             "user",
+			password:         "password",
+			expectedLogLevel: logutil.LevelSilent,
 		},
 		{
 			name:             "missing extension",
@@ -137,9 +147,25 @@ func TestRootCommand(t *testing.T) {
 "user": "user",
 "password": "password"
 }`,
-			endpoint: "http://example.com",
-			user:     "user",
-			password: "password",
+			endpoint:         "http://example.com",
+			user:             "user",
+			password:         "password",
+			expectedLogLevel: logutil.LevelSilent,
+		},
+		{
+			name:             "verbose level",
+			fileExtension:    pointer.Ptr(""),
+			passConfigOption: true,
+			configContent: `{
+"endpoint": "http://example.com",
+"user": "user",
+"password": "password",
+"verbose": "trace"
+}`,
+			endpoint:         "http://example.com",
+			user:             "user",
+			password:         "password",
+			expectedLogLevel: logutil.LevelTrace,
 		},
 	}
 	for _, tt := range tests {
@@ -180,6 +206,82 @@ func TestRootCommand(t *testing.T) {
 				require.Equal(t, tt.user, viper.GetString("user"))
 				require.Equal(t, tt.password, viper.GetString("password"))
 			}
+			require.Equal(t, tt.expectedLogLevel, logutil.GetLevel())
+		})
+	}
+}
+
+func TestVerboseFlag(t *testing.T) {
+	tests := []struct {
+		name          string
+		args          []string
+		expectedLevel slog.Level
+	}{
+		{
+			name:          "no verbose",
+			expectedLevel: logutil.LevelSilent,
+		},
+		{
+			name:          "one verbose",
+			args:          []string{"-v"},
+			expectedLevel: logutil.LevelInfo,
+		},
+		{
+			name:          "two verbose",
+			args:          []string{"-vv"},
+			expectedLevel: logutil.LevelDebug,
+		},
+		{
+			name:          "three verbose",
+			args:          []string{"-vvv"},
+			expectedLevel: logutil.LevelTrace,
+		},
+		{
+			name:          "explicit silent",
+			args:          []string{"--verbose=silent"},
+			expectedLevel: logutil.LevelSilent,
+		},
+		{
+			name:          "explicit error",
+			args:          []string{"--verbose=error"},
+			expectedLevel: logutil.LevelError,
+		},
+		{
+			name:          "explicit warn",
+			args:          []string{"--verbose=warn"},
+			expectedLevel: logutil.LevelWarn,
+		},
+		{
+			name:          "explicit info",
+			args:          []string{"--verbose=info"},
+			expectedLevel: logutil.LevelInfo,
+		},
+		{
+			name:          "explicit debug",
+			args:          []string{"--verbose=debug"},
+			expectedLevel: logutil.LevelDebug,
+		},
+		{
+			name:          "explicit trace",
+			args:          []string{"--verbose=trace"},
+			expectedLevel: logutil.LevelTrace,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer viper.Reset()
+			defer func() { _ = logutil.UpdateLevel("false") }()
+			fs := afero.NewMemMapFs()
+			viper.SetFs(fs)
+			stubUI := &stubs.StubUI{}
+			app := cmd.CreateApp(context.Background(), fs, stubUI)
+			require.NotNil(t, app)
+			app.SetArgs(tt.args)
+			err := app.ParseFlags(tt.args)
+			require.NoError(t, err)
+			err = app.PersistentPreRunE(app, app.Flags().Args())
+			require.NoError(t, err)
+			require.Equal(t, tt.expectedLevel, logutil.GetLevel())
 		})
 	}
 }

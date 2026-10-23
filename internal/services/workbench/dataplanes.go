@@ -9,6 +9,7 @@ import (
 
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/printutil"
 	"github.com/sassoftware/wbctl/internal/timeutil"
@@ -25,6 +26,7 @@ func GetDataplanes(
 	ids []string,
 	sortSpec string,
 ) (types.Dataplanes, error) {
+	logutil.GetLogger().Info("getting dataplanes", "ids", ids, "sort", sortSpec)
 	sortSpec = normalizeSortSpec(sortSpec, map[string][]string{
 		constants.SortKeyAge: {constants.SortKeyCreatedAt},
 	})

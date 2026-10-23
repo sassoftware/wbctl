@@ -10,6 +10,7 @@ import (
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/auth"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/printutil"
 	"github.com/sassoftware/wbctl/internal/timeutil"
@@ -26,6 +27,7 @@ func GetJobs(
 	ids []string,
 	sortSpec string,
 ) (types.Jobs, error) {
+	logutil.GetLogger().Info("getting jobs", "ids", ids, "sort", sortSpec)
 	sortSpec = normalizeSortSpec(sortSpec, map[string][]string{
 		constants.SortKeyAge:   {constants.SortKeyCreatedAt},
 		constants.SortKeyState: {constants.SortKeyCurrentState},
@@ -37,6 +39,7 @@ func GetJobs(
 
 // BulkDeleteJobs deletes the job with the given id.
 func BulkDeleteJobs(ctx context.Context, s *WorkbenchService, ids []string) ([]string, error) {
+	logutil.GetLogger().Info("deleting jobs", "ids", ids)
 	return result.Split(Post[[]string](
 		ctx,
 		s,
@@ -47,6 +50,7 @@ func BulkDeleteJobs(ctx context.Context, s *WorkbenchService, ids []string) ([]s
 
 // CreateJob creates a job.
 func CreateJob(ctx context.Context, s *WorkbenchService, body types.Job) (types.Job, error) {
+	logutil.GetLogger().Info("creating job", "body", body)
 	return result.Split(Post[types.Job](
 		ctx,
 		s,
@@ -63,6 +67,7 @@ func BulkUpdateJobs(
 	ids []string,
 	body types.Job,
 ) (types.Jobs, error) {
+	logutil.GetLogger().Info("updating jobs", "ids", ids, "body", body)
 	return result.Split(Post[types.Jobs](
 		ctx,
 		s,

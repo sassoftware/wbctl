@@ -12,6 +12,7 @@ import (
 	"github.com/sassoftware/sas-ggdk/pkg/jsonutils"
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/types"
 	"github.com/sassoftware/wbctl/internal/ui"
@@ -24,6 +25,7 @@ func GetSettings(
 	userID string,
 	tenant bool,
 ) (types.Settings, error) {
+	logutil.GetLogger().Info("getting settings", "userID", userID, "tenant", tenant)
 	endpoint := constants.WorkbenchEndpointWorkspaceGetSettings
 	query := url.Values{}
 	if userID != "" {
@@ -45,6 +47,7 @@ func SetSetting(
 	value any,
 	tenant bool,
 ) (bool, error) {
+	logutil.GetLogger().Info("setting setting", "userid", userID, "name", name, "value", value, "tenant", tenant)
 	body := map[string]interface{}{
 		constants.RPCBodyKeyName:  name,
 		constants.RPCBodyKeyValue: value,

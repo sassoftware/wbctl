@@ -9,6 +9,7 @@ import (
 
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/timeutil"
 	"github.com/sassoftware/wbctl/internal/types"
@@ -24,6 +25,7 @@ func GetEvents(
 	ids []string,
 	sortSpec string,
 ) (types.Events, error) {
+	logutil.GetLogger().Info("getting events", "ids", ids, "sort", sortSpec)
 	sortSpec = normalizeSortSpec(sortSpec, map[string][]string{
 		constants.SortKeyAge: {constants.SortKeyCreatedAt},
 	})

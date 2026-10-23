@@ -314,6 +314,8 @@ const (
 	UsersType                                       = "users"
 	ValueFlag                                       = "value"
 	ValueUnknown                                    = "<unknown>"
+	VerboseFlag                                     = "verbose"
+	VerboseShortFlag                                = "v"
 	VersionCommandName                              = "version"
 	VolumeCommandName                               = "volume"
 	VolumeConflictCommandName                       = "volume-conflict"

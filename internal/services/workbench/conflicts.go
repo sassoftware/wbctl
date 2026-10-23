@@ -9,6 +9,7 @@ import (
 
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/printutil"
 	"github.com/sassoftware/wbctl/internal/types"
@@ -24,6 +25,7 @@ func GetConflicts(
 	ids []string,
 	sortSpec string,
 ) (types.Conflicts, error) {
+	logutil.GetLogger().Info("getting conflicts", "ids", ids, "sort", sortSpec)
 	sortSpec = strings.ToLower(sortSpec)
 	sortSpec = strings.ReplaceAll(sortSpec, "volume_", "workspace_")
 	return result.Split(Get[types.Conflicts](

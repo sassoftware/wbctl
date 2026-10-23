@@ -20,6 +20,7 @@ import (
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/httputil"
 	"github.com/sassoftware/wbctl/internal/i18n"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/sliceutil"
 	"github.com/sassoftware/wbctl/internal/ui"
@@ -70,6 +71,7 @@ func GetCSRFToken(
 	controlPlaneEndpoint,
 	accessToken string,
 ) (string, error) {
+	logutil.GetLogger().Info("getting csrf token", "endpoint", controlPlaneEndpoint)
 	resourceURLString, err :=
 		url.JoinPath(controlPlaneEndpoint, postgrest.Endpoint(constants.WorkbenchEndpointRoot))
 	if err != nil {
@@ -146,7 +148,9 @@ func deferSaveTokenToCache(
 	err := saveTokenToCache(fsys, controlPlaneEndpoint, *tokenResp)
 	if err != nil {
 		// We can continue now even if we can't save the token for later.
-		_ui.Warn(i18n.Format(i18n.FailedToSaveDeviceToken, i18n.A{constants.I18nArgKeyError: err.Error()}))
+		warning := i18n.Format(i18n.FailedToSaveDeviceToken, i18n.A{constants.I18nArgKeyError: err.Error()})
+		logutil.GetLogger().Warn(warning)
+		_ui.Warn(warning)
 	}
 }
 
@@ -154,15 +158,15 @@ func deferSaveTokenToCache(
 // cached) and any access token (either cached or refreshed).
 func getCachedOrRefreshedToken(
 	ctx context.Context,
-	_ui ui.UI,
 	cfg wellKnownConfigResponse,
 	fsys afero.Fs,
 	controlPlaneEndpoint string,
 	ingressHost string,
 ) (tokenResponse, string) {
+	logutil.GetLogger().Info("getting cached token", "endpoint", controlPlaneEndpoint)
 	ct, err := getCachedTokenFor(fsys, controlPlaneEndpoint)
 	if err != nil {
-		_ui.Warn(err.Error())
+		logutil.GetLogger().Error("fetching cached token failed", "err", err)
 	} else {
 		accessToken, err := getValidAccessTokenFromCachedToken(ct)
 		if err == nil && accessToken != "" {
@@ -171,6 +175,7 @@ func getCachedOrRefreshedToken(
 	}
 	// Check for a cached refresh token
 	if ct.RefreshToken != "" {
+		logutil.GetLogger().Info("refreshing token")
 		tokenResp, err := performRefreshForToken(
 			ctx,
 			clientIDFromAccessToken(ct.AccessToken),
@@ -186,7 +191,7 @@ func getCachedOrRefreshedToken(
 				return tokenResp, accessToken
 			}
 		}
-		_ui.Warn(i18n.Format(i18n.FallingBackToFullReauthorization))
+		logutil.GetLogger().Error("fetching cached token failed", "err", err)
 	}
 	return tokenResponse{}, ""
 }

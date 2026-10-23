@@ -10,6 +10,7 @@ import (
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/auth"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/printutil"
 	"github.com/sassoftware/wbctl/internal/sliceutil"
@@ -27,6 +28,7 @@ func GetWorkbenches(
 	ids []string,
 	sortSpec string,
 ) (types.Workbenches, error) {
+	logutil.GetLogger().Info("getting workbenches", "ids", ids, "sort", sortSpec)
 	sortSpec = normalizeSortSpec(sortSpec, map[string][]string{
 		constants.SortKeyAge:   {constants.SortKeyCreatedAt},
 		constants.SortKeyState: {constants.SortKeyCurrentState},
@@ -38,6 +40,7 @@ func GetWorkbenches(
 
 // BulkDeleteWorkbenches deletes the workbench with the given id.
 func BulkDeleteWorkbenches(ctx context.Context, s *WorkbenchService, ids []string) ([]string, error) {
+	logutil.GetLogger().Info("deleting workbenches", "ids", ids)
 	return result.Split(Post[[]string](
 		ctx,
 		s,
@@ -52,6 +55,7 @@ func CreateWorkbench(
 	s *WorkbenchService,
 	body types.Workbench,
 ) (types.Workbench, error) {
+	logutil.GetLogger().Info("creating workbench", "body", body)
 	return result.Split(Post[types.Workbench](
 		ctx,
 		s,
@@ -68,6 +72,7 @@ func BulkUpdateWorkbenches(
 	ids []string,
 	body types.Workbench,
 ) (types.Workbenches, error) {
+	logutil.GetLogger().Info("updating workbenches", "ids", ids, "body", body)
 	return bulkUpdateForUniqueNameConstrainedResources[types.Workbench, types.Workbenches](
 		ctx,
 		s,

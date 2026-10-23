@@ -45,6 +45,7 @@ Flags:
       --ignore-token-cache    Ignore token cache.
       --no-listen             Do not open a local port to listen for PKCE authentication.
       --organization string   The organization to authenticate with the Workbench API.
+  -v, --verbose               Log verbosity. Repeat option for increased levels of verbose output (-v, -vv, or -vvv).
 
 Use "wbctl [command] --help" for more information about a command.
 </pre>
@@ -66,6 +67,9 @@ in this file as a top level field. For example:
   "output": "json"
 }
 ```
+
+Note that verbose can be specified in the config file as silent, error, warn,
+info, debug, or trace.
 
 ## Authentication
 
