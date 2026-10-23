@@ -8,6 +8,7 @@ import (
 
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/maputil"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/types"
@@ -23,6 +24,7 @@ func GetStorageClasses(
 	ids []string,
 	sortSpec string,
 ) (types.StorageClasses, error) {
+	logutil.GetLogger().Info("getting storageclasses", "ids", ids, "sort", sortSpec)
 	sortSpec = normalizeSortSpec(sortSpec, map[string][]string{
 		constants.SortKeyName:    {constants.SortKeyDisplayName},
 		constants.SortKeyDefault: {constants.SortKeyPropertiesDefault},

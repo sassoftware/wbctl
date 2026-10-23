@@ -6,8 +6,8 @@ package flags
 import (
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/i18n"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
@@ -510,6 +510,16 @@ func AddClientSecretFlag(cmd *cobra.Command) {
 	_ = cmd.PersistentFlags().MarkHidden(constants.ClientSecretFlag)
 }
 
+// AddVerboseFlag adds the persistent verbose flag to the command.
+func AddVerboseFlag(cmd *cobra.Command) {
+	cmd.PersistentFlags().BoolFuncP(
+		constants.VerboseFlag,
+		constants.VerboseShortFlag,
+		i18n.Format(i18n.FlagVerboseUsage),
+		logutil.UpdateLevel,
+	)
+}
+
 // BindToViper binds all the flags to viper. This cannot be done when the flags
 // are created because multiple commands have the same flags and viper maintains
 // a flat list. This means that `viper.GetString("name")` will look in the last
@@ -518,13 +528,8 @@ func BindToViper(
 	cmd *cobra.Command,
 	_ []string,
 ) {
-	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
-		// viper.BindPFlag can only return an error if flag is nil so we catch
-		// that condition here and ignore the error.
-		if flag != nil {
-			_ = viper.BindPFlag(flag.Name, flag)
-		}
-	})
+	// viper.BindPFlags always returns nil
+	_ = viper.BindPFlags(cmd.Flags())
 	// BindEnv can only fail if given zero arguments.
 	_ = viper.BindEnv(constants.ClientIDFlag, constants.ClientIDEnvVar)
 	_ = viper.BindEnv(constants.ClientSecretFlag, constants.ClientSecretEnvVar)

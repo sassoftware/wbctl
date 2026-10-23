@@ -12,6 +12,7 @@ import (
 	"github.com/go-openapi/spec"
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/ui"
 )
@@ -24,6 +25,7 @@ func GetAPI(
 	ctx context.Context,
 	s *WorkbenchService,
 ) (API, error) {
+	logutil.GetLogger().Info("getting api")
 	return result.Split(Get[API](ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointRoot), nil))
 }
 

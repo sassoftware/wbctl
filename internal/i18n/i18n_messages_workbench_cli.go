@@ -175,4 +175,5 @@ var wbctlMessages = "\n" +
 	"wbctl-cli-icu.warning.deafult.storage.class.msg=defaulting to '{storageclass}' storage class\n" +
 	"wbctl-cli-icu.warning.no.volume.specified.msg=no volume specified\n" +
 	"wbctl-cli-icu.version.display.msg={version}\n" +
+	"wbctl-cli-icu.flag.verbose.usage.msg=Log verbosity. Repeat option for increased levels of verbose output (-v, -vv, or -vvv).\n" +
 	""

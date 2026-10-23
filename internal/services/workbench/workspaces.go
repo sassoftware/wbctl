@@ -11,6 +11,7 @@ import (
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/auth"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/printutil"
 	"github.com/sassoftware/wbctl/internal/sliceutil"
@@ -28,6 +29,7 @@ func GetWorkspaces(
 	ids []string,
 	sortSpec string,
 ) (types.Workspaces, error) {
+	logutil.GetLogger().Info("getting volumes", "ids", ids, "sort", sortSpec)
 	sortSpec = normalizeSortSpec(sortSpec, map[string][]string{
 		constants.SortKeyAge:              {constants.SortKeyCreatedAt},
 		constants.SortKeySize:             {constants.SortKeyStorageSizeG},
@@ -41,6 +43,7 @@ func GetWorkspaces(
 
 // BulkDeleteWorkspaces deletes the workspaces with the given ids.
 func BulkDeleteWorkspaces(ctx context.Context, s *WorkbenchService, ids []string) ([]string, error) {
+	logutil.GetLogger().Info("deleting volumes", "ids", ids)
 	return result.Split(Post[[]string](
 		ctx,
 		s,
@@ -55,6 +58,7 @@ func CreateWorkspace(
 	s *WorkbenchService,
 	body types.Workspace,
 ) (types.Workspace, error) {
+	logutil.GetLogger().Info("creating volume", "body", body)
 	return result.Split(Post[types.Workspace](
 		ctx,
 		s,
@@ -71,6 +75,7 @@ func BulkUpdateWorkspaces(
 	ids []string,
 	body types.Workspace,
 ) (types.Workspaces, error) {
+	logutil.GetLogger().Info("updating volumes", "ids", ids)
 	return bulkUpdateForUniqueNameConstrainedResources[types.Workspace, types.Workspaces](
 		ctx,
 		s,

@@ -11,6 +11,7 @@ import (
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/auth"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/printutil"
 	"github.com/sassoftware/wbctl/internal/sliceutil"
@@ -28,6 +29,7 @@ func GetJobSubmissions(
 	ids []string,
 	sortSpec string,
 ) (types.JobSubmissions, error) {
+	logutil.GetLogger().Info("getting job-submissions", "ids", ids, "sort", sortSpec)
 	sortSpec = normalizeSortSpec(sortSpec, map[string][]string{
 		constants.SortKeyAge:   {constants.SortKeyCreatedAt},
 		constants.SortKeyState: {constants.SortKeyCurrentState},
@@ -39,6 +41,7 @@ func GetJobSubmissions(
 
 // BulkDeleteJobSubmissions deletes the job submission with the given id.
 func BulkDeleteJobSubmissions(ctx context.Context, s *WorkbenchService, ids []string) ([]string, error) {
+	logutil.GetLogger().Info("deleting job-submissions", "ids", ids)
 	return result.Split(Post[[]string](
 		ctx,
 		s,
@@ -53,6 +56,7 @@ func CreateJobSubmission(
 	s *WorkbenchService,
 	body types.JobSubmission,
 ) (types.JobSubmission, error) {
+	logutil.GetLogger().Info("creating job-submission", "body", body)
 	return result.Split(Post[types.JobSubmission](
 		ctx,
 		s,

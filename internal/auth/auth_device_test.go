@@ -208,7 +208,6 @@ func TestGetAccessTokenDevice(t *testing.T) {
 					"organization=org-1&" +
 					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
 					"scope=openid+profile+offline_access in your browser and enter code: uc"},
-				warns: []string{"falling back to full reauthorization"},
 				cachedToken: &expectedTokenCache{
 					accessToken:  "device-ok",
 					refreshToken: "drt",
@@ -253,7 +252,6 @@ func TestGetAccessTokenDevice(t *testing.T) {
 					accessToken:  "device2",
 					refreshToken: "d2",
 				},
-				warns: []string{"falling back to full reauthorization"},
 			},
 		},
 		{
@@ -286,7 +284,6 @@ func TestGetAccessTokenDevice(t *testing.T) {
 			}),
 			expected: authExpected{
 				errFormat: authTestDeviceAuthorizationFailureErrFormat,
-				warns:     []string{"falling back to full reauthorization"},
 			},
 		},
 		// This is a fake token so not a security issue.
@@ -562,9 +559,6 @@ func TestGetAccessTokenDevice(t *testing.T) {
 					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
 					"scope=openid+profile+offline_access in your browser and enter code: uc"},
 				warns: []string{
-					"failed to load token cache" +
-						"\n Caused by:" +
-						"\n\t* open ${HOME}" + osutil.PathSeparator() + ".wbctl" + osutil.PathSeparator() + "token.json: not a directory",
 					"failed to save device token: failed to save token cache" +
 						"\n Caused by:" +
 						"\n\t* failed to load token cache" +
@@ -595,7 +589,6 @@ func TestGetAccessTokenDevice(t *testing.T) {
 					"redirect_uri=https%3A%2F%2Fverify&response_type=code&" +
 					"scope=openid+profile+offline_access in your browser and enter code: uc"},
 				warns: []string{
-					osutil.HomeEnvVarName() + " is not defined",
 					"failed to save device token: failed to save token cache\n Caused by:\n\t* " +
 						osutil.HomeEnvVarName() + " is not defined",
 				},
@@ -657,9 +650,6 @@ func TestGetAccessTokenDevice(t *testing.T) {
 				},
 			}),
 			expected: authExpected{
-				warns: []string{
-					"falling back to full reauthorization",
-				},
 				errFormat: authTestDeviceModeInvalidRefreshURLErr,
 			},
 		},

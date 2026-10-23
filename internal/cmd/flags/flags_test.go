@@ -8,6 +8,7 @@ import (
 
 	"github.com/sassoftware/wbctl/internal/cmd/flags"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
@@ -583,11 +584,25 @@ func TestExportedFlags(t *testing.T) {
 			viperKey:      constants.ClientSecretFlag,
 			expectedValue: "",
 		},
+		{
+			name:          "VerboseFlag",
+			call:          flags.AddVerboseFlag,
+			args:          []string{"--" + constants.VerboseFlag},
+			viperKey:      constants.VerboseFlag,
+			expectedValue: logutil.LevelInfo,
+		},
+		{
+			name:          "VerboseFlagDefault",
+			call:          flags.AddVerboseFlag,
+			viperKey:      constants.VerboseFlag,
+			expectedValue: "",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			defer viper.Reset()
+			defer func() { _ = logutil.UpdateLevel("silent") }()
 			mockCmd := &cobra.Command{}
 			tt.call(mockCmd)
 			mockCmd.SetArgs(tt.args)

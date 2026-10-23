@@ -15,6 +15,7 @@ import (
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/i18n"
 	"github.com/sassoftware/wbctl/internal/jsonutil"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/services/workbench"
 	"github.com/sassoftware/wbctl/internal/sliceutil"
 	"github.com/sassoftware/wbctl/internal/types"
@@ -465,7 +466,9 @@ func validateCreateOptions(
 				if sc.Properties[constants.DefaultKey] == true {
 					storageClass = sc.ID
 					v.Set(constants.StorageClassFlag, storageClass)
-					_ui.Warn(i18n.Format(i18n.WarningDefaultStorageClass, i18n.A{"storageclass": storageClass}))
+					warning := i18n.Format(i18n.WarningDefaultStorageClass, i18n.A{"storageclass": storageClass})
+					logutil.GetLogger().Warn(warning)
+					_ui.Warn(warning)
 					break
 				}
 			}

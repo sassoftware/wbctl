@@ -8,6 +8,7 @@ import (
 
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/types"
 	"github.com/sassoftware/wbctl/internal/ui"
@@ -22,6 +23,7 @@ func GetInitializers(
 	ids []string,
 	sortSpec string,
 ) (types.Initializers, error) {
+	logutil.GetLogger().Info("getting initializers", "ids", ids, "sort", sortSpec)
 	return result.Split(Get[types.Initializers](
 		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointDataplaneWorkspaceServices), IDsQuery(ids, sortSpec),
 	))

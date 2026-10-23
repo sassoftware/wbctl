@@ -148,6 +148,7 @@ const (
 	FlagTenantUsage                      = BundleID + ".flag.tenant.usage.msg"
 	FlagUserIDUsage                      = BundleID + ".flag.user.id.usage.msg"
 	FlagValueUsage                       = BundleID + ".flag.value.usage.msg"
+	FlagVerboseUsage                     = BundleID + ".flag.verbose.usage.msg"
 	FlagVolumeUsage                      = BundleID + ".flag.volume.usage.msg"
 	FlagWorkspaceDeprecationUsage        = BundleID + ".flag.workspace.deprecation.usage.msg"
 	FlagWorkspaceUsage                   = BundleID + ".flag.workspace.usage.msg"

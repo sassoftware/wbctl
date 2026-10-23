@@ -9,6 +9,7 @@ import (
 
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/types"
 	"github.com/sassoftware/wbctl/internal/ui"
@@ -23,6 +24,7 @@ func GetServices(
 	ids []string,
 	sortSpec string,
 ) (types.Services, error) {
+	logutil.GetLogger().Info("getting services", "ids", ids, "sort", sortSpec)
 	return result.Split(Get[types.Services](
 		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointDataplaneWorkbenchServices), IDsQuery(ids, sortSpec),
 	))

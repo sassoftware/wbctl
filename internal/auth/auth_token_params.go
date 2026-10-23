@@ -12,14 +12,14 @@ import (
 // GetAccessTokenParams collects the inputs to GetAccessToken in a struct so
 // they can be addressed by name.
 type GetAccessTokenParams struct {
-	ControlPlaneEndpoint string
-	IngressHost          string
-	Organization         string
-	AuthMode             string
-	ClientID             string
-	ClientSecret         string
-	IgnoreTokenCache     bool
-	NoListen             bool
+	AuthMode             string `json:"authMode,omitempty"`
+	ClientID             string `json:"clientID,omitempty"`
+	ClientSecret         string `json:"-"`
+	ControlPlaneEndpoint string `json:"endpoint,omitempty"`
+	IgnoreTokenCache     bool   `json:"ignoreTokenCache,omitempty"`
+	IngressHost          string `json:"ingressHost,omitempty"`
+	NoListen             bool   `json:"noListen,omitempty"`
+	Organization         string `json:"organization,omitempty"`
 }
 
 // NormalizedAuthMode returns the normalized auth mode. Anything other than pkce

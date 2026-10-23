@@ -14,6 +14,7 @@ import (
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/i18n"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/sliceutil"
 	"github.com/sassoftware/wbctl/internal/ui"
 	"github.com/spf13/afero"
@@ -26,6 +27,10 @@ func getAccessTokenByClientSecret(
 	fsys afero.Fs,
 	params GetAccessTokenParams,
 ) (string, error) {
+	logutil.GetLogger().Info(
+		"getting access token by client credentials grant",
+		"params", params,
+	)
 	if params.ClientID == "" {
 		return "", errors.New(i18n.Format(i18n.ClientIDMustBeSpecified))
 	}

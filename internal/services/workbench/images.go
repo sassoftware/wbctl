@@ -10,6 +10,7 @@ import (
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/auth"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/printutil"
 	"github.com/sassoftware/wbctl/internal/sliceutil"
@@ -27,6 +28,7 @@ func GetImages(
 	ids []string,
 	sortSpec string,
 ) (types.Images, error) {
+	logutil.GetLogger().Info("getting images", "ids", ids, "sort", sortSpec)
 	sortSpec = normalizeSortSpec(sortSpec, map[string][]string{
 		constants.SortKeyAge:          {constants.SortKeyCreatedAt},
 		constants.SortKeyImageBuildID: {constants.SortKeyLatestImageBuildID},
@@ -44,6 +46,7 @@ func GetImages(
 
 // BulkDeleteImages deletes the images with the given ids.
 func BulkDeleteImages(ctx context.Context, s *WorkbenchService, ids []string) ([]string, error) {
+	logutil.GetLogger().Info("deleting images", "ids", ids)
 	return result.Split(Post[[]string](
 		ctx,
 		s,
@@ -54,6 +57,7 @@ func BulkDeleteImages(ctx context.Context, s *WorkbenchService, ids []string) ([
 
 // CreateImage creates an image.
 func CreateImage(ctx context.Context, s *WorkbenchService, body types.Image) (types.Image, error) {
+	logutil.GetLogger().Info("deleting images", "body", body)
 	return result.Split(Post[types.Image](
 		ctx,
 		s,
@@ -64,6 +68,7 @@ func CreateImage(ctx context.Context, s *WorkbenchService, body types.Image) (ty
 
 // RebuildImage rebuilds the image with the given id.
 func RebuildImage(ctx context.Context, s *WorkbenchService, id string) (bool, error) {
+	logutil.GetLogger().Info("rebuilding image", "id", id)
 	return result.Split(Post[bool](
 		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointRPCImageRebuild), map[string]interface{}{"id": id},
 	))
@@ -77,6 +82,7 @@ func BulkUpdateImages(
 	ids []string,
 	body types.Image,
 ) (types.Images, error) {
+	logutil.GetLogger().Info("updating images", "ids", ids, "body", body)
 	return result.Split(Post[types.Images](
 		ctx,
 		s,

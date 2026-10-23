@@ -22,6 +22,7 @@ import (
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/i18n"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/sliceutil"
 	"github.com/sassoftware/wbctl/internal/ui"
 	"github.com/spf13/afero"
@@ -46,6 +47,10 @@ func getAccessTokenByPKCE(
 	fsys afero.Fs,
 	params GetAccessTokenParams,
 ) (string, error) {
+	logutil.GetLogger().Info(
+		"getting access token by pkce grant",
+		"params", params,
+	)
 	var tokenResp tokenResponse
 	var accessToken string
 	var err error
@@ -73,7 +78,6 @@ func getAccessTokenByPKCE(
 	if !params.IgnoreTokenCache {
 		tokenResp, accessToken = getCachedOrRefreshedToken(
 			ctx,
-			_ui,
 			cfg,
 			fsys,
 			authState.controlPlaneEndpoint,
@@ -85,6 +89,7 @@ func getAccessTokenByPKCE(
 	}
 
 	// Generate PKCE params
+	logutil.GetLogger().Info("falling back to full authorization")
 	authState.verifier = generateCodeVerifier()
 	authState.challenge = codeChallengeS256(authState.verifier)
 	authState.state = generateState()
@@ -119,7 +124,9 @@ func getCodeFromPKCEManualFlow(
 	})
 	_ui.Display(msg)
 	_ui.Display(i18n.Format(i18n.PKCEInstructions))
-	_ui.Warn(i18n.Format(i18n.PKCEInstructionsWarning))
+	warning := i18n.Format(i18n.PKCEInstructionsWarning)
+	logutil.GetLogger().Warn(warning)
+	_ui.Warn(warning)
 	input := _ui.Ask(i18n.Format(i18n.PKCEBrowserURLPrompt))
 	u, err := url.Parse(input)
 	if err != nil {

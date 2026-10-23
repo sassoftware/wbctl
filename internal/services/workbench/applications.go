@@ -10,6 +10,7 @@ import (
 
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/types"
 	"github.com/sassoftware/wbctl/internal/ui"
@@ -24,6 +25,7 @@ func GetApplications(
 	ids []string,
 	sortSpec string,
 ) (types.Applications, error) {
+	logutil.GetLogger().Info("getting applications", "ids", ids, "sort", sortSpec)
 	sortSpec = normalizeSortSpec(sortSpec, map[string][]string{
 		constants.SortKeyName: {constants.SortKeyDisplayName},
 	})

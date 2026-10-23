@@ -9,6 +9,7 @@ import (
 
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/printutil"
 	"github.com/sassoftware/wbctl/internal/timeutil"
@@ -25,6 +26,7 @@ func GetPings(
 	ids []string,
 	sortSpec string,
 ) (types.Pings, error) {
+	logutil.GetLogger().Info("getting pings", "ids", ids, "sort", sortSpec)
 	sortSpec = normalizeSortSpec(sortSpec, map[string][]string{
 		constants.SortKeyAge:        {constants.SortKeyRequestAt},
 		constants.SortKeyResponseAt: {constants.SortKeyStatusUpdatedAt},
