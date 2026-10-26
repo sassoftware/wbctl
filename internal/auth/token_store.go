@@ -15,6 +15,7 @@ import (
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/i18n"
+	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/spf13/afero"
 )
 
@@ -29,6 +30,7 @@ type tokenCache map[string]cachedToken
 type cachedToken struct {
 	AccessToken  string    `json:"access_token,omitempty"`
 	ExpiresAt    time.Time `json:"expires_at,omitempty"`
+	IDToken      string    `json:"id_token,omitempty"`
 	RefreshToken string    `json:"refresh_token,omitempty"`
 	TokenType    string    `json:"token_type,omitempty"`
 }
@@ -45,6 +47,7 @@ func getValidAccessTokenFromCachedToken(ct cachedToken) (string, error) {
 }
 
 func loadTokenCache(fsys afero.Fs, path string) (tokenCache, error) {
+	logutil.GetLogger().Debug("loading token cache", "path", path)
 	fs := afero.Afero{Fs: fsys}
 	res, err := result.Split(jsonutils.LoadWith[tokenCache](fs.ReadFile, path))
 	if err != nil {
@@ -76,9 +79,10 @@ func saveTokenToCache(fsys afero.Fs, endpoint string, responseToken tokenRespons
 	endpoint = normalizeEndpoint(endpoint)
 	ct := cachedToken{
 		AccessToken:  responseToken.AccessToken,
+		ExpiresAt:    timeNow().UTC().Add(time.Duration(responseToken.ExpiresIn) * time.Second),
+		IDToken:      responseToken.IDToken,
 		RefreshToken: responseToken.RefreshToken,
 		TokenType:    responseToken.TokenType,
-		ExpiresAt:    timeNow().UTC().Add(time.Duration(responseToken.ExpiresIn) * time.Second),
 	}
 	return updateTokenCache(fsys, func(cache tokenCache) (tokenCache, bool) {
 		cache[endpoint] = ct
@@ -141,8 +145,9 @@ func getTokenCachePath() (string, error) {
 func saveCache(
 	fsys afero.Fs,
 	cache tokenCache,
-	p string,
+	_path string,
 ) error {
+	logutil.GetLogger().Debug("saving token cache", "path", _path)
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return err
@@ -165,7 +170,7 @@ func saveCache(
 		_ = fsys.Remove(tmpName)
 		return err
 	}
-	err = fsys.Rename(tmpName, p)
+	err = fsys.Rename(tmpName, _path)
 	if err != nil {
 		_ = fsys.Remove(tmpName)
 		return err

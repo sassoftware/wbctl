@@ -48,6 +48,7 @@ func TestSetNowAndSince(t *testing.T) {
 			timeutil.SetNow(func() time.Time { return fixedNow })
 			defer timeutil.SetNow(time.Now)
 
+			require.Equal(t, fixedNow, timeutil.Now())
 			actual := timeutil.Since(tt.at)
 			require.Equal(t, tt.expected, actual)
 		})

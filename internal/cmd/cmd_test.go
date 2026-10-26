@@ -53,6 +53,7 @@ func TestCreateRoot(t *testing.T) {
 		constants.RebuildCommandName,
 		constants.SettingsCommandName,
 		constants.VersionCommandName,
+		constants.WhoamiCommandName,
 	}
 	slices.Sort(expected)
 	actual := commandNames(app.Commands())

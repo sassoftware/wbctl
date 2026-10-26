@@ -135,6 +135,20 @@ func RemoveAccessToken(
 	return removeTokenFromCache(fsys, controlPlaneEndpoint)
 }
 
+// GetCachedIdentityToken returns the cached identity token for the given
+// controlPlaneEndpoint. Returns an empty string if there is no cached identity
+// token.
+func GetCachedIdentityToken(
+	fsys afero.Fs,
+	controlPlaneEndpoint string,
+) string {
+	ct, err := getCachedTokenFor(fsys, controlPlaneEndpoint)
+	if err != nil {
+		return ""
+	}
+	return ct.IDToken
+}
+
 func deferSaveTokenToCache(
 	_ui ui.UI,
 	fsys afero.Fs,
@@ -273,41 +287,57 @@ func performRefreshForToken(
 	return res, nil
 }
 
-// IsRole reports whether the JWT contains the requested role.
+// IsRole reports whether the JWTPayload contains the requested role.
 func IsRole(
 	token string,
 	role string,
 ) bool {
-	parsedToken := parseAccessToken(token)
+	parsedToken, err := ParseTokenPayload(token)
+	if err != nil {
+		return false
+	}
 	return slices.Contains(parsedToken.Sas.Roles, role)
 }
 
 func clientIDFromAccessToken(token string) string {
-	parsedToken := parseAccessToken(token)
+	parsedToken, err := ParseTokenPayload(token)
+	if err != nil {
+		return ""
+	}
 	return parsedToken.Azp
 }
 
-func parseAccessToken(token string) jwt {
+// ParseTokenPayload parses the payload of a JWT token and returns a JWTPayload
+// struct. If the token is invalid, it returns an empty JWTPayload struct.
+func ParseTokenPayload(token string) (JWTPayload, error) {
+	payloadBytes, err := ParseTokenPayloadAsBytes(token)
+	if err != nil {
+		return JWTPayload{}, err
+	}
+	jwtPayload, err := result.Split(jsonutils.UnmarshalAs[JWTPayload](payloadBytes))
+	if err != nil {
+		return JWTPayload{}, err
+	}
+	return jwtPayload, nil
+}
+
+// ParseTokenPayloadAsBytes parses the payload fo a JWT and returns the raw
+// bytes. If the token is invalid, it returns nil.
+func ParseTokenPayloadAsBytes(token string) ([]byte, error) {
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
-		return jwt{}
+		return nil, nil
 	}
 	payloadPart := parts[1]
 	padLen := (4 - (len(payloadPart) % 4)) % 4
 	payloadPart += strings.Repeat("=", padLen)
 	decoder := base64.NewDecoder(base64.URLEncoding, strings.NewReader(payloadPart))
-	payloadBytes, err := io.ReadAll(decoder)
-	if err != nil {
-		return jwt{}
-	}
-	jwtPayload, err := result.Split(jsonutils.UnmarshalAs[jwt](payloadBytes))
-	if err != nil {
-		return jwt{}
-	}
-	return jwtPayload
+	return io.ReadAll(decoder)
 }
 
-type workbenchClaims struct {
+// SASWorkbenchClaims are the claims added to Workbench JWTs for Workbench
+// clients.
+type SASWorkbenchClaims struct {
 	Auth0OrgID  string   `json:"auth0_org_id"`
 	Auth0UserID string   `json:"auth0_user_id"`
 	OrgID       string   `json:"org_id"`
@@ -316,15 +346,16 @@ type workbenchClaims struct {
 	UserID      string   `json:"user_id"`
 }
 
-type jwt struct {
-	Sas     workbenchClaims `json:"sas"`
-	Iss     string          `json:"iss"`
-	Sub     string          `json:"sub"`
-	Aud     []string        `json:"aud"`
-	Iat     int             `json:"iat"`
-	Exp     int             `json:"exp"`
-	Scope   string          `json:"scope"`
-	OrgID   string          `json:"org_id"`
-	OrgName string          `json:"org_name"`
-	Azp     string          `json:"azp"`
+// JWTPayload represents the payload of a Workbench JWT.
+type JWTPayload struct {
+	Sas     SASWorkbenchClaims `json:"sas"`
+	Iss     string             `json:"iss"`
+	Sub     string             `json:"sub"`
+	Iat     int                `json:"iat"`
+	Exp     int                `json:"exp"`
+	Scope   string             `json:"scope"`
+	OrgID   string             `json:"org_id"`
+	OrgName string             `json:"org_name"`
+	Azp     string             `json:"azp"`
+	Name    string             `json:"name"`
 }

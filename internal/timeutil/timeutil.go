@@ -16,6 +16,11 @@ func SetNow(newNow func() time.Time) {
 	now = newNow
 }
 
+// Now returns the result of calling the current time function.
+func Now() time.Time {
+	return now()
+}
+
 // Since returns a human-readable duration since the given time.
 func Since(at *time.Time) string {
 	if at == nil || at.IsZero() {

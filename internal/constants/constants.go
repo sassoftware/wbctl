@@ -326,6 +326,7 @@ const (
 	VolumeType                                      = "volume"
 	VolumesCommandName                              = "volumes"
 	VolumesType                                     = "volumes"
+	WhoamiCommandName                               = "whoami"
 	WorkbenchAdminRole                              = "workbench_admin"
 	WorkbenchCommandName                            = "workbench"
 	WorkbenchEndpointCustom                         = "/custom"

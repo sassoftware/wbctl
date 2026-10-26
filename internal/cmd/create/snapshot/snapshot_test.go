@@ -12,6 +12,7 @@ import (
 	"github.com/sassoftware/wbctl/internal/cmd"
 	"github.com/sassoftware/wbctl/internal/cmd/create/snapshot"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/osutil"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/stubs"
 	"github.com/spf13/afero"
@@ -322,7 +323,7 @@ func TestCreateSnapshotCommand(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			defer viper.Reset()
-			t.Setenv("HOME", t.TempDir())
+			t.Setenv(osutil.HomeEnvVar(), t.TempDir())
 
 			srv, hitCounts := stubs.NewStubHTTPServer(t, tt.mockEndpoints)
 			defer srv.Close()
@@ -579,7 +580,7 @@ func TestUpdateSnapshotCommand(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			defer viper.Reset()
-			t.Setenv("HOME", t.TempDir())
+			t.Setenv(osutil.HomeEnvVar(), t.TempDir())
 
 			srv, hitCounts := stubs.NewStubHTTPServer(t, tt.mockEndpoints)
 			defer srv.Close()
