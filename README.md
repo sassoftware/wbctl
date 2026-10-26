@@ -37,6 +37,7 @@ Available Commands:
   stop        Stop running Workbench resources
   update      Update Workbench resources
   version     Print version information
+  whoami      Display the authenticated user.
 
 Flags:
   -m, --auth-mode string      Authentication mode. One of: device, pkce. (default "device")

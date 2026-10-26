@@ -26,6 +26,7 @@ import (
 	"github.com/sassoftware/wbctl/internal/cmd/settings"
 	"github.com/sassoftware/wbctl/internal/cmd/state"
 	"github.com/sassoftware/wbctl/internal/cmd/version"
+	"github.com/sassoftware/wbctl/internal/cmd/whoami"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/i18n"
 	"github.com/sassoftware/wbctl/internal/logutil"
@@ -170,5 +171,6 @@ func createCommands(
 		rebuild.Command(ctx, fsys, _ui),
 		settings.Command(ctx, fsys, _ui),
 		version.Command(ctx, fsys, _ui),
+		whoami.Command(ctx, fsys, _ui),
 	}
 }

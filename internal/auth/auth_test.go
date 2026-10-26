@@ -65,20 +65,11 @@ const (
 		" Caused by:\n" +
 		"\t* GET ${URL}/auth0Admin/internal/.well-known/openid-configuration failed\n" +
 		"\t* 500 {\"error\":\"discovery\"}"
-	authTestDiscoveryFailurePasswordErrFormat = "failed to get username/password token\n" +
-		" Caused by:\n" +
-		"\t* GET ${URL}/auth0Admin/internal/.well-known/openid-configuration failed\n" +
-		"\t* 500 {\"error\":\"discovery\"}"
 	authTestGetCSRFFailureErrFormat = "failed to get CSRF token\n" +
 		" Caused by:\n" +
 		"\t* HEAD ${URL} failed\n" +
 		"\t* 500 "
-	authTestInvalidAuthModeErr            = "invalid --auth-mode: \"invalid\" (allowed: auto, password, device)"
-	authTestPasswordGrantFailureErrFormat = "failed to get username/password token\n" +
-		" Caused by:\n" +
-		"\t* POST ${URL}/token failed\n" +
-		"\t* 401 {\"error\":\"bad\"}"
-	authTestPasswordModeRequiresUsername = "--auth-mode=password requires --username" // nolint:gosec
+	authTestInvalidAuthModeErr           = "invalid --auth-mode: \"invalid\" (allowed: auto, password, device)"
 	authTestPollingAccessDeniedErrFormat = "failed to get device token\n" +
 		" Caused by:\n" +
 		"\t* POST ${URL}/token failed\n" +
@@ -90,15 +81,9 @@ const (
 	authTestDeviceAuthorizationTimeoutErr = "failed to get device token\n" +
 		" Caused by:\n" +
 		"\t* device authorization timeout"
-	authTestPasswordModeEmptyAccessTokenErr = "failed to get username/password token\n" +
-		" Caused by:\n" +
-		"\t* token response missing access_token"
 	authTestDeviceModeEmptyAccessTokenErr = "failed to get device token\n" +
 		" Caused by:\n" +
 		"\t* token response missing access_token"
-	authTestPasswordModeInvalidTokenURLErr = "failed to get username/password token\n" +
-		" Caused by:\n" +
-		"\t* parse \"a\\nb\": net/url: invalid control character in URL"
 	authTestDeviceModeInvalidDeviceURLErr = "failed to get device token\n" +
 		" Caused by:\n" +
 		"\t* parse \"a\\nb\": net/url: invalid control character in URL"
@@ -906,6 +891,83 @@ func TestIsRole(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			require.Equal(t, tt.expected, auth.IsRole(tt.tok, tt.role))
+		})
+	}
+}
+
+const (
+	fakeCache = `
+{
+  "https://example.com": {
+    "access_token": "access-token",
+    "expires_at": "2026-10-26T21:02:17.516241Z",
+    "id_token": "header.payload.signature",
+    "refresh_token": "refresh-token",
+    "token_type": "Bearer"
+  }
+}
+`
+	invalidCache = `invalid`
+)
+
+type getCachedIdentityTokenInput struct {
+	cacheContent string
+	endpoint     string
+}
+
+type getCachedIdentityTokenExpected struct {
+	idToken string
+}
+
+type getCachedIdentityTokenTestCase struct {
+	name     string
+	input    getCachedIdentityTokenInput
+	expected getCachedIdentityTokenExpected
+}
+
+func TestGetCachedIdentityToken(t *testing.T) {
+	tests := []getCachedIdentityTokenTestCase{
+		{
+			name: "no cached token",
+			expected: getCachedIdentityTokenExpected{
+				idToken: "",
+			},
+		},
+		{
+			name: "fake cached token",
+			input: getCachedIdentityTokenInput{
+				cacheContent: fakeCache,
+				endpoint:     "https://example.com",
+			},
+			expected: getCachedIdentityTokenExpected{
+				idToken: "header.payload.signature",
+			},
+		},
+		{
+			name: "invalid cached token",
+			input: getCachedIdentityTokenInput{
+				cacheContent: invalidCache,
+				endpoint:     "https://example.com",
+			},
+			expected: getCachedIdentityTokenExpected{
+				idToken: "",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fsys := stubs.StubFS{Fs: afero.NewMemMapFs()}
+			home, err := afero.TempDir(fsys, "", "")
+			require.NoError(t, err)
+			t.Setenv(osutil.HomeEnvVar(), home)
+			if tt.input.cacheContent != "" {
+				tokenFilePath := filepath.Join(home, constants.DefaultTokenFileName)
+				err = afero.WriteFile(fsys, tokenFilePath, []byte(tt.input.cacheContent), 0644)
+				require.NoError(t, err)
+			}
+			actual := auth.GetCachedIdentityToken(fsys, tt.input.endpoint)
+			require.Equal(t, tt.expected.idToken, actual)
 		})
 	}
 }

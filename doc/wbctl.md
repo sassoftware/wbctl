@@ -22,6 +22,7 @@ Available Commands:
   <a href='wbctl stop.md'>stop</a>        Stop running Workbench resources
   <a href='wbctl update.md'>update</a>      Update Workbench resources
   <a href='wbctl version.md'>version</a>     Print version information
+  <a href='wbctl whoami.md'>whoami</a>      Display the authenticated user.
 
 Flags:
   -m, --auth-mode string      Authentication mode. One of: device, pkce. (default "device")

@@ -10,6 +10,7 @@ import (
 	"github.com/sassoftware/wbctl/internal/cmd"
 	"github.com/sassoftware/wbctl/internal/cmd/logout"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/osutil"
 	"github.com/sassoftware/wbctl/internal/stubs"
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
@@ -54,7 +55,7 @@ func TestLogoutCommand(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			defer viper.Reset()
-			t.Setenv("HOME", t.TempDir())
+			t.Setenv(osutil.HomeEnvVar(), t.TempDir())
 
 			stubUI := tt.response.stubUI
 			if stubUI == nil {
