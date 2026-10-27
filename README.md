@@ -46,6 +46,7 @@ Flags:
       --ignore-token-cache    Ignore token cache.
       --no-listen             Do not open a local port to listen for PKCE authentication.
       --organization string   The organization to authenticate with the Workbench API.
+  -p, --profile string        The configuration profile to use. (default "Default")
   -v, --verbose               Log verbosity. Repeat option for increased levels of verbose output (-v, -vv, or -vvv).
 
 Use "wbctl [command] --help" for more information about a command.
@@ -71,6 +72,38 @@ in this file as a top level field. For example:
 
 Note that verbose can be specified in the config file as silent, error, warn,
 info, debug, or trace.
+
+Multiple profiles can be created in the same config file like the following
+
+```
+{
+  "dev": {
+    "auth-mode": "device",
+    "endpoint": "https://dev.workbench.sas.com",
+  },
+  "test": {
+    "auth-mode": "device",
+    "endpoint": "https://test.workbench.sas.com",
+  },
+  "prod": {
+    "auth-mode": "pkce",
+    "endpoint": "https://prod.workbench.sas.com",
+  }
+  "organization": "myorganization",
+  "output": "json"
+}
+```
+
+The profile can be selected on the command line with the `--profile` option.
+
+```shell
+> ./wbctl --profile dev get workbenches
+```
+
+Options specified outside a profile object serve as defaults when the selected
+profile does not specify the option (`organization` and `output` in the above
+example). When profiles exist in the config file and a `--profile` option is not
+specified on the command line, the profile named "Default" will be used.
 
 ## Authentication
 

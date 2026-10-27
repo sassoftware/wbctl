@@ -13,6 +13,7 @@ import (
 	"github.com/sassoftware/wbctl/internal/auth0admin"
 	"github.com/sassoftware/wbctl/internal/cmd"
 	cmdapi "github.com/sassoftware/wbctl/internal/cmd/api"
+	"github.com/sassoftware/wbctl/internal/cmd/flags"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/stubs"
@@ -364,6 +365,7 @@ func TestAPICommand(t *testing.T) {
 			mockCmd := cmdapi.Command(context.Background(), fsys, stubUI)
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getAPIArgs(tt))
+			mockCmd.PersistentPreRun = flags.BindToViper
 			err := mockCmd.Execute()
 			var replacements map[string]string
 			if srv != nil {

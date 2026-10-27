@@ -32,6 +32,7 @@ func GetAccessTokens(
 		ctx,
 		_ui,
 		fsys,
+		v,
 		auth.GetAccessTokenParams{
 			ControlPlaneEndpoint: endpoint,
 			IngressHost:          ingressHost,

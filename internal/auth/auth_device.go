@@ -19,6 +19,7 @@ import (
 	"github.com/sassoftware/wbctl/internal/sliceutil"
 	"github.com/sassoftware/wbctl/internal/ui"
 	"github.com/spf13/afero"
+	"github.com/spf13/viper"
 )
 
 // nolint:cyclop
@@ -26,6 +27,7 @@ func getAccessTokenByDeviceGrant(
 	ctx context.Context,
 	_ui ui.UI,
 	fsys afero.Fs,
+	v *viper.Viper,
 	params GetAccessTokenParams,
 ) (string, error) {
 	logutil.GetLogger().Info(
@@ -39,7 +41,7 @@ func getAccessTokenByDeviceGrant(
 	var tokenResp tokenResponse
 	var accessToken string
 	var err error
-	defer deferSaveTokenToCache(_ui, fsys, params.ControlPlaneEndpoint, &tokenResp, &err)
+	defer deferSaveTokenToCache(_ui, fsys, v, params.ControlPlaneEndpoint, &tokenResp, &err)
 
 	cfg, err := getWellKnownConfig(ctx, params.ControlPlaneEndpoint)
 	if err != nil {
@@ -52,6 +54,7 @@ func getAccessTokenByDeviceGrant(
 			ctx,
 			cfg,
 			fsys,
+			v,
 			params.ControlPlaneEndpoint,
 			params.IngressHost,
 		)

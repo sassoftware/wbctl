@@ -6,7 +6,6 @@ package cancel
 import (
 	"context"
 
-	"github.com/sassoftware/wbctl/internal/cmd/flags"
 	cmdtypes "github.com/sassoftware/wbctl/internal/cmd/types"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/i18n"
@@ -22,11 +21,10 @@ func Command(
 	_ui ui.UI,
 ) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:              constants.CancelCommandName,
-		Short:            i18n.Format(i18n.CmdCancelUsage),
-		Long:             i18n.Format(i18n.CmdCancelDescription),
-		Args:             cobra.NoArgs,
-		PersistentPreRun: flags.BindToViper,
+		Use:   constants.CancelCommandName,
+		Short: i18n.Format(i18n.CmdCancelUsage),
+		Long:  i18n.Format(i18n.CmdCancelDescription),
+		Args:  cobra.NoArgs,
 	}
 	cmd.AddCommand(getSubcommands(ctx, fsys, _ui)...)
 	return cmd

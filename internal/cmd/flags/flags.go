@@ -520,6 +520,16 @@ func AddVerboseFlag(cmd *cobra.Command) {
 	)
 }
 
+// AddProfileFlag adds the persistent profile flag to the command.
+func AddProfileFlag(cmd *cobra.Command) {
+	cmd.PersistentFlags().StringP(
+		constants.ProfileFlag,
+		constants.ProfileShortFlag,
+		constants.DefaultProfileName,
+		i18n.Format(i18n.FlagProfileUsage),
+	)
+}
+
 // BindToViper binds all the flags to viper. This cannot be done when the flags
 // are created because multiple commands have the same flags and viper maintains
 // a flat list. This means that `viper.GetString("name")` will look in the last

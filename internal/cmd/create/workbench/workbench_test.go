@@ -11,6 +11,7 @@ import (
 
 	"github.com/sassoftware/wbctl/internal/cmd"
 	"github.com/sassoftware/wbctl/internal/cmd/create/workbench"
+	"github.com/sassoftware/wbctl/internal/cmd/flags"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/osutil"
 	"github.com/sassoftware/wbctl/internal/postgrest"
@@ -517,6 +518,7 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 			mockCmd := workbench.CreateCommand(context.Background(), fsys, stubUI)
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getCreateArgs(tt))
+			mockCmd.PersistentPreRun = flags.BindToViper
 			err := mockCmd.Execute()
 			replacements := map[string]string{
 				"${PORT}": stubs.Port(t, srv.URL),
@@ -878,6 +880,7 @@ func TestUpdateWorkbenchCommand(t *testing.T) {
 			mockCmd := workbench.UpdateCommand(context.Background(), fsys, stubUI)
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getUpdateArgs(tt))
+			mockCmd.PersistentPreRun = flags.BindToViper
 			err := mockCmd.Execute()
 			replacements := map[string]string{
 				"${PORT}": stubs.Port(t, srv.URL),

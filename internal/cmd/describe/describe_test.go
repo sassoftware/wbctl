@@ -13,6 +13,7 @@ import (
 	"github.com/sassoftware/wbctl/internal/auth0admin"
 	"github.com/sassoftware/wbctl/internal/cmd"
 	"github.com/sassoftware/wbctl/internal/cmd/describe"
+	"github.com/sassoftware/wbctl/internal/cmd/flags"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/stubs"
@@ -1158,6 +1159,7 @@ func TestDescribeCommand(t *testing.T) {
 			mockCmd := describe.Command(context.Background(), afero.NewMemMapFs(), stubUI)
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getDescribeArgs(tt))
+			mockCmd.PersistentPreRun = flags.BindToViper
 			err := mockCmd.Execute()
 			replacements := map[string]string{
 				"${PORT}": stubs.Port(t, srv.URL),

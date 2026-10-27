@@ -8,7 +8,6 @@ import (
 
 	"github.com/sassoftware/wbctl/internal/cmd/cancel"
 	"github.com/sassoftware/wbctl/internal/cmd/create/job_submission"
-	"github.com/sassoftware/wbctl/internal/cmd/flags"
 	"github.com/sassoftware/wbctl/internal/cmd/types"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/i18n"
@@ -24,11 +23,10 @@ func StopCommand(
 	_ui ui.UI,
 ) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:              constants.StopCommandName,
-		Short:            i18n.Format(i18n.CmdStopUsage),
-		Long:             i18n.Format(i18n.CmdStopDescription),
-		Args:             cobra.NoArgs,
-		PersistentPreRun: flags.BindToViper,
+		Use:   constants.StopCommandName,
+		Short: i18n.Format(i18n.CmdStopUsage),
+		Long:  i18n.Format(i18n.CmdStopDescription),
+		Args:  cobra.NoArgs,
 	}
 	cmd.AddCommand(getStopSubcommands(ctx, fsys, _ui)...)
 	return cmd
@@ -41,11 +39,10 @@ func StartCommand(
 	_ui ui.UI,
 ) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:              constants.StartCommandName,
-		Short:            i18n.Format(i18n.CmdStartUsage),
-		Long:             i18n.Format(i18n.CmdStartDescription),
-		Args:             cobra.NoArgs,
-		PersistentPreRun: flags.BindToViper,
+		Use:   constants.StartCommandName,
+		Short: i18n.Format(i18n.CmdStartUsage),
+		Long:  i18n.Format(i18n.CmdStartDescription),
+		Args:  cobra.NoArgs,
 	}
 	cmd.AddCommand(getStartSubcommands(ctx, fsys, _ui)...)
 	return cmd

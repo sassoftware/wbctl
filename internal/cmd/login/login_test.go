@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/sassoftware/wbctl/internal/cmd"
+	"github.com/sassoftware/wbctl/internal/cmd/flags"
 	"github.com/sassoftware/wbctl/internal/cmd/login"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/osutil"
@@ -71,6 +72,7 @@ func TestLoginCommand(t *testing.T) {
 			mockCmd := login.Command(context.Background(), afero.NewMemMapFs(), stubUI)
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getLoginArgs(tt))
+			mockCmd.PersistentPreRun = flags.BindToViper
 			err := mockCmd.Execute()
 			if tt.expected.err != "" {
 				require.EqualError(t, err, tt.expected.err)

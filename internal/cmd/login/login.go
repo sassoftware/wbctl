@@ -55,6 +55,7 @@ func newLoginFunction(
 			ctx,
 			_ui,
 			fsys,
+			v,
 			params,
 		)
 		return err

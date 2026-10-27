@@ -21,13 +21,12 @@ func Command(
 	_ui ui.UI,
 ) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:              constants.SettingsCommandName,
-		Aliases:          []string{constants.SettingCommandName},
-		Args:             cobra.NoArgs,
-		RunE:             newSettingsFunction(ctx, fsys, _ui),
-		Short:            i18n.Format(i18n.CmdSettingsUsage),
-		Long:             i18n.Format(i18n.CmdSettingsDescription),
-		PersistentPreRun: flags.BindToViper,
+		Use:     constants.SettingsCommandName,
+		Aliases: []string{constants.SettingCommandName},
+		Args:    cobra.NoArgs,
+		RunE:    newSettingsFunction(ctx, fsys, _ui),
+		Short:   i18n.Format(i18n.CmdSettingsUsage),
+		Long:    i18n.Format(i18n.CmdSettingsDescription),
 	}
 	flags.AddSetFlag(cmd)
 	flags.AddValueFlag(cmd)

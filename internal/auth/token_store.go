@@ -17,6 +17,7 @@ import (
 	"github.com/sassoftware/wbctl/internal/i18n"
 	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/spf13/afero"
+	"github.com/spf13/viper"
 )
 
 // timeNow is hook for testing to override the time.Now() func.
@@ -61,22 +62,31 @@ func loadTokenCache(fsys afero.Fs, path string) (tokenCache, error) {
 }
 
 // getCachedTokenFor loads the cached token from ~/.wbctl/token.json.
-func getCachedTokenFor(fsys afero.Fs, endpoint string) (cachedToken, error) {
-	path, err := getTokenCachePath()
+func getCachedTokenFor(
+	fsys afero.Fs,
+	v *viper.Viper,
+	endpoint string,
+) (cachedToken, error) {
+	_path, err := getTokenCachePath()
 	if err != nil {
 		return cachedToken{}, err
 	}
-	cache, err := loadTokenCache(fsys, path)
+	cache, err := loadTokenCache(fsys, _path)
 	if err != nil {
 		return cachedToken{}, err
 	}
-	return getTokenFromCache(endpoint, cache), nil
+	return getTokenFromCache(v, endpoint, cache), nil
 }
 
 // saveTokenToCache converts the given token to the cached representation and saves
 // that cached representation to ~/.wbctl/token.json.
-func saveTokenToCache(fsys afero.Fs, endpoint string, responseToken tokenResponse) error {
-	endpoint = normalizeEndpoint(endpoint)
+func saveTokenToCache(
+	fsys afero.Fs,
+	v *viper.Viper,
+	endpoint string,
+	responseToken tokenResponse,
+) error {
+	endpoint = normalizeEndpoint(v, endpoint)
 	ct := cachedToken{
 		AccessToken:  responseToken.AccessToken,
 		ExpiresAt:    timeNow().UTC().Add(time.Duration(responseToken.ExpiresIn) * time.Second),
@@ -92,8 +102,8 @@ func saveTokenToCache(fsys afero.Fs, endpoint string, responseToken tokenRespons
 
 // removeTokenFromCache removes the cached token for the given endpoint from
 // ~/.wbctl/token.json.
-func removeTokenFromCache(fsys afero.Fs, endpoint string) error {
-	endpoint = normalizeEndpoint(endpoint)
+func removeTokenFromCache(fsys afero.Fs, v *viper.Viper, endpoint string) error {
+	endpoint = normalizeEndpoint(v, endpoint)
 	return updateTokenCache(fsys, func(cache tokenCache) (tokenCache, bool) {
 		_, present := cache[endpoint]
 		if !present {
@@ -105,11 +115,11 @@ func removeTokenFromCache(fsys afero.Fs, endpoint string) error {
 }
 
 func updateTokenCache(fsys afero.Fs, updater func(tokenCache) (tokenCache, bool)) error {
-	path, err := getTokenCachePath()
+	_path, err := getTokenCachePath()
 	if err != nil {
 		return errors.Wrap(err, i18n.Format(i18n.FailedToSaveTokenCache))
 	}
-	cache, err := loadTokenCache(fsys, path)
+	cache, err := loadTokenCache(fsys, _path)
 	if err != nil {
 		return errors.Wrap(err, i18n.Format(i18n.FailedToSaveTokenCache))
 	}
@@ -117,12 +127,12 @@ func updateTokenCache(fsys afero.Fs, updater func(tokenCache) (tokenCache, bool)
 	if !updated {
 		return nil
 	}
-	dir := filepath.Dir(path)
+	dir := filepath.Dir(_path)
 	err = fsys.MkdirAll(dir, 0o700)
 	if err != nil {
 		return errors.Wrap(err, i18n.Format(i18n.FailedToSaveTokenCache))
 	}
-	err = saveCache(fsys, cache, path)
+	err = saveCache(fsys, cache, _path)
 	if err != nil {
 		return errors.Wrap(err, i18n.Format(i18n.FailedToSaveTokenCache))
 	}
@@ -179,10 +189,11 @@ func saveCache(
 }
 
 func getTokenFromCache(
+	v *viper.Viper,
 	endpoint string,
 	cache tokenCache,
 ) cachedToken {
-	endpoint = normalizeEndpoint(endpoint)
+	endpoint = normalizeEndpoint(v, endpoint)
 	found, present := cache[endpoint]
 	if !present {
 		return cachedToken{}
@@ -190,7 +201,7 @@ func getTokenFromCache(
 	return found
 }
 
-func normalizeEndpoint(endpoint string) string {
+func normalizeEndpoint(v *viper.Viper, endpoint string) string {
 	parsedEndpoint, err := url.Parse(endpoint)
 	if err == nil {
 		parsedEndpoint.Path = ""
@@ -198,5 +209,9 @@ func normalizeEndpoint(endpoint string) string {
 		parsedEndpoint.Fragment = ""
 		endpoint = parsedEndpoint.String()
 	}
-	return endpoint
+	profileName := v.GetString(constants.ProfileFlag)
+	if profileName == "" {
+		return endpoint
+	}
+	return profileName + "." + endpoint
 }

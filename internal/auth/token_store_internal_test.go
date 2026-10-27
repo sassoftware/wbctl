@@ -13,6 +13,7 @@ import (
 	"github.com/sassoftware/wbctl/internal/osutil"
 	"github.com/sassoftware/wbctl/internal/stubs"
 	"github.com/spf13/afero"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 )
 
@@ -104,7 +105,7 @@ func TestLoadTokenCacheMissingFile(t *testing.T) {
 	t.Setenv(osutil.HomeEnvVar(), tempDir)
 
 	fsys := afero.NewMemMapFs()
-	result, err := getCachedTokenFor(fsys, endpoint)
+	result, err := getCachedTokenFor(fsys, viper.New(), endpoint)
 	require.NoError(t, err)
 	require.Equal(t, cachedToken{}, result)
 
@@ -129,7 +130,7 @@ func TestLoadTokenCacheMalformedJSON(t *testing.T) {
 	err = afero.WriteFile(fsys, tokenPath, []byte("not valid json"), 0o600)
 	require.NoError(t, err, "failed to write token to file")
 
-	_, err = getCachedTokenFor(fsys, endpoint)
+	_, err = getCachedTokenFor(fsys, viper.New(), endpoint)
 	expectedLoadErr := "failed to load token cache\n" +
 		" Caused by:\n" +
 		"\t* " + tokenStoreInvalidCharacterErr

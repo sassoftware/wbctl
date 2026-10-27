@@ -6,7 +6,6 @@ package logout
 import (
 	"context"
 
-	"github.com/sassoftware/wbctl/internal/cmd/flags"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/i18n"
 	"github.com/sassoftware/wbctl/internal/ui"
@@ -21,12 +20,11 @@ func Command(
 	_ui ui.UI,
 ) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:    constants.LogoutCommandName,
-		Short:  i18n.Format(i18n.CmdLogoutUsage),
-		Long:   i18n.Format(i18n.CmdLogoutDescription),
-		Args:   cobra.NoArgs,
-		RunE:   newLogoutFunction(fsys, _ui),
-		PreRun: flags.BindToViper,
+		Use:   constants.LogoutCommandName,
+		Short: i18n.Format(i18n.CmdLogoutUsage),
+		Long:  i18n.Format(i18n.CmdLogoutDescription),
+		Args:  cobra.NoArgs,
+		RunE:  newLogoutFunction(fsys, _ui),
 	}
 	return cmd
 }

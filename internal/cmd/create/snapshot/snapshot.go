@@ -45,7 +45,6 @@ func CreateCommand(
 			i18n.CmdCreateTypeDescription,
 			i18n.A{constants.I18nArgTypeKey: cmdtypes.Titler.String(constants.SnapshotType)},
 		),
-		PreRun: flags.BindToViper,
 	}
 	flags.AddFilenameFlag(cmd, constants.SnapshotType)
 	flags.AddDryRunFlag(cmd)
@@ -75,7 +74,6 @@ func UpdateCommand(
 			i18n.CmdUpdateTypeDescription,
 			i18n.A{constants.I18nArgTypeKey: cmdtypes.Titler.String(constants.SnapshotType)},
 		),
-		PreRun: flags.BindToViper,
 	}
 	flags.AddFilenameFlag(cmd, constants.SnapshotType)
 	flags.AddDryRunFlag(cmd)

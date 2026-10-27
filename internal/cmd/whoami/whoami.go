@@ -42,9 +42,10 @@ func newWhoamiFunction(
 		endpoint := v.GetString(constants.EndpointFlag)
 		idtoken := auth.GetCachedIdentityToken(
 			fsys,
+			v,
 			endpoint,
 		)
-		if constants.JSONOutputValue == viper.GetString(constants.OutputFlag) {
+		if constants.JSONOutputValue == v.GetString(constants.OutputFlag) {
 			return printAsJSON(_ui, idtoken)
 		}
 		return printIDToken(_ui, idtoken)

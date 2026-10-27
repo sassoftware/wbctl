@@ -12,6 +12,7 @@ import (
 
 	"github.com/sassoftware/wbctl/internal/auth0admin"
 	"github.com/sassoftware/wbctl/internal/cmd"
+	"github.com/sassoftware/wbctl/internal/cmd/flags"
 	"github.com/sassoftware/wbctl/internal/cmd/get"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/postgrest"
@@ -2255,6 +2256,7 @@ func TestGetCommand(t *testing.T) {
 			mockCmd := get.Command(context.Background(), afero.NewMemMapFs(), stubUI)
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getGetArgs(tt))
+			mockCmd.PersistentPreRun = flags.BindToViper
 			err := mockCmd.Execute()
 			replacements := map[string]string{
 				"${PORT}": stubs.Port(t, srv.URL),

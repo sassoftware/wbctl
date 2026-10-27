@@ -196,7 +196,7 @@ func getImpl[T any](
 			return err
 		}
 		token := workbench.GetAccessToken(svc)
-		if constants.JSONOutputValue == viper.GetString(constants.OutputFlag) {
+		if constants.JSONOutputValue == v.GetString(constants.OutputFlag) {
 			response, err := wbctljson.MakeMarshaler[T](wbctljson.ViewOptions)(resources)
 			if err == nil {
 				_ui.Display(string(response))

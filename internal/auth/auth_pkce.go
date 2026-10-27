@@ -26,6 +26,7 @@ import (
 	"github.com/sassoftware/wbctl/internal/sliceutil"
 	"github.com/sassoftware/wbctl/internal/ui"
 	"github.com/spf13/afero"
+	"github.com/spf13/viper"
 )
 
 type pkceAuthState struct {
@@ -45,6 +46,7 @@ func getAccessTokenByPKCE(
 	ctx context.Context,
 	_ui ui.UI,
 	fsys afero.Fs,
+	v *viper.Viper,
 	params GetAccessTokenParams,
 ) (string, error) {
 	logutil.GetLogger().Info(
@@ -60,7 +62,7 @@ func getAccessTokenByPKCE(
 		organization:         params.Organization,
 		controlPlaneEndpoint: params.ControlPlaneEndpoint,
 	}
-	defer deferSaveTokenToCache(_ui, fsys, authState.controlPlaneEndpoint, &tokenResp, &err)
+	defer deferSaveTokenToCache(_ui, fsys, v, authState.controlPlaneEndpoint, &tokenResp, &err)
 
 	if authState.ingressHost == "" {
 		endpoint, err := url.Parse(authState.controlPlaneEndpoint)
@@ -80,6 +82,7 @@ func getAccessTokenByPKCE(
 			ctx,
 			cfg,
 			fsys,
+			v,
 			authState.controlPlaneEndpoint,
 			authState.ingressHost,
 		)

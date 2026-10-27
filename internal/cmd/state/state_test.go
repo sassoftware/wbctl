@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/sassoftware/wbctl/internal/cmd"
+	"github.com/sassoftware/wbctl/internal/cmd/flags"
 	cmdstate "github.com/sassoftware/wbctl/internal/cmd/state"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/postgrest"
@@ -225,6 +226,7 @@ func TestStateCommands(t *testing.T) {
 				mockCmd := action.newCommandFunc(context.Background(), afero.NewMemMapFs(), stubUI)
 				cmd.AddRootFlags(mockCmd)
 				mockCmd.SetArgs(getStateArgs(tt))
+				mockCmd.PersistentPreRun = flags.BindToViper
 				err := mockCmd.Execute()
 				replacements := map[string]string{
 					"${PORT}":   stubs.Port(t, srv.URL),
