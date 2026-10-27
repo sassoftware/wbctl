@@ -5,9 +5,6 @@ package cmd
 
 import (
 	"context"
-	"os"
-	"path"
-	"slices"
 
 	"github.com/sassoftware/sas-ggdk/pkg/errors"
 	"github.com/sassoftware/sas-ggdk/pkg/httputils"
@@ -22,11 +19,13 @@ import (
 	"github.com/sassoftware/wbctl/internal/cmd/log"
 	"github.com/sassoftware/wbctl/internal/cmd/login"
 	"github.com/sassoftware/wbctl/internal/cmd/logout"
+	"github.com/sassoftware/wbctl/internal/cmd/profile"
 	"github.com/sassoftware/wbctl/internal/cmd/rebuild"
 	"github.com/sassoftware/wbctl/internal/cmd/settings"
 	"github.com/sassoftware/wbctl/internal/cmd/state"
 	"github.com/sassoftware/wbctl/internal/cmd/version"
 	"github.com/sassoftware/wbctl/internal/cmd/whoami"
+	"github.com/sassoftware/wbctl/internal/configutil"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/i18n"
 	"github.com/sassoftware/wbctl/internal/logutil"
@@ -102,26 +101,21 @@ func configureLogging() {
 func loadConfigFile(
 	fsys afero.Fs,
 ) error {
-	ignoreMissing := false
-	configPath := os.Getenv(constants.ConfigFileEnvVar)
-	if configPath == "" {
-		ignoreMissing = true
-		home, err := os.UserHomeDir()
-		// If we can't get the home dir then just return. Ignore the error.
-		if err != nil {
-			return nil // nolint:nilerr
-		}
-		configPath = path.Join(home, constants.DefaultConfigFileName)
+	configPath, isDefault, err := configutil.ResolvePath()
+	// If we can't get the home dir then just return. Ignore the error.
+	if err != nil {
+		logutil.GetLogger().Warn("failed to resolve config path", "error", err)
+		return nil // nolint:nilerr
 	}
-	// Ignore a missing config default config file. Otherwise, return an error
-	// for an explicit config file that is missing.
-	exists, err := afero.Exists(fsys, configPath)
-	if ignoreMissing && (err != nil || !exists) {
+	// Ignore a missing default config file. Otherwise, return an error for an
+	// explicit config file that is missing.
+	exists, existsErr := afero.Exists(fsys, configPath)
+	if isDefault && (existsErr != nil || !exists) {
 		return nil // nolint:nilerr
 	}
 	// If viper does not know what it is then try json
-	if !isKnownViperType(configPath) {
-		viper.SetConfigType(constants.DefaultConfigFileType)
+	if !configutil.IsKnownFormat(configPath) {
+		viper.SetConfigType(constants.ConfigFileTypeDefault)
 	}
 	viper.SetConfigFile(configPath)
 	err = viper.ReadInConfig()
@@ -145,15 +139,6 @@ func loadConfigFile(
 		viper.Set(k, v)
 	}
 	return nil
-}
-
-func isKnownViperType(configPath string) bool {
-	ext := path.Ext(configPath)
-	if len(ext) < 1 {
-		return false
-	}
-	ext = ext[1:] // remove the dot
-	return slices.Contains(viper.SupportedExts, ext)
 }
 
 // AddRootFlags adds the root flags common to all commands.
@@ -193,5 +178,6 @@ func createCommands(
 		settings.Command(ctx, fsys, _ui),
 		version.Command(ctx, fsys, _ui),
 		whoami.Command(ctx, fsys, _ui),
+		profile.Command(ctx, fsys, _ui),
 	}
 }

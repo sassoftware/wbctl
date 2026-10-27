@@ -33,7 +33,12 @@ const (
 	ClientSecretFlag                                = "client-secret"
 	CommandFlag                                     = "command"
 	CommandShortFlag                                = "c"
+	ConfigFileDirPerm                               = 0o700
 	ConfigFileEnvVar                                = "WBCONFIG"
+	ConfigFilePerm                                  = 0o600
+	ConfigFileTypeDefault                           = "json"
+	ConfigFileTypeYAML                              = "yaml"
+	ConfigFileTypeYML                               = "yml"
 	ContentTypeHeaderKey                            = "Content-Type"
 	ContextFlag                                     = "context"
 	CookieHeaderKey                                 = "cookie"
@@ -47,7 +52,6 @@ const (
 	DataplanesType                                  = "dataplanes"
 	DefaultConfigDirName                            = ".wbctl"
 	DefaultConfigFileName                           = DefaultConfigDirName + "/config.json"
-	DefaultConfigFileType                           = "json"
 	DefaultKey                                      = "default"
 	DefaultProfileName                              = "Default"
 	DefaultTokenFileName                            = DefaultConfigDirName + "/token.json" // nolint:gosec
@@ -112,6 +116,7 @@ const (
 	ImagesCommandName                               = "images"
 	ImagesType                                      = "images"
 	IngressHostFlag                                 = "ingress-host"
+	InitCommandName                                 = "init"
 	InitializerCommandName                          = "initializer"
 	InitializerFlag                                 = "initializer"
 	InitializerType                                 = "initializer"
@@ -132,6 +137,7 @@ const (
 	K8sVolumeSnapshotKind                           = "VolumeSnapshot"
 	LabelFlag                                       = "label"
 	LabelShortFlag                                  = "l"
+	ListCommandName                                 = "list"
 	LogCommandName                                  = "logs"
 	LoginCommandName                                = "login"
 	LogoutCommandName                               = "logout"
@@ -168,6 +174,8 @@ const (
 	PostgrestAPIEndpoint                            = "/postgrest"
 	PostgrestCSRFTokenHeaderKey                     = "Postgrest-Csrf-Token" // nolint:gosec
 	PostgrestCSRFTokenKey                           = "postgrest-csrf-token" // nolint:gosec
+	ProfileAliasName                                = "prof"
+	ProfileCommandName                              = "profile"
 	ProfileFlag                                     = "profile"
 	ProfileShortFlag                                = "p"
 	QueryFlag                                       = "query"
@@ -214,6 +222,7 @@ const (
 	SetFlag                                         = "set"
 	SettingCommandName                              = "setting"
 	SettingsCommandName                             = "settings"
+	ShowCommandName                                 = "show"
 	SizeFlag                                        = "size"
 	SnapshotCommandName                             = "snapshot"
 	SnapshotFlag                                    = "snapshot"

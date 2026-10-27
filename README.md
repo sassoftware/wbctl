@@ -31,6 +31,7 @@ Available Commands:
   login       Authenticate and cache an access token
   logout      Remove cached access token
   logs        Fetch the logs of Workbench resources
+  profile     Manage profiles
   rebuild     Rebuild Workbench image
   settings    Manage user settings
   start       Start stopped Workbench resources
@@ -104,6 +105,16 @@ Options specified outside a profile object serve as defaults when the selected
 profile does not specify the option (`organization` and `output` in the above
 example). When profiles exist in the config file and a `--profile` option is not
 specified on the command line, the profile named "Default" will be used.
+
+Profiles can also be created or replaced interactively with
+`wbctl profile init` (alias `wbctl prof init`), which prompts for the profile
+name, endpoint, and organization (defaulting to the current values from the
+config file or command line) and saves them, along with any other flags
+explicitly passed on the command line, into the selected profile.
+
+```shell
+> ./wbctl profile init --profile dev --auth-mode pkce
+```
 
 ## Authentication
 

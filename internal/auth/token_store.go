@@ -6,7 +6,6 @@ package auth
 import (
 	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"time"
 
@@ -164,7 +163,7 @@ func saveCache(
 	}
 	tmp, err := afero.TempFile(
 		fsys,
-		path.Join(homeDir, constants.DefaultConfigDirName),
+		filepath.Join(homeDir, constants.DefaultConfigDirName),
 		constants.DefaultTokenTmpFileName,
 	)
 	if err != nil {
