@@ -87,13 +87,13 @@ func printIDToken(
 	if err != nil {
 		return errors.Wrap(err, i18n.Format(i18n.FailedToMarshalJWTPayloadToJSON))
 	}
-	var tabbedString strings.Builder
 	now := timeutil.Now()
 	expires := time.Unix(int64(jwtPayload.Exp), 0)
 	expiredLabel := ""
 	if expires.Before(now) {
 		expiredLabel = " (EXPIRED)"
 	}
+	var tabbedString strings.Builder
 	printutil.AppendTabbedString(&tabbedString, func(w io.Writer) {
 		_, _ = fmt.Fprintf(w, "User:\t%s (%s)\n", jwtPayload.Name, jwtPayload.Sas.UserID)
 		_, _ = fmt.Fprintf(w, "Organization:\t%s (%s)\n", jwtPayload.Sas.OrgName, jwtPayload.Sas.OrgID)

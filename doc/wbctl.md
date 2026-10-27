@@ -16,6 +16,7 @@ Available Commands:
   <a href='wbctl login.md'>login</a>       Authenticate and cache an access token
   <a href='wbctl logout.md'>logout</a>      Remove cached access token
   <a href='wbctl logs.md'>logs</a>        Fetch the logs of Workbench resources
+  <a href='wbctl profile.md'>profile</a>     Manage profiles
   <a href='wbctl rebuild.md'>rebuild</a>     Rebuild Workbench image
   <a href='wbctl settings.md'>settings</a>    Manage user settings
   <a href='wbctl start.md'>start</a>       Start stopped Workbench resources
@@ -31,7 +32,7 @@ Flags:
       --ignore-token-cache    Ignore token cache.
       --no-listen             Do not open a local port to listen for PKCE authentication.
       --organization string   The organization to authenticate with the Workbench API.
-  -p, --profile string        The configuration profile to use. (default "Default")
+  -p, --profile string        The configuration <a href='wbctl profile.md'>profile</a> to use. (default "Default")
   -v, --verbose               Log verbosity. Repeat option for increased levels of verbose output (-v, -vv, or -vvv).
 
 Use "wbctl [command] --help" for more information about a command.

@@ -6,10 +6,9 @@ package cmd_test
 import (
 	"context"
 	"log/slog"
-	"path"
+	"os"
 	"path/filepath"
 	"slices"
-	"strings"
 	"testing"
 
 	"github.com/sassoftware/sas-ggdk/pkg/pointer"
@@ -55,6 +54,7 @@ func TestCreateRoot(t *testing.T) {
 		constants.SettingsCommandName,
 		constants.VersionCommandName,
 		constants.WhoamiCommandName,
+		constants.ProfileCommandName,
 	}
 	slices.Sort(expected)
 	actual := commandNames(app.Commands())
@@ -69,7 +69,7 @@ type cmdTestCase struct {
 	endpoint            string
 	user                string
 	password            string
-	expectedBeforeError string
+	expectedPreRunError string
 	noHomeDir           bool
 	fileExtension       *string
 	expectedLogLevel    slog.Level
@@ -85,7 +85,7 @@ func TestRootCommand(t *testing.T) {
 			name:             "invalid config",
 			passConfigOption: true,
 			configContent:    `[`,
-			expectedBeforeError: "Failed to read config file '${HOME}/.wbctl/config.json'\n" +
+			expectedPreRunError: "Failed to read config file '${HOME}${SEP}.wbctl${SEP}config.json'\n" +
 				" Caused by:\n" +
 				"\t* While parsing config: unexpected end of JSON input",
 			expectedLogLevel: logutil.LevelSilent,
@@ -188,7 +188,7 @@ func TestRootCommand(t *testing.T) {
 				if tt.fileExtension != nil {
 					ext = *tt.fileExtension
 				}
-				configPath = path.Join(home, ".wbctl/config"+ext)
+				configPath = filepath.Join(home, ".wbctl/config"+ext)
 				err := afero.WriteFile(fs, configPath, []byte(tt.configContent), 0o600)
 				require.NoError(t, err)
 			}
@@ -200,8 +200,13 @@ func TestRootCommand(t *testing.T) {
 			require.NotNil(t, app)
 			app.SetArgs([]string{})
 			err := app.PersistentPreRunE(app, app.Flags().Args())
-			if tt.expectedBeforeError != "" {
-				require.EqualError(t, err, strings.ReplaceAll(tt.expectedBeforeError, "${HOME}", home))
+			replacements := map[string]string{
+				"${HOME}": home,
+				"${SEP}":  string(os.PathSeparator),
+			}
+			if tt.expectedPreRunError != "" {
+				expectedErr, actualErr := stubs.Sanitize(tt.expectedPreRunError, err.Error(), replacements)
+				require.Equal(t, expectedErr, actualErr)
 			} else {
 				require.NoError(t, err)
 				require.Equal(t, tt.endpoint, viper.GetString("endpoint"))
