@@ -135,6 +135,7 @@ const (
 	FlagNodepoolUsage                    = BundleID + ".flag.nodepool.usage.msg"
 	FlagOrganizationUsage                = BundleID + ".flag.organization.usage.msg"
 	FlagOutputUsage                      = BundleID + ".flag.output.usage.msg"
+	FlagProfileUsage                     = BundleID + ".flag.profile.usage.msg"
 	FlagQueryUsage                       = BundleID + ".flag.query.usage.msg"
 	FlagRequiredWhen                     = BundleID + ".flag.required.when.msg"
 	FlagScheduleUsage                    = BundleID + ".flag.schedule.usage.msg"

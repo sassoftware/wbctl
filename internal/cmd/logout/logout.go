@@ -30,6 +30,7 @@ func newLogoutFunction(
 		endpoint = promptForMissing(_ui, endpoint)
 		return auth.RemoveAccessToken(
 			fsys,
+			v,
 			endpoint,
 		)
 	}

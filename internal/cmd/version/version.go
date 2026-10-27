@@ -50,7 +50,8 @@ func newVersionFunction(
 					debugutil.GetSetting(buildInfo.Settings, constants.BuildSettingGOARCHKey),
 			},
 		}
-		if constants.JSONOutputValue == viper.GetString(constants.OutputFlag) {
+		v := viper.GetViper()
+		if constants.JSONOutputValue == v.GetString(constants.OutputFlag) {
 			response, err := wbctljson.MakeMarshaler[version](wbctljson.ViewOptions)(ver)
 			if err == nil {
 				_ui.Display(string(response))

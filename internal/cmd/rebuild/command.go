@@ -6,7 +6,6 @@ package rebuild
 import (
 	"context"
 
-	"github.com/sassoftware/wbctl/internal/cmd/flags"
 	"github.com/sassoftware/wbctl/internal/cmd/types"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/i18n"
@@ -22,11 +21,10 @@ func Command(
 	_ui ui.UI,
 ) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:              constants.RebuildCommandName,
-		Short:            i18n.Format(i18n.CmdRebuildUsage),
-		Long:             i18n.Format(i18n.CmdRebuildDescription),
-		Args:             cobra.NoArgs,
-		PersistentPreRun: flags.BindToViper,
+		Use:   constants.RebuildCommandName,
+		Short: i18n.Format(i18n.CmdRebuildUsage),
+		Long:  i18n.Format(i18n.CmdRebuildDescription),
+		Args:  cobra.NoArgs,
 	}
 	cmd.AddCommand(getSubcommands(ctx, fsys, _ui)...)
 	return cmd

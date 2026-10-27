@@ -11,6 +11,7 @@ import (
 
 	"github.com/sassoftware/wbctl/internal/cmd"
 	"github.com/sassoftware/wbctl/internal/cmd/create/job"
+	"github.com/sassoftware/wbctl/internal/cmd/flags"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/osutil"
 	"github.com/sassoftware/wbctl/internal/postgrest"
@@ -826,6 +827,7 @@ func TestCreateJobCommand(t *testing.T) {
 			mockCmd := job.CreateCommand(context.Background(), fsys, stubUI)
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getCreateArgs(tt))
+			mockCmd.PersistentPreRun = flags.BindToViper
 			err := mockCmd.Execute()
 			replacements := map[string]string{
 				"${PORT}": stubs.Port(t, srv.URL),
@@ -1170,6 +1172,7 @@ func TestUpdateJobCommand(t *testing.T) {
 			mockCmd := job.UpdateCommand(context.Background(), fsys, stubUI)
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getUpdateArgs(tt))
+			mockCmd.PersistentPreRun = flags.BindToViper
 			err := mockCmd.Execute()
 			replacements := map[string]string{
 				"${PORT}": stubs.Port(t, srv.URL),

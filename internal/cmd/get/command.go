@@ -22,11 +22,10 @@ func Command(
 	_ui ui.UI,
 ) *cobra.Command {
 	cmd := cobra.Command{
-		Use:              constants.GetCommandName,
-		Short:            i18n.Format(i18n.CmdGetUsage),
-		Long:             i18n.Format(i18n.CmdGetDescription),
-		Args:             cobra.NoArgs,
-		PersistentPreRun: flags.BindToViper,
+		Use:   constants.GetCommandName,
+		Short: i18n.Format(i18n.CmdGetUsage),
+		Long:  i18n.Format(i18n.CmdGetDescription),
+		Args:  cobra.NoArgs,
 	}
 	cmd.AddCommand(getSubcommands(ctx, fsys, _ui)...)
 	return &cmd

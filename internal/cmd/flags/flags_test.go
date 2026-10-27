@@ -597,20 +597,30 @@ func TestExportedFlags(t *testing.T) {
 			viperKey:      constants.VerboseFlag,
 			expectedValue: "",
 		},
+		{
+			name:          "ProfileFlag",
+			call:          flags.AddProfileFlag,
+			args:          []string{"--" + constants.ProfileFlag, "profile-value"},
+			viperKey:      constants.ProfileFlag,
+			expectedValue: "profile-value",
+		},
+		{
+			name:          "ProfileFlagDefault",
+			call:          flags.AddProfileFlag,
+			viperKey:      constants.ProfileFlag,
+			expectedValue: "Default",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			defer viper.Reset()
 			defer func() { _ = logutil.UpdateLevel("silent") }()
-			mockCmd := &cobra.Command{}
+			mockCmd := &cobra.Command{Run: func(_ *cobra.Command, _ []string) {}}
 			tt.call(mockCmd)
 			mockCmd.SetArgs(tt.args)
-			// Execute first so that cobra combines the persistent flags with
-			// the command flags so that we can bind them all to viper.
+			mockCmd.PersistentPreRun = flags.BindToViper
 			err := mockCmd.Execute()
-			require.NoError(t, err)
-			flags.BindToViper(mockCmd, nil)
 			require.NoError(t, err)
 			actual := viper.Get(tt.viperKey)
 			require.Equal(t, tt.expectedValue, actual)

@@ -21,12 +21,11 @@ func Command(
 	_ui ui.UI,
 ) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:              constants.APICommandName,
-		Short:            i18n.Format(i18n.CmdAPIUsage),
-		Args:             cobra.MaximumNArgs(1),
-		RunE:             newAPIFunction(ctx, fsys, _ui),
-		Hidden:           true,
-		PersistentPreRun: flags.BindToViper,
+		Use:    constants.APICommandName,
+		Short:  i18n.Format(i18n.CmdAPIUsage),
+		Args:   cobra.MaximumNArgs(1),
+		RunE:   newAPIFunction(ctx, fsys, _ui),
+		Hidden: true,
 	}
 	flags.AddFilenameFlag(cmd, i18n.Format(i18n.APIRequestBodyType))
 	flags.AddDataFlag(cmd, i18n.Format(i18n.APIRequestBodyType))

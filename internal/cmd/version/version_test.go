@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/sassoftware/wbctl/internal/cmd"
+	"github.com/sassoftware/wbctl/internal/cmd/flags"
 	"github.com/sassoftware/wbctl/internal/cmd/version"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/debugutil"
@@ -85,6 +86,7 @@ func TestVersionCommand(t *testing.T) {
 			mockCmd := version.Command(context.Background(), afero.NewMemMapFs(), stubUI)
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getVersionArgs(tt))
+			mockCmd.PersistentPreRun = flags.BindToViper
 			err := mockCmd.Execute()
 			require.NoError(t, err)
 			require.ElementsMatch(t, tt.expected.displays, stubUI.Displays)

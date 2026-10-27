@@ -49,6 +49,7 @@ const (
 	DefaultConfigFileName                           = DefaultConfigDirName + "/config.json"
 	DefaultConfigFileType                           = "json"
 	DefaultKey                                      = "default"
+	DefaultProfileName                              = "Default"
 	DefaultTokenFileName                            = DefaultConfigDirName + "/token.json" // nolint:gosec
 	DefaultTokenTmpFileName                         = "token.json.*"                       // nolint:gosec
 	DeleteCommandName                               = "delete"
@@ -167,6 +168,8 @@ const (
 	PostgrestAPIEndpoint                            = "/postgrest"
 	PostgrestCSRFTokenHeaderKey                     = "Postgrest-Csrf-Token" // nolint:gosec
 	PostgrestCSRFTokenKey                           = "postgrest-csrf-token" // nolint:gosec
+	ProfileFlag                                     = "profile"
+	ProfileShortFlag                                = "p"
 	QueryFlag                                       = "query"
 	QueryParameterAudience                          = "audience"
 	QueryParameterClientID                          = "client_id"

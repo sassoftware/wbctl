@@ -6,7 +6,6 @@ package log
 import (
 	"context"
 
-	"github.com/sassoftware/wbctl/internal/cmd/flags"
 	"github.com/sassoftware/wbctl/internal/cmd/types"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/i18n"
@@ -22,11 +21,10 @@ func Command(
 	_ui ui.UI,
 ) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:              constants.LogCommandName,
-		Short:            i18n.Format(i18n.CmdLogUsage),
-		Long:             i18n.Format(i18n.CmdLogDescription),
-		Args:             cobra.NoArgs,
-		PersistentPreRun: flags.BindToViper,
+		Use:   constants.LogCommandName,
+		Short: i18n.Format(i18n.CmdLogUsage),
+		Long:  i18n.Format(i18n.CmdLogDescription),
+		Args:  cobra.NoArgs,
 	}
 	cmd.AddCommand(getSubcommands(ctx, fsys, _ui)...)
 	return cmd

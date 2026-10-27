@@ -21,12 +21,11 @@ func Command(
 	_ui ui.UI,
 ) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:    constants.VersionCommandName,
-		Short:  i18n.Format(i18n.CmdVersionUsage),
-		Long:   i18n.Format(i18n.CmdVersionDescription),
-		Args:   cobra.NoArgs,
-		RunE:   newVersionFunction(_ui),
-		PreRun: flags.BindToViper,
+		Use:   constants.VersionCommandName,
+		Short: i18n.Format(i18n.CmdVersionUsage),
+		Long:  i18n.Format(i18n.CmdVersionDescription),
+		Args:  cobra.NoArgs,
+		RunE:  newVersionFunction(_ui),
 	}
 	flags.AddOutputFlag(cmd)
 	return cmd

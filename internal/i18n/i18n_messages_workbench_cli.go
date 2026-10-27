@@ -123,6 +123,7 @@ var wbctlMessages = "\n" +
 	"wbctl-cli-icu.flag.nodepool.usage.msg=The nodepool in which to run the {type}.\n" +
 	"wbctl-cli-icu.flag.organization.usage.msg=The organization to authenticate with the Workbench API.\n" +
 	"wbctl-cli-icu.flag.output.usage.msg=The output format. One of: json, text.\n" +
+	"wbctl-cli-icu.flag.profile.usage.msg=The configuration profile to use.\n" +
 	"wbctl-cli-icu.flag.query.usage.msg=The query parameters to include in the API request, in key=value&key2=value2 format.\n" +
 	"wbctl-cli-icu.flag.required.when.msg=--{child} required when --{parent} specified\n" +
 	"wbctl-cli-icu.flag.schedule.usage.msg=The cron schedule for the job. If not specified, the job will only run when a job-submission is explicitly created.\n" +
@@ -150,6 +151,7 @@ var wbctlMessages = "\n" +
 	"wbctl-cli-icu.multiple.elements.found.msg=multiple elements found\n" +
 	"wbctl-cli-icu.no.access.token.in.cache.msg=no access token in cache\n" +
 	"wbctl-cli-icu.no.elements.found.msg=no elements found\n" +
+	"wbctl-cli-icu.not.authenticated.msg=Not authenticated\n" +
 	"wbctl-cli-icu.one.of.flag.names.are.required.msg=one, and only one, of --{flagNameOne} or --{flagNameTwo} is required\n" +
 	"wbctl-cli-icu.only.one.id.supported.msg=Only one ID supported\n" +
 	"wbctl-cli-icu.pkce.authorization.timeout.msg=pkce authorization timeout\n" +
@@ -179,5 +181,4 @@ var wbctlMessages = "\n" +
 	"wbctl-cli-icu.version.display.msg={version}\n" +
 	"wbctl-cli-icu.warning.deafult.storage.class.msg=defaulting to '{storageclass}' storage class\n" +
 	"wbctl-cli-icu.warning.no.volume.specified.msg=no volume specified\n" +
-	"wbctl-cli-icu.not.authenticated.msg=Not authenticated\n" +
 	""

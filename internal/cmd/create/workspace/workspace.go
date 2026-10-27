@@ -51,7 +51,6 @@ func CreateCommand(
 			i18n.CmdCreateTypeDescription,
 			i18n.A{constants.I18nArgTypeKey: cmdtypes.Titler.String(constants.VolumeType)},
 		),
-		PreRun: flags.BindToViper,
 	}
 	flags.AddFilenameFlag(cmd, constants.VolumeType)
 	flags.AddDryRunFlag(cmd)
@@ -89,7 +88,6 @@ func UpdateCommand(
 			i18n.CmdUpdateTypeDescription,
 			i18n.A{constants.I18nArgTypeKey: cmdtypes.Titler.String(constants.VolumeType)},
 		),
-		PreRun: flags.BindToViper,
 	}
 	flags.AddFilenameFlag(cmd, constants.VolumeType)
 	flags.AddDryRunFlag(cmd)

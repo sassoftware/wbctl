@@ -25,6 +25,7 @@ import (
 	"github.com/sassoftware/wbctl/internal/sliceutil"
 	"github.com/sassoftware/wbctl/internal/ui"
 	"github.com/spf13/afero"
+	"github.com/spf13/viper"
 )
 
 type wellKnownConfigResponse struct {
@@ -107,6 +108,7 @@ func GetAccessToken(
 	ctx context.Context,
 	_ui ui.UI,
 	fsys afero.Fs,
+	v *viper.Viper,
 	params GetAccessTokenParams,
 ) (string, error) {
 	if params.ControlPlaneEndpoint == "" {
@@ -115,11 +117,11 @@ func GetAccessToken(
 	authMode := params.NormalizedAuthMode()
 	switch authMode {
 	case constants.AuthModeDevice:
-		return getAccessTokenByDeviceGrant(ctx, _ui, fsys, params)
+		return getAccessTokenByDeviceGrant(ctx, _ui, fsys, v, params)
 	case constants.AuthModePKCE:
-		return getAccessTokenByPKCE(ctx, _ui, fsys, params)
+		return getAccessTokenByPKCE(ctx, _ui, fsys, v, params)
 	case constants.AuthModeClientCredentials:
-		return getAccessTokenByClientSecret(ctx, _ui, fsys, params)
+		return getAccessTokenByClientSecret(ctx, _ui, fsys, v, params)
 	default:
 		return "", errors.New(i18n.Format(i18n.InvalidAuthMode, i18n.A{
 			constants.I18nArgKeyAuthMode: authMode,
@@ -130,9 +132,10 @@ func GetAccessToken(
 // RemoveAccessToken removes an access token from the token cache.
 func RemoveAccessToken(
 	fsys afero.Fs,
+	v *viper.Viper,
 	controlPlaneEndpoint string,
 ) error {
-	return removeTokenFromCache(fsys, controlPlaneEndpoint)
+	return removeTokenFromCache(fsys, v, controlPlaneEndpoint)
 }
 
 // GetCachedIdentityToken returns the cached identity token for the given
@@ -140,9 +143,10 @@ func RemoveAccessToken(
 // token.
 func GetCachedIdentityToken(
 	fsys afero.Fs,
+	v *viper.Viper,
 	controlPlaneEndpoint string,
 ) string {
-	ct, err := getCachedTokenFor(fsys, controlPlaneEndpoint)
+	ct, err := getCachedTokenFor(fsys, v, controlPlaneEndpoint)
 	if err != nil {
 		return ""
 	}
@@ -152,6 +156,7 @@ func GetCachedIdentityToken(
 func deferSaveTokenToCache(
 	_ui ui.UI,
 	fsys afero.Fs,
+	v *viper.Viper,
 	controlPlaneEndpoint string,
 	tokenResp *tokenResponse,
 	errp *error,
@@ -159,7 +164,7 @@ func deferSaveTokenToCache(
 	if tokenResp.AccessToken == "" || *errp != nil {
 		return
 	}
-	err := saveTokenToCache(fsys, controlPlaneEndpoint, *tokenResp)
+	err := saveTokenToCache(fsys, v, controlPlaneEndpoint, *tokenResp)
 	if err != nil {
 		// We can continue now even if we can't save the token for later.
 		warning := i18n.Format(i18n.FailedToSaveDeviceToken, i18n.A{constants.I18nArgKeyError: err.Error()})
@@ -174,11 +179,12 @@ func getCachedOrRefreshedToken(
 	ctx context.Context,
 	cfg wellKnownConfigResponse,
 	fsys afero.Fs,
+	v *viper.Viper,
 	controlPlaneEndpoint string,
 	ingressHost string,
 ) (tokenResponse, string) {
 	logutil.GetLogger().Info("getting cached token", "endpoint", controlPlaneEndpoint)
-	ct, err := getCachedTokenFor(fsys, controlPlaneEndpoint)
+	ct, err := getCachedTokenFor(fsys, v, controlPlaneEndpoint)
 	if err != nil {
 		logutil.GetLogger().Error("fetching cached token failed", "err", err)
 	} else {

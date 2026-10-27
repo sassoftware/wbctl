@@ -22,6 +22,7 @@ import (
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/stubs"
 	"github.com/spf13/afero"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -317,6 +318,7 @@ func TestGetAccessToken_EndpointRequired(t *testing.T) {
 		context.Background(),
 		stubUI,
 		fsys,
+		viper.New(),
 		auth.GetAccessTokenParams{
 			ControlPlaneEndpoint: "",
 			AuthMode:             constants.AuthModeDevice,
@@ -361,6 +363,7 @@ type authInput struct {
 	pkceAuthorizationResponse string
 	pkceListenPort            int
 	pkceCallbackTimeout       *time.Duration
+	profile                   string
 }
 
 type authExpected struct {
@@ -619,6 +622,7 @@ func TestGetAccessToken(t *testing.T) {
 }
 
 type removeInput struct {
+	profile      string
 	endpoint     string
 	cacheContent string
 }
@@ -646,6 +650,17 @@ func TestRemoveAccessToken(t *testing.T) {
 			},
 		},
 		{
+			name: "simple success with profile",
+			input: removeInput{
+				profile:      "my-profile",
+				endpoint:     "https://example.com",
+				cacheContent: `{"my-profile.https://example.com": {}}`,
+			},
+			expected: removeExpected{
+				cacheContent: `{}`,
+			},
+		},
+		{
 			name: "no op",
 			input: removeInput{
 				endpoint:     "https://does not exist",
@@ -653,6 +668,16 @@ func TestRemoveAccessToken(t *testing.T) {
 			},
 			expected: removeExpected{
 				cacheContent: `{"https://example.com": {}}`,
+			},
+		},
+		{
+			name: "no op with profile",
+			input: removeInput{
+				endpoint:     "https://does not exist",
+				cacheContent: `{"Default.https://example.com": {}}`,
+			},
+			expected: removeExpected{
+				cacheContent: `{"Default.https://example.com": {}}`,
 			},
 		},
 	}
@@ -665,7 +690,11 @@ func TestRemoveAccessToken(t *testing.T) {
 			tokenFilePath := filepath.Join(home, constants.DefaultTokenFileName)
 			err = afero.WriteFile(fsys, tokenFilePath, []byte(tt.input.cacheContent), 0644)
 			require.NoError(t, err)
-			err = auth.RemoveAccessToken(fsys, tt.input.endpoint)
+			v := viper.New()
+			if tt.input.profile != "" {
+				v.Set(constants.ProfileFlag, tt.input.profile)
+			}
+			err = auth.RemoveAccessToken(fsys, v, tt.input.endpoint)
 			require.NoError(t, err)
 			actual, err := afero.ReadFile(fsys, tokenFilePath)
 			require.NoError(t, err)
@@ -680,6 +709,9 @@ func makeAuthTestFunc(tt authTestCase) func(t *testing.T) {
 		home, err := afero.TempDir(fsys, "", "")
 		require.NoError(t, err)
 		t.Setenv(osutil.HomeEnvVar(), home)
+		if tt.input.profile == "" {
+			tt.input.profile = "Default"
+		}
 		if tt.input.home == homeAsFile {
 			cachePath := filepath.Join(home, constants.DefaultTokenFileName)
 			fsys.OpenFunc = func(
@@ -704,7 +736,7 @@ func makeAuthTestFunc(tt authTestCase) func(t *testing.T) {
 			// Populate endpoint-keyed cached token entry when requested.
 			cachePath := filepath.Join(home, constants.DefaultTokenFileName)
 			require.NoError(t, fsys.MkdirAll(filepath.Dir(cachePath), 0o700))
-			cacheEntry := map[string]json.RawMessage{srv.URL: json.RawMessage(tt.input.cache)}
+			cacheEntry := map[string]json.RawMessage{tt.input.profile + "." + srv.URL: json.RawMessage(tt.input.cache)}
 			cacheData, err := json.Marshal(cacheEntry)
 			require.NoError(t, err)
 			require.NoError(t, afero.WriteFile(fsys, cachePath, cacheData, 0o600))
@@ -759,10 +791,13 @@ func makeAuthTestFunc(tt authTestCase) func(t *testing.T) {
 			auth.SetCallbackTimeout(tt.input.pkceCallbackTimeout)
 			t.Cleanup(func() { auth.SetCallbackTimeout(nil) })
 		}
+		v := viper.New()
+		v.Set(constants.ProfileFlag, tt.input.profile)
 		res, err := auth.GetAccessToken(
 			ctx,
 			stubUI,
 			fsys,
+			v,
 			auth.GetAccessTokenParams{
 				ControlPlaneEndpoint: controlPlaneEndpoint,
 				AuthMode:             tt.input.authMode,
@@ -790,7 +825,7 @@ func makeAuthTestFunc(tt authTestCase) func(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, tt.expected.token, res)
 			if tt.expected.cachedToken != nil {
-				verifyTokenCacheContents(t, fsys, home, srv.URL, *tt.expected.cachedToken)
+				verifyTokenCacheContents(t, fsys, home, tt.input.profile, srv.URL, *tt.expected.cachedToken)
 			}
 		}
 		if len(tt.expected.displays) == 0 {
@@ -907,12 +942,24 @@ const (
   }
 }
 `
+	fakeCacheWithProfile = `
+{
+  "profile.https://example.com": {
+    "access_token": "access-token",
+    "expires_at": "2026-10-26T21:02:17.516241Z",
+    "id_token": "header.payload.signature",
+    "refresh_token": "refresh-token",
+    "token_type": "Bearer"
+  }
+}
+`
 	invalidCache = `invalid`
 )
 
 type getCachedIdentityTokenInput struct {
 	cacheContent string
 	endpoint     string
+	profile      string
 }
 
 type getCachedIdentityTokenExpected struct {
@@ -944,6 +991,17 @@ func TestGetCachedIdentityToken(t *testing.T) {
 			},
 		},
 		{
+			name: "fake cached token with profile",
+			input: getCachedIdentityTokenInput{
+				cacheContent: fakeCacheWithProfile,
+				endpoint:     "https://example.com",
+				profile:      "profile",
+			},
+			expected: getCachedIdentityTokenExpected{
+				idToken: "header.payload.signature",
+			},
+		},
+		{
 			name: "invalid cached token",
 			input: getCachedIdentityTokenInput{
 				cacheContent: invalidCache,
@@ -966,7 +1024,11 @@ func TestGetCachedIdentityToken(t *testing.T) {
 				err = afero.WriteFile(fsys, tokenFilePath, []byte(tt.input.cacheContent), 0644)
 				require.NoError(t, err)
 			}
-			actual := auth.GetCachedIdentityToken(fsys, tt.input.endpoint)
+			v := viper.New()
+			if tt.input.profile != "" {
+				v.Set(constants.ProfileFlag, tt.input.profile)
+			}
+			actual := auth.GetCachedIdentityToken(fsys, v, tt.input.endpoint)
 			require.Equal(t, tt.expected.idToken, actual)
 		})
 	}
@@ -995,7 +1057,7 @@ type expectedTokenCache struct {
 func verifyTokenCacheContents(
 	t *testing.T,
 	fsys afero.Fs,
-	home, endpoint string,
+	home, profile, endpoint string,
 	expected expectedTokenCache,
 ) {
 	t.Helper()
@@ -1007,7 +1069,11 @@ func verifyTokenCacheContents(
 	err = json.Unmarshal(data, &cached)
 	require.NoError(t, err, "failed to unmarshal token cache JSON")
 
-	entry, ok := cached[endpoint]
+	key := endpoint
+	if profile != "" {
+		key = fmt.Sprintf("%s.%s", profile, key)
+	}
+	entry, ok := cached[key]
 	require.True(t, ok, "missing endpoint entry in cache: %s", endpoint)
 
 	if expected.accessToken != "" {

@@ -50,10 +50,10 @@ func CreateApp(
 		Use:   constants.SASAppName,
 		Short: constants.SASAppUsage,
 		PersistentPreRunE: func(
-			_ *cobra.Command,
+			cmd *cobra.Command,
 			_ []string,
 		) error {
-			return configureApplication(fsys)
+			return configureApplication(cmd, fsys)
 		},
 		SilenceUsage:  true,
 		SilenceErrors: true,
@@ -66,12 +66,19 @@ func CreateApp(
 // configureApplication handles the configuration of the application including
 // loading any config file and setting up logging.
 func configureApplication(
+	cmd *cobra.Command,
 	fsys afero.Fs,
 ) error {
+	flags.BindToViper(cmd, nil)
+	// Configure logging after binding so that loading the config file can be
+	// logged based on command line options.
+	configureLogging()
 	err := loadConfigFile(fsys)
 	if err != nil {
 		return err
 	}
+	// Configure logging a second time to honor logging settings from the now
+	// loaded config file.
 	configureLogging()
 	return nil
 }
@@ -124,6 +131,19 @@ func loadConfigFile(
 			i18n.Format(i18n.ConfigFileReadFailed, i18n.A{constants.I18nArgKeyPath: configPath}),
 		)
 	}
+	// Resolve profile, if present. If a profile is selected and present, then
+	// set all the profile's keys at the top level. Otherwise, leave viper
+	// unchanged.
+	profileName := viper.GetString(constants.ProfileFlag)
+	logutil.GetLogger().Debug("loading profile", "profile", profileName)
+	profile := viper.GetStringMap(profileName)
+	if len(profile) == 0 {
+		logutil.GetLogger().Debug("profile not found, using top level keys", "profile", profileName)
+		return nil
+	}
+	for k, v := range profile {
+		viper.Set(k, v)
+	}
 	return nil
 }
 
@@ -147,6 +167,7 @@ func AddRootFlags(cmd *cobra.Command) {
 	flags.AddClientIDFlag(cmd)
 	flags.AddClientSecretFlag(cmd)
 	flags.AddVerboseFlag(cmd)
+	flags.AddProfileFlag(cmd)
 }
 
 func createCommands(

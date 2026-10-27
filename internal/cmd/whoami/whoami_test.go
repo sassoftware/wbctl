@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/sassoftware/wbctl/internal/cmd"
+	"github.com/sassoftware/wbctl/internal/cmd/flags"
 	"github.com/sassoftware/wbctl/internal/cmd/whoami"
 	"github.com/sassoftware/wbctl/internal/constants"
 	"github.com/sassoftware/wbctl/internal/osutil"
@@ -21,7 +22,7 @@ import (
 const (
 	fakeCache = `
 {
-  "https://example.com": {
+  "Default.https://example.com": {
     "access_token": "access-token",
     "expires_at": "2026-10-26T21:02:17.516241Z",
     "id_token": "header.ewogICJhdWQiOiAibXktYXVkaWVuY2UiLAogICJleHAiOiAxNzkzMDg0M` +
@@ -40,7 +41,7 @@ const (
 `
 	invalidCache = `
 {
-  "https://example.com": {
+  "Default.https://example.com": {
     "access_token": "access-token",
     "expires_at": "2026-10-26T21:02:17.516241Z",
     "id_token": "header.aW52YWxpZC1wYXlsb2FkCg==.signature",
@@ -186,6 +187,7 @@ func TestWhoamiCommand(t *testing.T) {
 			mockCmd := whoami.Command(context.Background(), fsys, stubUI)
 			cmd.AddRootFlags(mockCmd)
 			mockCmd.SetArgs(getWhoamiArgs(tt))
+			mockCmd.PersistentPreRun = flags.BindToViper
 			err = mockCmd.Execute()
 			if tt.expected.err != "" {
 				require.EqualError(t, err, tt.expected.err)

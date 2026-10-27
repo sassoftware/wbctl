@@ -43,7 +43,6 @@ func CreateCommand(
 			i18n.CmdCreateTypeDescription,
 			i18n.A{constants.I18nArgTypeKey: cmdtypes.Titler.String(constants.JobSubmissionType)},
 		),
-		PreRun: flags.BindToViper,
 	}
 	flags.AddFilenameFlag(cmd, constants.JobSubmissionType)
 	flags.AddDryRunFlag(cmd)
@@ -75,7 +74,6 @@ func StartCommand(
 			i18n.CmdStartTypeDescription,
 			i18n.A{constants.I18nArgTypeKey: cmdtypes.Titler.String(constants.JobSubmissionType)},
 		),
-		PreRun: flags.BindToViper,
 	}
 	flags.AddDryRunFlag(cmd)
 	flags.AddDataplaneFlag(cmd, constants.JobSubmissionType)

@@ -7,6 +7,7 @@ import (
 	"context"
 	"log/slog"
 	"path"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -283,6 +284,110 @@ func TestVerboseFlag(t *testing.T) {
 			err = app.PersistentPreRunE(app, app.Flags().Args())
 			require.NoError(t, err)
 			require.Equal(t, tt.expectedLevel, logutil.GetLevel())
+		})
+	}
+}
+
+const (
+	config = `
+{
+  "verbose": "trace",
+  "endpoint": "http://example.com"
+}
+`
+	configWithDefaultProfile = `
+{
+  "verbose": "trace",
+  "Default": {
+    "endpoint": "http://example.com"
+  }
+}
+`
+	configWithNamedProfile = `
+{
+  "verbose": "trace",
+  "profile-name": {
+    "endpoint": "http://example.com"
+  }
+}
+`
+)
+
+type profileInput struct {
+	configContent string
+	args          []string
+}
+
+type profileExpected struct {
+	endpoint string
+	verbose  slog.Level
+}
+
+type profileTestCase struct {
+	name     string
+	input    profileInput
+	expected profileExpected
+}
+
+func TestProfileFlag(t *testing.T) {
+	tests := []profileTestCase{
+		{
+			name: "config without profile",
+			input: profileInput{
+				configContent: config,
+			},
+			expected: profileExpected{
+				endpoint: "http://example.com",
+				verbose:  logutil.LevelTrace,
+			},
+		},
+		{
+			name: "config with default profile",
+			input: profileInput{
+				configContent: configWithDefaultProfile,
+			},
+			expected: profileExpected{
+				endpoint: "http://example.com",
+				verbose:  logutil.LevelTrace,
+			},
+		},
+		{
+			name: "config with named profile",
+			input: profileInput{
+				configContent: configWithNamedProfile,
+				args:          []string{"--profile", "profile-name"},
+			},
+			expected: profileExpected{
+				endpoint: "http://example.com",
+				verbose:  logutil.LevelTrace,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer viper.Reset()
+
+			fsys := stubs.StubFS{Fs: afero.NewMemMapFs()}
+			home, err := afero.TempDir(fsys, "", "")
+			require.NoError(t, err)
+			t.Setenv(osutil.HomeEnvVar(), home)
+			if tt.input.configContent != "" {
+				tokenFilePath := filepath.Join(home, constants.DefaultConfigFileName)
+				err = afero.WriteFile(fsys, tokenFilePath, []byte(tt.input.configContent), 0644)
+				require.NoError(t, err)
+			}
+			viper.SetFs(fsys)
+			stubUI := &stubs.StubUI{}
+			app := cmd.CreateApp(context.Background(), fsys, stubUI)
+			require.NotNil(t, app)
+			app.SetArgs(tt.input.args)
+			err = app.ParseFlags(tt.input.args)
+			require.NoError(t, err)
+			err = app.PersistentPreRunE(app, app.Flags().Args())
+			require.NoError(t, err)
+			require.Equal(t, tt.expected.endpoint, viper.GetString("endpoint"))
+			require.Equal(t, tt.expected.verbose, logutil.GetLevel())
 		})
 	}
 }
