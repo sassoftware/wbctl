@@ -8,7 +8,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gotnospirit/messageformat v0.0.0-20221001023931-dfe49f1eb092
 	github.com/jedib0t/go-pretty/v6 v6.8.3
-	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.6.0
+	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.7.0
 	github.com/magiconair/properties v1.18.12
 	github.com/sassoftware/sas-ggdk v0.5.0
 	github.com/spf13/afero v1.15.0
