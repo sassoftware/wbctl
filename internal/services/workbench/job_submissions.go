@@ -21,27 +21,47 @@ import (
 )
 
 // GetJobSubmissions  gets the job submissions in the given WorkbenchService. If
-// given any ids, only the matching resources will be returned. Otherwise, all
+// given any ids/names, only the matching resources will be returned. Otherwise, all
 // resources are returned.
 func GetJobSubmissions(
 	ctx context.Context,
 	s *WorkbenchService,
-	ids []string,
+	args []string,
 	sortSpec string,
 ) (types.JobSubmissions, error) {
-	logutil.GetLogger().Info("getting job-submissions", "ids", ids, "sort", sortSpec)
+	logutil.GetLogger().Info("getting job-submissions", "args", args, "sort", sortSpec)
 	sortSpec = normalizeSortSpec(sortSpec, map[string][]string{
 		constants.SortKeyAge:   {constants.SortKeyCreatedAt},
 		constants.SortKeyState: {constants.SortKeyCurrentState},
 	})
-	return result.Split(Get[types.JobSubmissions](
-		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointJobRuns), IDsOrControllerIDsQuery(ids, sortSpec),
+	jobSubmissions, err := result.Split(Get[types.JobSubmissions](
+		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointJobRuns), IDsControllerIDsOrJobNamesQuery(args, sortSpec),
 	))
+	if err != nil {
+		return nil, err
+	}
+	return selectByIDThenName(
+		args,
+		jobSubmissions,
+		func(j types.JobSubmission) string { return j.ID },
+		func(j types.JobSubmission) string { return j.ControllerID },
+		func(j types.JobSubmission) string { return j.JobName },
+	), nil
 }
 
-// BulkDeleteJobSubmissions deletes the job submission with the given id.
-func BulkDeleteJobSubmissions(ctx context.Context, s *WorkbenchService, ids []string) ([]string, error) {
-	logutil.GetLogger().Info("deleting job-submissions", "ids", ids)
+func resolveJobSubmissionIDs(ctx context.Context, s *WorkbenchService, ids []string) ([]string, error) {
+	return resolveIDs(
+		ctx, s, ids, GetJobSubmissions, func(j types.JobSubmission) string { return j.ID }, constants.JobSubmissionType,
+	)
+}
+
+// BulkDeleteJobSubmissions deletes the job submissions with the given ids/names.
+func BulkDeleteJobSubmissions(ctx context.Context, s *WorkbenchService, args []string) ([]string, error) {
+	logutil.GetLogger().Info("deleting job-submissions", "args", args)
+	ids, err := resolveJobSubmissionIDs(ctx, s, args)
+	if err != nil {
+		return nil, err
+	}
 	return result.Split(Post[[]string](
 		ctx,
 		s,

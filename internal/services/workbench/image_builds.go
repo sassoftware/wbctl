@@ -19,21 +19,31 @@ import (
 )
 
 // GetImageBuilds gets the image builds in the given WorkbenchService. If given
-// any ids, only the matching resources will be returned. Otherwise, all
+// any ids/names, only the matching resources will be returned. Otherwise, all
 // resources are returned.
 func GetImageBuilds(
 	ctx context.Context,
 	s *WorkbenchService,
-	ids []string,
+	args []string,
 	sortSpec string,
 ) (types.ImageBuilds, error) {
-	logutil.GetLogger().Info("getting image-builds", "ids", ids, "sort", sortSpec)
+	logutil.GetLogger().Info("getting image-builds", "args", args, "sort", sortSpec)
 	sortSpec = normalizeSortSpec(sortSpec, map[string][]string{
 		constants.SortKeyAge: {constants.SortKeyCreatedAt},
 	})
-	return result.Split(Get[types.ImageBuilds](
-		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointImageBuilds), IDsOrControllerIDsQuery(ids, sortSpec),
+	imageBuilds, err := result.Split(Get[types.ImageBuilds](
+		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointImageBuilds), IDsControllerIDsOrNamesQuery(args, sortSpec),
 	))
+	if err != nil {
+		return nil, err
+	}
+	return selectByIDThenName(
+		args,
+		imageBuilds,
+		func(b types.ImageBuild) string { return b.ID },
+		func(b types.ImageBuild) string { return b.ControllerID },
+		func(b types.ImageBuild) string { return b.Name },
+	), nil
 }
 
 // PrintImageBuilds returns a function that prints the given image builds.

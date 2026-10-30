@@ -20,27 +20,47 @@ import (
 )
 
 // GetWorkbenches gets the workbenches in the given WorkbenchService. If given
-// any ids, only the matching resources will be returned. Otherwise, all
+// any ids/names, only the matching resources will be returned. Otherwise, all
 // resources are returned.
 func GetWorkbenches(
 	ctx context.Context,
 	s *WorkbenchService,
-	ids []string,
+	args []string,
 	sortSpec string,
 ) (types.Workbenches, error) {
-	logutil.GetLogger().Info("getting workbenches", "ids", ids, "sort", sortSpec)
+	logutil.GetLogger().Info("getting workbenches", "args", args, "sort", sortSpec)
 	sortSpec = normalizeSortSpec(sortSpec, map[string][]string{
 		constants.SortKeyAge:   {constants.SortKeyCreatedAt},
 		constants.SortKeyState: {constants.SortKeyCurrentState},
 	})
-	return result.Split(Get[types.Workbenches](
-		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointWorkbenches), IDsOrControllerIDsQuery(ids, sortSpec),
+	workbenches, err := result.Split(Get[types.Workbenches](
+		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointWorkbenches), IDsControllerIDsOrNamesQuery(args, sortSpec),
 	))
+	if err != nil {
+		return nil, err
+	}
+	return selectByIDThenName(
+		args,
+		workbenches,
+		func(w types.Workbench) string { return w.ID },
+		func(w types.Workbench) string { return w.ControllerID },
+		func(w types.Workbench) string { return w.Name },
+	), nil
 }
 
-// BulkDeleteWorkbenches deletes the workbench with the given id.
-func BulkDeleteWorkbenches(ctx context.Context, s *WorkbenchService, ids []string) ([]string, error) {
-	logutil.GetLogger().Info("deleting workbenches", "ids", ids)
+func resolveWorkbenchIDs(ctx context.Context, s *WorkbenchService, args []string) ([]string, error) {
+	return resolveIDs(
+		ctx, s, args, GetWorkbenches, func(w types.Workbench) string { return w.ID }, constants.WorkbenchType,
+	)
+}
+
+// BulkDeleteWorkbenches deletes the workbenches with the given ids/names.
+func BulkDeleteWorkbenches(ctx context.Context, s *WorkbenchService, args []string) ([]string, error) {
+	logutil.GetLogger().Info("deleting workbenches", "args", args)
+	ids, err := resolveWorkbenchIDs(ctx, s, args)
+	if err != nil {
+		return nil, err
+	}
 	return result.Split(Post[[]string](
 		ctx,
 		s,
@@ -64,15 +84,19 @@ func CreateWorkbench(
 	))
 }
 
-// BulkUpdateWorkbenches  applies the given types.Workbench to all the
-// workbenches with the given ids.
+// BulkUpdateWorkbenches applies the given types.Workbench to all the
+// workbenches with the given ids/names.
 func BulkUpdateWorkbenches(
 	ctx context.Context,
 	s *WorkbenchService,
-	ids []string,
+	args []string,
 	body types.Workbench,
 ) (types.Workbenches, error) {
-	logutil.GetLogger().Info("updating workbenches", "ids", ids, "body", body)
+	logutil.GetLogger().Info("updating workbenches", "args", args, "body", body)
+	ids, err := resolveWorkbenchIDs(ctx, s, args)
+	if err != nil {
+		return nil, err
+	}
 	return bulkUpdateForUniqueNameConstrainedResources[types.Workbench, types.Workbenches](
 		ctx,
 		s,

@@ -18,28 +18,48 @@ import (
 	"github.com/sassoftware/wbctl/internal/ui"
 )
 
-// GetJobs gets the jobs in the given WorkbenchService. If given any ids, only
-// the matching resources will be returned. Otherwise, all resources are
+// GetJobs gets the jobs in the given WorkbenchService. If given any ids/names,
+// only the matching resources will be returned. Otherwise, all resources are
 // returned.
 func GetJobs(
 	ctx context.Context,
 	s *WorkbenchService,
-	ids []string,
+	args []string,
 	sortSpec string,
 ) (types.Jobs, error) {
-	logutil.GetLogger().Info("getting jobs", "ids", ids, "sort", sortSpec)
+	logutil.GetLogger().Info("getting jobs", "args", args, "sort", sortSpec)
 	sortSpec = normalizeSortSpec(sortSpec, map[string][]string{
 		constants.SortKeyAge:   {constants.SortKeyCreatedAt},
 		constants.SortKeyState: {constants.SortKeyCurrentState},
 	})
-	return result.Split(Get[types.Jobs](
-		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointJobs), IDsQuery(ids, sortSpec),
+	jobs, err := result.Split(Get[types.Jobs](
+		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointJobs), IDsOrNamesQuery(args, sortSpec),
 	))
+	if err != nil {
+		return nil, err
+	}
+	return selectByIDThenName(
+		args,
+		jobs,
+		func(j types.Job) string { return j.ID },
+		nil,
+		func(j types.Job) string { return j.Name },
+	), nil
 }
 
-// BulkDeleteJobs deletes the job with the given id.
-func BulkDeleteJobs(ctx context.Context, s *WorkbenchService, ids []string) ([]string, error) {
-	logutil.GetLogger().Info("deleting jobs", "ids", ids)
+func resolveJobIDs(ctx context.Context, s *WorkbenchService, args []string) ([]string, error) {
+	return resolveIDs(
+		ctx, s, args, GetJobs, func(j types.Job) string { return j.ID }, constants.JobType,
+	)
+}
+
+// BulkDeleteJobs deletes the jobs with the given ids/names.
+func BulkDeleteJobs(ctx context.Context, s *WorkbenchService, args []string) ([]string, error) {
+	logutil.GetLogger().Info("deleting jobs", "args", args)
+	ids, err := resolveJobIDs(ctx, s, args)
+	if err != nil {
+		return nil, err
+	}
 	return result.Split(Post[[]string](
 		ctx,
 		s,
@@ -59,15 +79,19 @@ func CreateJob(ctx context.Context, s *WorkbenchService, body types.Job) (types.
 	))
 }
 
-// BulkUpdateJobs  applies the given types.Job to all the jobs with the given
-// ids.
+// BulkUpdateJobs applies the given types.Job to all the jobs with the given
+// ids/names.
 func BulkUpdateJobs(
 	ctx context.Context,
 	s *WorkbenchService,
-	ids []string,
+	args []string,
 	body types.Job,
 ) (types.Jobs, error) {
-	logutil.GetLogger().Info("updating jobs", "ids", ids, "body", body)
+	logutil.GetLogger().Info("updating jobs", "args", args, "body", body)
+	ids, err := resolveJobIDs(ctx, s, args)
+	if err != nil {
+		return nil, err
+	}
 	return result.Split(Post[types.Jobs](
 		ctx,
 		s,

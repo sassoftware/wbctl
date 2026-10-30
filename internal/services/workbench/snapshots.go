@@ -22,29 +22,49 @@ import (
 )
 
 // GetSnapshots gets the snapshots in the given WorkbenchService. If given any
-// ids, only the matching resources will be returned. Otherwise, all resources
+// ids/names, only the matching resources will be returned. Otherwise, all resources
 // are returned.
 func GetSnapshots(
 	ctx context.Context,
 	s *WorkbenchService,
-	ids []string,
+	args []string,
 	sortSpec string,
 ) (types.Snapshots, error) {
-	logutil.GetLogger().Info("getting snapshots", "ids", ids, "sort", sortSpec)
+	logutil.GetLogger().Info("getting snapshots", "args", args, "sort", sortSpec)
 	sortSpec = normalizeSortSpec(sortSpec, map[string][]string{
 		constants.SortKeyAge:    {constants.SortKeyCreatedAt},
 		constants.SortKeySource: {constants.SortKeySpecSourcePVCName},
 		constants.SortKeySize:   {constants.SortKeyVolumeStatusRestoreSize},
 		constants.SortKeyReady:  {constants.SortKeyVolumeStatusReadyToUse},
 	})
-	return result.Split(Get[types.Snapshots](
-		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointSnapshots), IDsOrControllerIDsQuery(ids, sortSpec),
+	snapshots, err := result.Split(Get[types.Snapshots](
+		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointSnapshots), IDsControllerIDsOrNamesQuery(args, sortSpec),
 	))
+	if err != nil {
+		return nil, err
+	}
+	return selectByIDThenName(
+		args,
+		snapshots,
+		func(s types.Snapshot) string { return s.ID },
+		func(s types.Snapshot) string { return s.ControllerID },
+		func(s types.Snapshot) string { return s.Name },
+	), nil
 }
 
-// BulkDeleteSnapshots deletes the snapshot with the given id.
-func BulkDeleteSnapshots(ctx context.Context, s *WorkbenchService, ids []string) ([]string, error) {
-	logutil.GetLogger().Info("deleting snapshots", "ids", ids)
+func resolveSnapshotIDs(ctx context.Context, s *WorkbenchService, args []string) ([]string, error) {
+	return resolveIDs(
+		ctx, s, args, GetSnapshots, func(s types.Snapshot) string { return s.ID }, constants.SnapshotType,
+	)
+}
+
+// BulkDeleteSnapshots deletes the snapshots with the given ids/names.
+func BulkDeleteSnapshots(ctx context.Context, s *WorkbenchService, args []string) ([]string, error) {
+	logutil.GetLogger().Info("deleting snapshots", "args", args)
+	ids, err := resolveSnapshotIDs(ctx, s, args)
+	if err != nil {
+		return nil, err
+	}
 	return result.Split(Post[[]string](
 		ctx,
 		s,
@@ -69,14 +89,18 @@ func CreateSnapshot(
 }
 
 // BulkUpdateSnapshots applies the given types.Snapshot to all the snapshots
-// with the given ids.
+// with the given ids/names.
 func BulkUpdateSnapshots(
 	ctx context.Context,
 	s *WorkbenchService,
-	ids []string,
+	args []string,
 	body types.Snapshot,
 ) (types.Snapshots, error) {
-	logutil.GetLogger().Info("updating snapshots", "ids", ids, "body", body)
+	logutil.GetLogger().Info("updating snapshots", "args", args, "body", body)
+	ids, err := resolveSnapshotIDs(ctx, s, args)
+	if err != nil {
+		return nil, err
+	}
 	return result.Split(Post[types.Snapshots](
 		ctx,
 		s,
