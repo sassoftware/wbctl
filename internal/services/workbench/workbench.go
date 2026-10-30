@@ -127,7 +127,7 @@ func GetValidDataplaneID(ctx context.Context, svc *WorkbenchService, dataplaneID
 	return dataplanes[0].ID, nil
 }
 
-// GetValidWorkspaceRequests takes the given worksaceIDs, fetches those
+// GetValidWorkspaceRequests takes the given workspaceIDs, fetches those
 // workspaces from the server, and returns the database id and full workspace
 // request body for each.
 func GetValidWorkspaceRequests(

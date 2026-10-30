@@ -34,7 +34,7 @@ func GetWorkbenches(
 		constants.SortKeyState: {constants.SortKeyCurrentState},
 	})
 	return result.Split(Get[types.Workbenches](
-		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointWorkbenches), IDsOrControllerIDsQuery(ids, sortSpec),
+		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointWorkbenches), IDsControllerIDsOrNamesQuery(ids, sortSpec),
 	))
 }
 

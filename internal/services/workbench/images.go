@@ -40,7 +40,7 @@ func GetImages(
 		},
 	})
 	return result.Split(Get[types.Images](
-		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointImages), IDsOrControllerIDsQuery(ids, sortSpec),
+		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointImages), IDsControllerIDsOrNamesQuery(ids, sortSpec),
 	))
 }
 

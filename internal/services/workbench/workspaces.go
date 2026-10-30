@@ -36,14 +36,35 @@ func GetWorkspaces(
 		constants.SortKeyHomeDir:          {constants.SortKeyPropertiesHomeDirectory},
 		constants.SortKeyStorageClassName: {constants.SortKeyStorageSpecStorageClassName},
 	})
-	return result.Split(Get[types.Workspaces](
-		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointWorkspaces), IDsOrControllerIDsQuery(ids, sortSpec),
+	workspaces, err := result.Split(Get[types.Workspaces](
+		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointWorkspaces), IDsControllerIDsOrNamesQuery(ids, sortSpec),
 	))
+	if err != nil {
+		return nil, err
+	}
+	return selectByIDThenName(
+		ids,
+		workspaces,
+		func(w types.Workspace) string { return w.ID },
+		func(w types.Workspace) string { return w.ControllerID },
+		func(w types.Workspace) string { return w.Name },
+	), nil
 }
 
-// BulkDeleteWorkspaces deletes the workspaces with the given ids.
+func resolveWorkspaceIDs(ctx context.Context, s *WorkbenchService, ids []string) ([]string, error) {
+	return resolveIDs(
+		ctx, s, ids, GetWorkspaces, func(w types.Workspace) string { return w.ID }, constants.VolumeType,
+	)
+}
+
+// BulkDeleteWorkspaces deletes the workspaces with the given ids,
+// controller_ids, or names.
 func BulkDeleteWorkspaces(ctx context.Context, s *WorkbenchService, ids []string) ([]string, error) {
 	logutil.GetLogger().Info("deleting volumes", "ids", ids)
+	ids, err := resolveWorkspaceIDs(ctx, s, ids)
+	if err != nil {
+		return nil, err
+	}
 	return result.Split(Post[[]string](
 		ctx,
 		s,
@@ -76,6 +97,10 @@ func BulkUpdateWorkspaces(
 	body types.Workspace,
 ) (types.Workspaces, error) {
 	logutil.GetLogger().Info("updating volumes", "ids", ids)
+	ids, err := resolveWorkspaceIDs(ctx, s, ids)
+	if err != nil {
+		return nil, err
+	}
 	return bulkUpdateForUniqueNameConstrainedResources[types.Workspace, types.Workspaces](
 		ctx,
 		s,

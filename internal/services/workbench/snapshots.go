@@ -38,7 +38,7 @@ func GetSnapshots(
 		constants.SortKeyReady:  {constants.SortKeyVolumeStatusReadyToUse},
 	})
 	return result.Split(Get[types.Snapshots](
-		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointSnapshots), IDsOrControllerIDsQuery(ids, sortSpec),
+		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointSnapshots), IDsControllerIDsOrNamesQuery(ids, sortSpec),
 	))
 }
 

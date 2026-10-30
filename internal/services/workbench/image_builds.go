@@ -32,7 +32,7 @@ func GetImageBuilds(
 		constants.SortKeyAge: {constants.SortKeyCreatedAt},
 	})
 	return result.Split(Get[types.ImageBuilds](
-		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointImageBuilds), IDsOrControllerIDsQuery(ids, sortSpec),
+		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointImageBuilds), IDsControllerIDsOrNamesQuery(ids, sortSpec),
 	))
 }
 

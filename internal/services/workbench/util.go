@@ -34,40 +34,135 @@ func IDsQuery(ids []string, sortSpec string) url.Values {
 	return query
 }
 
-// IDsOrControllerIDsQuery returns a PostgREST compatible query for the given
-// IDs and sort spec that will match either the actual id or the controller_id
+// IDsControllerIDsOrNamesQuery returns a PostgREST compatible query for the
+// given IDs/names and sort spec that will match the id, controller_id, or name
 // columns.
-func IDsOrControllerIDsQuery(ids []string, sortSpec string) url.Values {
+func IDsControllerIDsOrNamesQuery(ids []string, sortSpec string) url.Values {
+	return buildFilterQuery(ids, "controller_id", "name", sortSpec)
+}
+
+// IDsOrNamesQuery returns a PostgREST compatible query for the given IDs/names
+// and sort spec that will match the id or name columns.
+func IDsOrNamesQuery(ids []string, sortSpec string) url.Values {
+	return buildFilterQuery(ids, "", "name", sortSpec)
+}
+
+// IDsOrControllerIDsOrJobNamesQuery returns a PostgREST compatible query for the
+// given IDs/names and sort spec that will match the id, controller_id, or job_name
+// columns.
+func IDsOrControllerIDsOrJobNamesQuery(ids []string, sortSpec string) url.Values {
+	return buildFilterQuery(ids, "controller_id", "job_name", sortSpec)
+}
+
+// buildFilterQuery generates the query for the given IDs/names. UUID values
+// are matched against the id column, while other values are matched against
+// the controllerIDColumn if provided. Every value is matched against the
+// nameColumn.
+func buildFilterQuery(ids []string, controllerIDColumn, nameColumn, sortSpec string) url.Values {
 	query := url.Values{}
 	if sortSpec != "" {
 		query["order"] = []string{sortSpec}
 	}
+	if len(ids) == 0 {
+		return query
+	}
 	uuidIDs := []string{}
-	controllerIDs := []string{}
+	nonUUIDs := []string{}
 	for _, id := range ids {
 		if isUUID(id) {
 			uuidIDs = append(uuidIDs, id)
 		} else {
-			controllerIDs = append(controllerIDs, id)
+			nonUUIDs = append(nonUUIDs, id)
 		}
 	}
-	switch {
-	case len(uuidIDs) > 0 && len(controllerIDs) > 0:
-		query["or"] = []string{
-			"(id.in.(" + strings.Join(
-				uuidIDs,
-				",",
-			) + "),controller_id.in.(" + strings.Join(
-				controllerIDs,
-				",",
-			) + "))",
-		}
-	case len(uuidIDs) > 0:
-		query["id"] = []string{"in.(" + strings.Join(uuidIDs, ",") + ")"}
-	case len(controllerIDs) > 0:
-		query["controller_id"] = []string{"in.(" + strings.Join(controllerIDs, ",") + ")"}
+	clauses := []string{}
+	if len(uuidIDs) > 0 {
+		clauses = append(clauses, "id.in.("+strings.Join(uuidIDs, ",")+")")
 	}
+	if controllerIDColumn != "" && len(nonUUIDs) > 0 {
+		clauses = append(clauses, controllerIDColumn+".in.("+strings.Join(nonUUIDs, ",")+")")
+	}
+	clauses = append(clauses, nameColumn+".in.("+strings.Join(ids, ",")+")")
+	query["or"] = []string{"(" + strings.Join(clauses, ",") + ")"}
 	return query
+}
+
+// selectByIDThenName narrows resources to those requested by args. It provides precedence
+// for selecting by ID > Name. Each arg is resolved independendently, resource order is
+// preserved, and no resource is returned twice.
+func selectByIDThenName[T any, TS ~[]T](
+	args []string,
+	resources TS,
+	getIDFunc func(T) string,
+	getControllerIDFunc func(T) string,
+	getNameFunc func(T) string,
+) TS {
+	if len(args) == 0 {
+		return resources
+	}
+	selected := make([]bool, len(resources))
+	for _, arg := range args {
+		if arg == "" {
+			continue
+		}
+		matchedID := false
+		for i, resource := range resources {
+			if getIDFunc(resource) == arg || (getControllerIDFunc != nil && getControllerIDFunc(resource) == arg) {
+				selected[i] = true
+				matchedID = true
+			}
+		}
+		if matchedID {
+			continue
+		}
+		for i, resource := range resources {
+			if getNameFunc(resource) == arg {
+				selected[i] = true
+			}
+		}
+	}
+	filtered := make(TS, 0, len(resources))
+	for i, resource := range resources {
+		if selected[i] {
+			filtered = append(filtered, resource)
+		}
+	}
+	return filtered
+}
+
+// resolveIDs converts the given args, which may be ids, controller_ids, or names,
+// into the database ids of the matching resources.
+func resolveIDs[T any, TS ~[]T](
+	ctx context.Context,
+	s *WorkbenchService,
+	ids []string,
+	getter func(context.Context, *WorkbenchService, []string, string) (TS, error),
+	getIDFunc func(T) string,
+	resourceType string,
+) ([]string, error) {
+	if len(ids) == 0 {
+		return ids, nil
+	}
+	resources, err := getter(ctx, s, ids, "")
+	if err != nil {
+		return nil, err
+	}
+	if len(resources) == 0 {
+		return nil, errors.New(
+			i18n.Format(
+				i18n.ResourceNotFoundWithID,
+				i18n.A{
+					constants.I18nArgTypeKey: resourceType,
+					constants.I18nArgKeyID:   strings.Join(ids, ", "),
+				},
+			),
+		)
+	}
+	resolved := make([]string, 0, len(resources))
+	for _, resource := range resources {
+		resolved = append(resolved, getIDFunc(resource))
+	}
+	return resolved, nil
 }
 
 // Auth0IDsQuery returns an Auth0 compatible query for the given IDs.

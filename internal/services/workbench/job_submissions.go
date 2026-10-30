@@ -35,7 +35,7 @@ func GetJobSubmissions(
 		constants.SortKeyState: {constants.SortKeyCurrentState},
 	})
 	return result.Split(Get[types.JobSubmissions](
-		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointJobRuns), IDsOrControllerIDsQuery(ids, sortSpec),
+		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointJobRuns), IDsOrControllerIDsOrJobNamesQuery(ids, sortSpec),
 	))
 }
 
