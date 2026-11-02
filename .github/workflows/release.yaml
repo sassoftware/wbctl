@@ -4,6 +4,12 @@ name: release
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag for the binaries'
+        required: true
+        default: ''
 
 jobs:
   release:
@@ -16,4 +22,5 @@ jobs:
           fetch-depth: 0
 
       - name: Tag release
+        if: github.event_name != 'workflow_dispatch'
         run: make -f Makefile-ci.mk release-tag
