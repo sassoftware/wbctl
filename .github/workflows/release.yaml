@@ -4,11 +4,18 @@ name: release
 on:
   push:
     branches: [main]
-
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag for the binaries'
+        required: true
+        default: ''
 jobs:
   release:
     name: Tag a merged release
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
     steps:
       - name: Check out code
         uses: actions/checkout@v7.0.1
@@ -16,4 +23,42 @@ jobs:
           fetch-depth: 0
 
       - name: Tag release
-        run: make -f Makefile-ci.mk release-tag
+        if: github.event_name != 'workflow_dispatch'
+        id: tag
+        shell: bash
+        run: |
+          make -f Makefile-ci.mk release-tag
+          if [[ $(git log -1 --format=%s) == release:* ]]; then
+            printf 'tag=%s\n' "$(git describe --tags --exact-match HEAD)" >> "$GITHUB_OUTPUT"
+          fi
+
+  binaries:
+    name: Build release binaries
+    needs: release
+    if: needs.release.outputs.tag != ''
+    runs-on: macos-latest
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      SIGNING_MODE: ${{ vars.SIGNING_MODE || 'auto' }}
+      MACOS_SIGN_IDENTITY: ${{ vars.MACOS_SIGN_IDENTITY }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Build and publish binaries
+        uses: ./.github/actions/build-publish-binaries
+        with:
+          signing-mode: ${{ vars.SIGNING_MODE || 'auto' }}
+          macos-certificate-p12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          macos-certificate-password: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          macos-sign-identity: ${{ vars.MACOS_SIGN_IDENTITY }}
+          windows-certificate-p12: ${{ secrets.WINDOWS_CERTIFICATE_P12 }}
+          windows-sign-password: ${{ secrets.WINDOWS_SIGN_PASSWORD }}
+          apple-id: ${{ secrets.APPLE_ID }}
+          apple-app-specific-password: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          apple-team-id: ${{ vars.APPLE_TEAM_ID }}
+          release-tag: ${{ needs.release.outputs.tag || github.event.inputs.release_tag }}
