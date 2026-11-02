@@ -1,5 +1,5 @@
 name: Build and publish binaries
-description: Build, sign, and notarize binaries on macOS, then upload test artifacts or publish release assets. Requires id-token write and contents write permissions.
+description: Build, sign, and notarize binaries on macOS, then publish release assets or dry-run publishing for manual tests. Requires id-token write and contents write permissions.
 inputs:
   signing-mode:
     description: Signing mode (auto, keyless, or unsigned).
@@ -66,29 +66,34 @@ runs:
         APPLE_TEAM_ID: ${{ inputs.apple-team-id }}
       run: make -f Makefile-ci.mk notarize-macos
 
-    - name: Upload release artifacts
-      if: github.event_name == 'workflow_dispatch'
-      uses: actions/upload-artifact@v7
-      with:
-        name: wbctl-release-binaries
-        path: build/release/*
-        if-no-files-found: error
-
     - name: Publish release assets
-      if: github.event_name == 'push'
+      if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
       env:
         GH_TOKEN: ${{ github.token }}
         RELEASE_TAG: ${{ inputs.release-tag }}
         SIGNING_MODE: ${{ inputs.signing-mode }}
+        DRY_RUN: ${{ github.event_name == 'workflow_dispatch' }}
       shell: bash
       run: |
-        : "${RELEASE_TAG:?Set release-tag when publishing release assets}"
-        if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-          gh release create "$RELEASE_TAG" --verify-tag --generate-notes
+        if [[ "$DRY_RUN" == true ]]; then
+          RELEASE_TAG=${RELEASE_TAG:-dry-run}
         fi
-        gh release upload "$RELEASE_TAG" build/release/wbctl-linux-amd64 \
+        : "${RELEASE_TAG:?Set release-tag when publishing release assets}"
+        run_gh() {
+          if [[ "$DRY_RUN" == true ]]; then
+            printf 'DRY RUN:'
+            printf ' %q' gh "$@"
+            printf '\n'
+          else
+            gh "$@"
+          fi
+        }
+        if [[ "$DRY_RUN" == true ]] || ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+          run_gh release create "$RELEASE_TAG" --verify-tag --generate-notes
+        fi
+        run_gh release upload "$RELEASE_TAG" build/release/wbctl-linux-amd64 \
           build/release/wbctl-darwin-universal build/release/wbctl-windows-amd64.exe \
           build/release/checksums.txt scripts/install.sh scripts/install.ps1 --clobber
         if [[ "$SIGNING_MODE" != unsigned ]]; then
-          gh release upload "$RELEASE_TAG" build/release/*.sigstore.json --clobber
+          run_gh release upload "$RELEASE_TAG" build/release/*.sigstore.json --clobber
         fi
