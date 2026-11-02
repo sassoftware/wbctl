@@ -88,7 +88,7 @@ func buildFilterQuery(args []string, controllerIDColumn, nameColumn, sortSpec st
 }
 
 // selectByIDThenName narrows resources to those requested by args. It provides precedence
-// for selecting by ID > Name. Each arg is resolved independendently and no resource is
+// for selecting by ID > Name. Each arg is resolved independently and no resource is
 // returned twice.
 func selectByIDThenName[T any, TS ~[]T](
 	args []string,

@@ -34,17 +34,17 @@ const (
 ]
 `
 
-	jobsGetTwoResponseJSON = `
+	jobsGetMixedResponseJSON = `
 [
   {
-    "id": "id-a",
-    "name": "job-a",
-    "application_id": "app-a"
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "name": "job-uuid",
+    "application_id": "app-uuid"
   },
   {
-    "id": "id-b",
-    "name": "job-b",
-    "application_id": "app-b"
+    "id": "job-name-id",
+    "name": "job-name",
+    "application_id": "app-name"
   }
 ]
 `
@@ -352,6 +352,9 @@ Schedule:                 0 * * * *
   }
 ]
 `
+	jobsResolveIDsQuery              = "or=(name.in.(job-1,job-2))"
+	jobsResolveIDsResponseJSON       = `[{"id":"job-1"},{"id":"job-2"}]`
+	jobsDeleteSuccessResponseJSON    = `["job-1", "job-2"]`
 	expectedDeleteJobRequestJSON     = `{"ids":["job-1","job-2"]}`
 	createJobOneResponseBodyJSON     = `{"id":"job-1","name":"daily-job"}`
 	expectedCreateJobRequestJSON     = `{"param":{"name":"daily-job"}}`
@@ -363,9 +366,9 @@ var (
 		{ID: "job-1", Name: "daily-job", Description: "first", ApplicationID: "app-1"},
 	}
 
-	expectedResponseTwoJobs = types.Jobs{
-		{ID: "id-a", Name: "job-a", ApplicationID: "app-a"},
-		{ID: "id-b", Name: "job-b", ApplicationID: "app-b"},
+	expectedResponseMixedJobs = types.Jobs{
+		{ID: "123e4567-e89b-12d3-a456-426614174000", Name: "job-uuid", ApplicationID: "app-uuid"},
+		{ID: "job-name-id", Name: "job-name", ApplicationID: "app-name"},
 	}
 )
 
@@ -377,9 +380,11 @@ func TestDeleteJob(t *testing.T) {
 				ids: []string{"job-1", "job-2"},
 			},
 			mockEndpoints: getJobsDeleteEndpoints(
+				jobsResolveIDsQuery,
+				jobsResolveIDsResponseJSON,
 				expectedDeleteJobRequestJSON,
 				http.StatusOK,
-				`["job-1", "job-2"]`,
+				jobsDeleteSuccessResponseJSON,
 			),
 			expected: deleteExpected{
 				result: []string{"job-1", "job-2"},
@@ -391,6 +396,8 @@ func TestDeleteJob(t *testing.T) {
 				ids: []string{"job-1", "job-2"},
 			},
 			mockEndpoints: getJobsDeleteEndpoints(
+				jobsResolveIDsQuery,
+				jobsResolveIDsResponseJSON,
 				expectedDeleteJobRequestJSON,
 				http.StatusUnauthorized,
 				"unauthorized",
@@ -489,6 +496,8 @@ func TestBulkUpdateJobs(t *testing.T) {
 				body: types.Job{Name: "updated-name"},
 			},
 			mockEndpoints: getJobsBulkUpdateEndpoints(
+				jobsResolveIDsQuery,
+				jobsResolveIDsResponseJSON,
 				expectedBulkUpdateJobRequestJSON,
 				http.StatusOK,
 				jobsBulkUpdateResponseJSON,
@@ -507,6 +516,8 @@ func TestBulkUpdateJobs(t *testing.T) {
 				body: types.Job{Name: "updated-name"},
 			},
 			mockEndpoints: getJobsBulkUpdateEndpoints(
+				jobsResolveIDsQuery,
+				jobsResolveIDsResponseJSON,
 				expectedBulkUpdateJobRequestJSON,
 				http.StatusUnauthorized,
 				"unauthorized",
@@ -524,6 +535,8 @@ func TestBulkUpdateJobs(t *testing.T) {
 				body: types.Job{Name: "updated-name"},
 			},
 			mockEndpoints: getJobsBulkUpdateEndpoints(
+				jobsResolveIDsQuery,
+				jobsResolveIDsResponseJSON,
 				expectedBulkUpdateJobRequestJSON,
 				http.StatusOK,
 				"[",
@@ -567,15 +580,18 @@ func TestGetJobs(t *testing.T) {
 			},
 		},
 		{
-			name:    "get jobs success with ids query",
-			request: getRequest{ids: []string{"id-a"}},
+			name: "get jobs success with mixed ids, names query",
+			request: getRequest{
+				ids:  []string{"123e4567-e89b-12d3-a456-426614174000", "job-name"},
+				sort: "id.asc",
+			},
 			mockEndpoints: getJobsGetEndpoints(
-				"id=in.(id-a)",
+				"or=(id.in.(123e4567-e89b-12d3-a456-426614174000),name.in.(123e4567-e89b-12d3-a456-426614174000,job-name))&order=id.asc",
 				http.StatusOK,
-				jobsGetTwoResponseJSON,
+				jobsGetMixedResponseJSON,
 			),
 			expected: getExpected[types.Jobs]{
-				result: expectedResponseTwoJobs,
+				result: expectedResponseMixedJobs,
 			},
 		},
 		{
@@ -666,14 +682,14 @@ func TestGetJobs(t *testing.T) {
 			name:    "get jobs invalid json response",
 			request: getRequest{ids: []string{"id-a"}},
 			mockEndpoints: getJobsGetEndpoints(
-				"id=in.(id-a)",
+				"or=(name.in.(id-a))",
 				http.StatusOK,
 				"[",
 			),
 			expected: getExpected[types.Jobs]{
 				// jobs do not have controller ids so this query is for `id`
 				// even though it is not a uuid.
-				err: "GET ${URL}/postgrest/jobs?id=in.%28id-a%29 failed\n" +
+				err: "GET ${URL}/postgrest/jobs?or=%28name.in.%28id-a%29%29 failed\n" +
 					" Caused by:\n" +
 					"\t* unexpected EOF",
 			},
@@ -682,12 +698,12 @@ func TestGetJobs(t *testing.T) {
 			name:    "get jobs non-200 from server",
 			request: getRequest{ids: []string{"id-a"}},
 			mockEndpoints: getJobsGetEndpoints(
-				"id=in.(id-a)",
+				"or=(name.in.(id-a))",
 				http.StatusUnauthorized,
 				"unauthorized",
 			),
 			expected: getExpected[types.Jobs]{
-				err: "GET ${URL}/postgrest/jobs?id=in.%28id-a%29 failed\n" +
+				err: "GET ${URL}/postgrest/jobs?or=%28name.in.%28id-a%29%29 failed\n" +
 					" Caused by:\n" +
 					"\t* 401 unauthorized",
 			},
@@ -852,24 +868,25 @@ func TestDescribeJobs(t *testing.T) {
 }
 
 func getJobsDeleteEndpoints(
+	expectedQuery string,
+	resolveResponseBody string,
 	expectedBody string,
 	responseStatus int,
 	responseBody string,
 ) []stubs.StubHTTPEndpoint {
-	return []stubs.StubHTTPEndpoint{
-		{
-			Request: stubs.StubHTTPRequest{
-				Method:          http.MethodPost,
-				URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCJobBulkDelete),
-				ExpectedHeaders: authHeaders,
-				ExpectedBody:    expectedBody,
-			},
-			Response: stubs.StubHTTPResponse{
-				Status: responseStatus,
-				Body:   responseBody,
-			},
+	endpoints := getJobsGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody)
+	return append(endpoints, stubs.StubHTTPEndpoint{
+		Request: stubs.StubHTTPRequest{
+			Method:          http.MethodPost,
+			URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCJobBulkDelete),
+			ExpectedHeaders: authHeaders,
+			ExpectedBody:    expectedBody,
 		},
-	}
+		Response: stubs.StubHTTPResponse{
+			Status: responseStatus,
+			Body:   responseBody,
+		},
+	})
 }
 
 func getJobsCreateEndpoints(
@@ -894,24 +911,25 @@ func getJobsCreateEndpoints(
 }
 
 func getJobsBulkUpdateEndpoints(
+	expectedQuery string,
+	resolveResponseBody string,
 	expectedBody string,
 	responseStatus int,
 	responseBody string,
 ) []stubs.StubHTTPEndpoint {
-	return []stubs.StubHTTPEndpoint{
-		{
-			Request: stubs.StubHTTPRequest{
-				Method:          http.MethodPost,
-				URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCJobBulkUpdate),
-				ExpectedHeaders: authHeaders,
-				ExpectedBody:    expectedBody,
-			},
-			Response: stubs.StubHTTPResponse{
-				Status: responseStatus,
-				Body:   responseBody,
-			},
+	endpoints := getJobsGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody)
+	return append(endpoints, stubs.StubHTTPEndpoint{
+		Request: stubs.StubHTTPRequest{
+			Method:          http.MethodPost,
+			URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCJobBulkUpdate),
+			ExpectedHeaders: authHeaders,
+			ExpectedBody:    expectedBody,
 		},
-	}
+		Response: stubs.StubHTTPResponse{
+			Status: responseStatus,
+			Body:   responseBody,
+		},
+	})
 }
 
 func getJobsGetEndpoints(

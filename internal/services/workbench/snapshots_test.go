@@ -6,7 +6,6 @@ package workbench_test
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -51,6 +50,13 @@ const (
     "name": "snapshot-controller",
     "username": "bob",
     "description": "controller"
+  },
+  {
+    "id": "snap-name",
+    "controller_id": "ctrl-name",
+    "name": "snapshot-name",
+    "username": "carol",
+    "description": "name"
   }
 ]
 `
@@ -333,6 +339,9 @@ Volume Status:
   Content Name:    <unknown>
   Creation Time:   <unknown>
 `
+	snapshotResolveIDsQuery               = "or=(controller_id.in.(snap-1,snap-2),name.in.(snap-1,snap-2))"
+	snapshotResolveIDsResponseJSON        = `[{"id":"snap-1"},{"id":"snap-2"}]`
+	snapshotDeleteSuccessResponseJSON     = `["snap-1", "snap-2"]`
 	expectedDeleteSnapshotRequestJSON     = `{"ids":["snap-1","snap-2"]}`
 	createSnapshotOneResponseBodyJSON     = `{"id":"snap-1","name":"snapshot-1"}`
 	expectedCreateSnapshotRequestJSON     = `{"param":{"name":"snapshot-1"}}`
@@ -350,7 +359,7 @@ var (
 		},
 	}
 
-	expectedResponseTwoSnapshots = types.Snapshots{
+	expectedResponseMixedSnapshots = types.Snapshots{
 		{
 			ID:           "123e4567-e89b-12d3-a456-426614174000",
 			ControllerID: "ctrl-uuid",
@@ -365,6 +374,13 @@ var (
 			Username:     "bob",
 			Description:  "controller",
 		},
+		{
+			ID:           "snap-name",
+			ControllerID: "ctrl-name",
+			Name:         "snapshot-name",
+			Username:     "carol",
+			Description:  "name",
+		},
 	}
 )
 
@@ -376,9 +392,11 @@ func TestDeleteSnapshot(t *testing.T) {
 				ids: []string{"snap-1", "snap-2"},
 			},
 			mockEndpoints: getSnapshotDeleteEndpoints(
+				snapshotResolveIDsQuery,
+				snapshotResolveIDsResponseJSON,
 				expectedDeleteSnapshotRequestJSON,
 				http.StatusOK,
-				`["snap-1","snap-2"]`,
+				snapshotDeleteSuccessResponseJSON,
 			),
 			expected: deleteExpected{
 				result: []string{"snap-1", "snap-2"},
@@ -390,6 +408,8 @@ func TestDeleteSnapshot(t *testing.T) {
 				ids: []string{"snap-1", "snap-2"},
 			},
 			mockEndpoints: getSnapshotDeleteEndpoints(
+				snapshotResolveIDsQuery,
+				snapshotResolveIDsResponseJSON,
 				expectedDeleteSnapshotRequestJSON,
 				http.StatusUnauthorized,
 				`unauthorized`,
@@ -486,6 +506,8 @@ func TestBulkUpdateSnapshots(t *testing.T) {
 				body: types.Snapshot{Name: "updated-name"},
 			},
 			mockEndpoints: getSnapshotBulkUpdateEndpoints(
+				snapshotResolveIDsQuery,
+				snapshotResolveIDsResponseJSON,
 				expectedBulkUpdateSnapshotRequestJSON,
 				http.StatusOK,
 				snapshotsBulkUpdateResponseJSON,
@@ -504,6 +526,8 @@ func TestBulkUpdateSnapshots(t *testing.T) {
 				body: types.Snapshot{Name: "updated-name"},
 			},
 			mockEndpoints: getSnapshotBulkUpdateEndpoints(
+				snapshotResolveIDsQuery,
+				snapshotResolveIDsResponseJSON,
 				expectedBulkUpdateSnapshotRequestJSON,
 				http.StatusUnauthorized,
 				`unauthorized`,
@@ -521,6 +545,8 @@ func TestBulkUpdateSnapshots(t *testing.T) {
 				body: types.Snapshot{Name: "updated-name"},
 			},
 			mockEndpoints: getSnapshotBulkUpdateEndpoints(
+				snapshotResolveIDsQuery,
+				snapshotResolveIDsResponseJSON,
 				expectedBulkUpdateSnapshotRequestJSON,
 				http.StatusOK,
 				`[`,
@@ -564,19 +590,18 @@ func TestGetSnapshots(t *testing.T) {
 			},
 		},
 		{
-			name: "get snapshots success with mixed uuid and controller ids query",
+			name: "get snapshots success with mixed uuid, controller id, names query",
 			request: getRequest{
-				ids:  []string{"123e4567-e89b-12d3-a456-426614174000", "controller-snapshot-2"},
+				ids:  []string{"123e4567-e89b-12d3-a456-426614174000", "controller-snapshot-2", "snapshot-name"},
 				sort: "id.asc",
 			},
 			mockEndpoints: getSnapshotsGetEndpoints(
-				"or=(id.in.(123e4567-e89b-12d3-a456-426614174000),"+
-					"controller_id.in.(controller-snapshot-2))&order=id.asc",
+				"or=(id.in.(123e4567-e89b-12d3-a456-426614174000),controller_id.in.(controller-snapshot-2,snapshot-name),name.in.(123e4567-e89b-12d3-a456-426614174000,controller-snapshot-2,snapshot-name))&order=id.asc",
 				http.StatusOK,
 				snapshotsGetMixedIDsResponseJSON,
 			),
 			expected: getExpected[types.Snapshots]{
-				result: expectedResponseTwoSnapshots,
+				result: expectedResponseMixedSnapshots,
 			},
 		},
 		{
@@ -712,12 +737,12 @@ func TestGetSnapshots(t *testing.T) {
 				ids: []string{"id-a"},
 			},
 			mockEndpoints: getSnapshotsGetEndpoints(
-				"controller_id=in.(id-a)",
+				"or=(controller_id.in.(id-a),name.in.(id-a))",
 				http.StatusOK,
 				`[`,
 			),
 			expected: getExpected[types.Snapshots]{
-				err: "GET %s/postgrest/snapshots?controller_id=in.%%28id-a%%29 failed\n" +
+				err: "GET ${URL}/postgrest/snapshots?or=%28controller_id.in.%28id-a%29%2Cname.in.%28id-a%29%29 failed\n" +
 					" Caused by:\n" +
 					"\t* unexpected EOF",
 			},
@@ -728,12 +753,12 @@ func TestGetSnapshots(t *testing.T) {
 				ids: []string{"id-a"},
 			},
 			mockEndpoints: getSnapshotsGetEndpoints(
-				"controller_id=in.(id-a)",
+				"or=(controller_id.in.(id-a),name.in.(id-a))",
 				http.StatusUnauthorized,
 				`unauthorized`,
 			),
 			expected: getExpected[types.Snapshots]{
-				err: "GET %s/postgrest/snapshots?controller_id=in.%%28id-a%%29 failed\n" +
+				err: "GET ${URL}/postgrest/snapshots?or=%28controller_id.in.%28id-a%29%2Cname.in.%28id-a%29%29 failed\n" +
 					" Caused by:\n" +
 					"\t* 401 unauthorized",
 			},
@@ -748,7 +773,7 @@ func TestGetSnapshots(t *testing.T) {
 
 			actual, err := workbench.GetSnapshots(context.Background(), svc, tt.request.ids, tt.request.sort)
 			if tt.expected.err != "" {
-				require.EqualError(t, err, fmt.Sprintf(tt.expected.err, srv.URL))
+				require.EqualError(t, err, strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL))
 				return
 			}
 			require.NoError(t, err)
@@ -872,24 +897,25 @@ func TestDescribeSnapshots(t *testing.T) {
 }
 
 func getSnapshotDeleteEndpoints(
+	expectedQuery string,
+	resolveResponseBody string,
 	expectedBody string,
 	responseStatus int,
 	responseBody string,
 ) []stubs.StubHTTPEndpoint {
-	return []stubs.StubHTTPEndpoint{
-		{
-			Request: stubs.StubHTTPRequest{
-				Method:          http.MethodPost,
-				URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCSnapshotBulkDelete),
-				ExpectedHeaders: authHeaders,
-				ExpectedBody:    expectedBody,
-			},
-			Response: stubs.StubHTTPResponse{
-				Body:   responseBody,
-				Status: responseStatus,
-			},
+	endpoints := getSnapshotsGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody)
+	return append(endpoints, stubs.StubHTTPEndpoint{
+		Request: stubs.StubHTTPRequest{
+			Method:          http.MethodPost,
+			URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCSnapshotBulkDelete),
+			ExpectedHeaders: authHeaders,
+			ExpectedBody:    expectedBody,
 		},
-	}
+		Response: stubs.StubHTTPResponse{
+			Body:   responseBody,
+			Status: responseStatus,
+		},
+	})
 }
 
 func getSnapshotCreateEndpoints(
@@ -914,24 +940,25 @@ func getSnapshotCreateEndpoints(
 }
 
 func getSnapshotBulkUpdateEndpoints(
+	expectedQuery string,
+	resolveResponseBody string,
 	expectedBody string,
 	responseStatus int,
 	responseBody string,
 ) []stubs.StubHTTPEndpoint {
-	return []stubs.StubHTTPEndpoint{
-		{
-			Request: stubs.StubHTTPRequest{
-				Method:          http.MethodPost,
-				URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCSnapshotBulkUpdate),
-				ExpectedHeaders: authHeaders,
-				ExpectedBody:    expectedBody,
-			},
-			Response: stubs.StubHTTPResponse{
-				Status: responseStatus,
-				Body:   responseBody,
-			},
+	endpoints := getSnapshotsGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody)
+	return append(endpoints, stubs.StubHTTPEndpoint{
+		Request: stubs.StubHTTPRequest{
+			Method:          http.MethodPost,
+			URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCSnapshotBulkUpdate),
+			ExpectedHeaders: authHeaders,
+			ExpectedBody:    expectedBody,
 		},
-	}
+		Response: stubs.StubHTTPResponse{
+			Status: responseStatus,
+			Body:   responseBody,
+		},
+	})
 }
 
 func getSnapshotsGetEndpoints(

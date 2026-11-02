@@ -6,7 +6,6 @@ package workbench_test
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -51,6 +50,13 @@ const (
     "controller_id": "controller-build-2",
     "created_by": "carol",
     "image_id": "img-controller"
+  },
+  {
+    "id": "ib-name",
+    "name": "build-name",
+    "controller_id": "ctrl-name",
+    "created_by": "ted",
+    "image_id": "img-name"
   }
 ]
 `
@@ -211,6 +217,13 @@ var (
 			CreatedBy:    "carol",
 			ImageID:      "img-controller",
 		},
+		{
+			ID:           "ib-name",
+			Name:         "build-name",
+			ControllerID: "ctrl-name",
+			CreatedBy:    "ted",
+			ImageID:      "img-name",
+		},
 	}
 )
 
@@ -225,13 +238,13 @@ func TestGetImageBuilds(t *testing.T) {
 			},
 		},
 		{
-			name: "get image builds success with mixed uuid and controller ids query",
+			name: "get image builds success with mixed uuid, controller id, names query",
 			request: getRequest{
-				ids:  []string{"123e4567-e89b-12d3-a456-426614174000", "controller-build-2"},
+				ids:  []string{"123e4567-e89b-12d3-a456-426614174000", "controller-build-2", "build-name"},
 				sort: "id.asc",
 			},
 			mockEndpoints: getImageBuildsGetEndpoints(
-				"or=(id.in.(123e4567-e89b-12d3-a456-426614174000),controller_id.in.(controller-build-2))&order=id.asc",
+				"or=(id.in.(123e4567-e89b-12d3-a456-426614174000),controller_id.in.(controller-build-2,build-name),name.in.(123e4567-e89b-12d3-a456-426614174000,controller-build-2,build-name))&order=id.asc",
 				http.StatusOK,
 				imageBuildsGetMixedIDsResponseJSON,
 			),
@@ -298,9 +311,9 @@ func TestGetImageBuilds(t *testing.T) {
 			request: getRequest{
 				ids: []string{"id-a"},
 			},
-			mockEndpoints: getImageBuildsGetEndpoints("controller_id=in.(id-a)", http.StatusOK, `[`),
+			mockEndpoints: getImageBuildsGetEndpoints("or=(controller_id.in.(id-a),name.in.(id-a))", http.StatusOK, `[`),
 			expected: getExpected[types.ImageBuilds]{
-				err: "GET %s/postgrest/image_builds?controller_id=in.%%28id-a%%29 failed\n" +
+				err: "GET ${URL}/postgrest/image_builds?or=%28controller_id.in.%28id-a%29%2Cname.in.%28id-a%29%29 failed\n" +
 					" Caused by:\n" +
 					"\t* unexpected EOF",
 			},
@@ -310,9 +323,9 @@ func TestGetImageBuilds(t *testing.T) {
 			request: getRequest{
 				ids: []string{"id-a"},
 			},
-			mockEndpoints: getImageBuildsGetEndpoints("controller_id=in.(id-a)", http.StatusUnauthorized, `unauthorized`),
+			mockEndpoints: getImageBuildsGetEndpoints("or=(controller_id.in.(id-a),name.in.(id-a))", http.StatusUnauthorized, `unauthorized`),
 			expected: getExpected[types.ImageBuilds]{
-				err: "GET %s/postgrest/image_builds?controller_id=in.%%28id-a%%29 failed\n" +
+				err: "GET ${URL}/postgrest/image_builds?or=%28controller_id.in.%28id-a%29%2Cname.in.%28id-a%29%29 failed\n" +
 					" Caused by:\n" +
 					"\t* 401 unauthorized",
 			},
@@ -327,7 +340,7 @@ func TestGetImageBuilds(t *testing.T) {
 
 			actual, err := workbench.GetImageBuilds(context.Background(), svc, tt.request.ids, tt.request.sort)
 			if tt.expected.err != "" {
-				require.EqualError(t, err, fmt.Sprintf(tt.expected.err, srv.URL))
+				require.EqualError(t, err, strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL))
 				return
 			}
 

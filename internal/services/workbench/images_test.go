@@ -36,7 +36,7 @@ const (
 ]
 `
 
-	imagesGetTwoResponseJSON = `
+	imagesGetMixedResponseJSON = `
 [
   {
     "id": "123e4567-e89b-12d3-a456-426614174000",
@@ -51,6 +51,13 @@ const (
     "image_name": "app-controller",
     "image_registry": "registry.controller.com",
     "controller_id": "controller-app-2"
+  },
+  {
+    "id": "img-name",
+    "name": "image-name",
+    "image_name": "image-name",
+    "image_registry": "registry.name.com",
+    "controller_id": "ctrl-name"
   }
 ]
 `
@@ -241,8 +248,6 @@ const (
 ]
 `
 
-	imagesDeleteSuccessResponseJSON = `["img-1", "img-2"]`
-
 	expectedImagesEmptyTableNonAdmin = "" +
 		"ID\tCONTROLLER_ID\tNAME\tDESCRIPTION\tIMAGE\tIMAGE_BUILD_ID\tSTATE\tMESSAGE\tAGE"
 
@@ -347,6 +352,9 @@ Pod pod-1:
   }
 ]
 `
+	imagesResolveIDsQuery              = "or=(controller_id.in.(img-1,img-2),name.in.(img-1,img-2))"
+	imagesResolveIDsResponseJSON       = `[{"id":"img-1"},{"id":"img-2"}]`
+	imagesDeleteSuccessResponseJSON    = `["img-1", "img-2"]`
 	expectedDeleteImageRequestJSON     = `{"ids":["img-1","img-2"]}`
 	expectedCreateImageRequestJSON     = `{"param":{"name":"image-1"}}`
 	createImageOneResponseBodyJSON     = `{"id":"img-1","name":"image-1"}`
@@ -365,7 +373,7 @@ var (
 		},
 	}
 
-	expectedResponseTwoImages = types.Images{
+	expectedResponseMixedImages = types.Images{
 		{
 			ID:            "123e4567-e89b-12d3-a456-426614174000",
 			Name:          "app-uuid",
@@ -380,6 +388,13 @@ var (
 			ImageRegistry: "registry.controller.com",
 			ControllerID:  "controller-app-2",
 		},
+		{
+			ID:            "img-name",
+			Name:          "image-name",
+			ImageName:     "image-name",
+			ImageRegistry: "registry.name.com",
+			ControllerID:  "ctrl-name",
+		},
 	}
 )
 
@@ -391,6 +406,8 @@ func TestDeleteImage(t *testing.T) {
 				ids: []string{"img-1", "img-2"},
 			},
 			mockEndpoints: getImagesDeleteEndpoints(
+				imagesResolveIDsQuery,
+				imagesResolveIDsResponseJSON,
 				expectedDeleteImageRequestJSON,
 				http.StatusOK,
 				imagesDeleteSuccessResponseJSON,
@@ -405,6 +422,8 @@ func TestDeleteImage(t *testing.T) {
 				ids: []string{"img-1", "img-2"},
 			},
 			mockEndpoints: getImagesDeleteEndpoints(
+				imagesResolveIDsQuery,
+				imagesResolveIDsResponseJSON,
 				expectedDeleteImageRequestJSON,
 				http.StatusUnauthorized,
 				`unauthorized`,
@@ -547,6 +566,8 @@ func TestBulkUpdateImages(t *testing.T) {
 				body: types.Image{Name: "updated-name"},
 			},
 			mockEndpoints: getImagesBulkUpdateEndpoints(
+				imagesResolveIDsQuery,
+				imagesResolveIDsResponseJSON,
 				expectedBulkUpdateImageRequestJSON,
 				http.StatusOK,
 				imagesBulkUpdateResponseJSON,
@@ -561,6 +582,8 @@ func TestBulkUpdateImages(t *testing.T) {
 			name:    "bulk update images non-200 from server",
 			request: bulkupdateRequest[types.Image]{ids: []string{"img-1", "img-2"}, body: types.Image{Name: "updated-name"}},
 			mockEndpoints: getImagesBulkUpdateEndpoints(
+				imagesResolveIDsQuery,
+				imagesResolveIDsResponseJSON,
 				expectedBulkUpdateImageRequestJSON,
 				http.StatusUnauthorized,
 				`unauthorized`,
@@ -575,6 +598,8 @@ func TestBulkUpdateImages(t *testing.T) {
 			name:    "bulk update images invalid json response",
 			request: bulkupdateRequest[types.Image]{ids: []string{"img-1", "img-2"}, body: types.Image{Name: "updated-name"}},
 			mockEndpoints: getImagesBulkUpdateEndpoints(
+				imagesResolveIDsQuery,
+				imagesResolveIDsResponseJSON,
 				expectedBulkUpdateImageRequestJSON,
 				http.StatusOK,
 				`[`,
@@ -664,18 +689,18 @@ func TestGetImages(t *testing.T) {
 			expected:      getExpected[types.Images]{result: expectedResponseOneImage},
 		},
 		{
-			name: "get images success with mixed uuid and controller ids query",
+			name: "get images success with mixed uuid, controller id, names query",
 			request: getRequest{
-				ids:  []string{"123e4567-e89b-12d3-a456-426614174000", "controller-app-2"},
+				ids:  []string{"123e4567-e89b-12d3-a456-426614174000", "controller-app-2", "image-name"},
 				sort: "id.asc",
 			},
 			mockEndpoints: getImagesGetEndpoints(
-				"or=(id.in.(123e4567-e89b-12d3-a456-426614174000),controller_id.in.(controller-app-2))&order=id.asc",
+				"or=(id.in.(123e4567-e89b-12d3-a456-426614174000),controller_id.in.(controller-app-2,image-name),name.in.(123e4567-e89b-12d3-a456-426614174000,controller-app-2,image-name))&order=id.asc",
 				http.StatusOK,
-				imagesGetTwoResponseJSON,
+				imagesGetMixedResponseJSON,
 			),
 			expected: getExpected[types.Images]{
-				result: expectedResponseTwoImages,
+				result: expectedResponseMixedImages,
 			},
 		},
 		{
@@ -755,18 +780,18 @@ func TestGetImages(t *testing.T) {
 		{
 			name:          "get images invalid json response",
 			request:       getRequest{ids: []string{"id-a"}},
-			mockEndpoints: getImagesGetEndpoints("controller_id=in.(id-a)", http.StatusOK, "["),
+			mockEndpoints: getImagesGetEndpoints("or=(controller_id.in.(id-a),name.in.(id-a))", http.StatusOK, "["),
 			expected: getExpected[types.Images]{
-				err: "GET ${URL}/postgrest/images?controller_id=in.%28id-a%29 failed\n" +
+				err: "GET ${URL}/postgrest/images?or=%28controller_id.in.%28id-a%29%2Cname.in.%28id-a%29%29 failed\n" +
 					" Caused by:\n" +
 					"\t* unexpected EOF"},
 		},
 		{
 			name:          "get images non-200 from server",
 			request:       getRequest{ids: []string{"id-a"}},
-			mockEndpoints: getImagesGetEndpoints("controller_id=in.(id-a)", http.StatusUnauthorized, "unauthorized"),
+			mockEndpoints: getImagesGetEndpoints("or=(controller_id.in.(id-a),name.in.(id-a))", http.StatusUnauthorized, "unauthorized"),
 			expected: getExpected[types.Images]{
-				err: "GET ${URL}/postgrest/images?controller_id=in.%28id-a%29 failed\n" +
+				err: "GET ${URL}/postgrest/images?or=%28controller_id.in.%28id-a%29%2Cname.in.%28id-a%29%29 failed\n" +
 					" Caused by:\n" +
 					"\t* 401 unauthorized"},
 		},
@@ -886,24 +911,25 @@ func createTokenWithRole(role string) string {
 }
 
 func getImagesDeleteEndpoints(
+	expectedQuery string,
+	resolveResponseBody string,
 	expectedBody string,
 	responseStatus int,
 	responseBody string,
 ) []stubs.StubHTTPEndpoint {
-	return []stubs.StubHTTPEndpoint{
-		{
-			Request: stubs.StubHTTPRequest{
-				Method:          http.MethodPost,
-				URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCImageBulkDelete),
-				ExpectedHeaders: authHeaders,
-				ExpectedBody:    expectedBody,
-			},
-			Response: stubs.StubHTTPResponse{
-				Status: responseStatus,
-				Body:   responseBody,
-			},
+	endpoints := getImagesGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody)
+	return append(endpoints, stubs.StubHTTPEndpoint{
+		Request: stubs.StubHTTPRequest{
+			Method:          http.MethodPost,
+			URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCImageBulkDelete),
+			ExpectedHeaders: authHeaders,
+			ExpectedBody:    expectedBody,
 		},
-	}
+		Response: stubs.StubHTTPResponse{
+			Status: responseStatus,
+			Body:   responseBody,
+		},
+	})
 }
 
 func getImagesCreateEndpoints(
@@ -928,24 +954,25 @@ func getImagesCreateEndpoints(
 }
 
 func getImagesBulkUpdateEndpoints(
+	expectedQuery string,
+	resolveResponseBody string,
 	expectedBody string,
 	responseStatus int,
 	responseBody string,
 ) []stubs.StubHTTPEndpoint {
-	return []stubs.StubHTTPEndpoint{
-		{
-			Request: stubs.StubHTTPRequest{
-				Method:          http.MethodPost,
-				URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCImageBulkUpdate),
-				ExpectedHeaders: authHeaders,
-				ExpectedBody:    expectedBody,
-			},
-			Response: stubs.StubHTTPResponse{
-				Status: responseStatus,
-				Body:   responseBody,
-			},
+	endpoints := getImagesGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody)
+	return append(endpoints, stubs.StubHTTPEndpoint{
+		Request: stubs.StubHTTPRequest{
+			Method:          http.MethodPost,
+			URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCImageBulkUpdate),
+			ExpectedHeaders: authHeaders,
+			ExpectedBody:    expectedBody,
 		},
-	}
+		Response: stubs.StubHTTPResponse{
+			Status: responseStatus,
+			Body:   responseBody,
+		},
+	})
 }
 
 func getImagesGetEndpoints(
