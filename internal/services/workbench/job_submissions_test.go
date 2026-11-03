@@ -885,19 +885,19 @@ func getJobSubmissionDeleteEndpoints(
 	responseStatus int,
 	responseBody string,
 ) []stubs.StubHTTPEndpoint {
-	endpoints := getJobSubmissionsGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody)
-	return append(endpoints, stubs.StubHTTPEndpoint{
-		Request: stubs.StubHTTPRequest{
-			Method:          http.MethodPost,
-			URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCJobRunBulkDelete),
-			ExpectedHeaders: authHeaders,
-			ExpectedBody:    expectedBody,
-		},
-		Response: stubs.StubHTTPResponse{
-			Body:   responseBody,
-			Status: responseStatus,
-		},
-	})
+	return append(getJobSubmissionsGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody),
+		stubs.StubHTTPEndpoint{
+			Request: stubs.StubHTTPRequest{
+				Method:          http.MethodPost,
+				URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCJobRunBulkDelete),
+				ExpectedHeaders: authHeaders,
+				ExpectedBody:    expectedBody,
+			},
+			Response: stubs.StubHTTPResponse{
+				Body:   responseBody,
+				Status: responseStatus,
+			},
+		})
 }
 
 func getJobSubmissionCreateEndpoints(

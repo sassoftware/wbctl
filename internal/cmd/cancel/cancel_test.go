@@ -35,7 +35,8 @@ const (
 	cancelTestControllerID1        = "controller-1"
 	cancelTestControllerID2        = "controller-2"
 	cancelTestGetJobSubmissionsErr = "" +
-		"GET ${URL}/postgrest/job_runs?controller_id=in.%28controller-1%2Ccontroller-2%29 failed" +
+		"GET ${URL}/postgrest/job_runs?or=%28controller_id.in.%28controller-1%2Ccontroller-2%29" +
+		"%2Cjob_name.in.%28controller-1%2Ccontroller-2%29%29 failed" +
 		"\n Caused by:" +
 		"\n\t* unexpected EOF"
 	cancelTestBulkCancelErr = "" +
@@ -51,7 +52,8 @@ const (
 	expectedInvalidEndpointErr              = "failed to get device token" +
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
-	cancelExpectedGetQuery = "controller_id=in.(controller-1,controller-2)"
+	cancelExpectedGetQuery = "or=(controller_id.in.(controller-1,controller-2)," +
+		"job_name.in.(controller-1,controller-2))"
 )
 
 var cancelExpectedDisplaysStoppedIDs = []string{

@@ -378,7 +378,7 @@ func TestGetWorkspaceRequests(t *testing.T) {
 			request: request{workspaceIDs: []string{"ws-1"}},
 			mockEndpoints: getEndpoints(
 				postgrest.Endpoint(constants.WorkbenchEndpointWorkspaces),
-				"controller_id=in.(ws-1)",
+				"or=(controller_id.in.(ws-1),name.in.(ws-1))",
 				http.StatusOK,
 				`[ {"id":"ws-1","controller_id":"ctrl-1","name":"myws","properties":{"HOME_DIRECTORY":"true"}} ]`,
 			),
@@ -393,7 +393,7 @@ func TestGetWorkspaceRequests(t *testing.T) {
 			request: request{workspaceIDs: []string{"00000000-0000-0000-0000-000000000001"}},
 			mockEndpoints: getEndpoints(
 				postgrest.Endpoint(constants.WorkbenchEndpointWorkspaces),
-				"id=in.(00000000-0000-0000-0000-000000000001)",
+				"or=(id.in.(00000000-0000-0000-0000-000000000001),name.in.(00000000-0000-0000-0000-000000000001))",
 				http.StatusOK,
 				`[ {"id":"00000000-0000-0000-0000-000000000001","controller_id":"","name":"wsname","properties":{}} ]`,
 			),
@@ -408,7 +408,7 @@ func TestGetWorkspaceRequests(t *testing.T) {
 			request: request{workspaceIDs: []string{"missing"}},
 			mockEndpoints: getEndpoints(
 				postgrest.Endpoint(constants.WorkbenchEndpointWorkspaces),
-				"controller_id=in.(missing)",
+				"or=(controller_id.in.(missing),name.in.(missing))",
 				http.StatusOK,
 				`[]`,
 			),
@@ -419,12 +419,13 @@ func TestGetWorkspaceRequests(t *testing.T) {
 			request: request{workspaceIDs: []string{"ws-1"}},
 			mockEndpoints: getEndpoints(
 				postgrest.Endpoint(constants.WorkbenchEndpointWorkspaces),
-				"controller_id=in.(ws-1)",
+				"or=(controller_id.in.(ws-1),name.in.(ws-1))",
 				http.StatusOK,
 				`[invalid`,
 			),
 			expected: expected{
-				err: "GET ${URL}/postgrest/workspaces?controller_id=in.%28ws-1%29 failed" +
+				err: "GET ${URL}/postgrest/workspaces?" +
+					"or=%28controller_id.in.%28ws-1%29%2Cname.in.%28ws-1%29%29 failed" +
 					"\n Caused by:" +
 					"\n\t* invalid character 'i' looking for beginning of value",
 			},

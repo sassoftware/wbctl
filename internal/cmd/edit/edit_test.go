@@ -275,7 +275,7 @@ func TestEditCommand(t *testing.T) {
 			mockEndpoints: getEditEndpoints(editConfig{
 				getURL: postgrest.Endpoint(constants.WorkbenchEndpointImages),
 				getConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(resource-1)",
+					ExpectedQuery:  "or=(controller_id.in.(resource-1),name.in.(resource-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   "[]",
 				},
@@ -292,7 +292,7 @@ func TestEditCommand(t *testing.T) {
 			mockEndpoints: getEditEndpoints(editConfig{
 				getURL: postgrest.Endpoint(constants.WorkbenchEndpointImages),
 				getConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(resource-1)",
+					ExpectedQuery:  "or=(controller_id.in.(resource-1),name.in.(resource-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   twoImagesJSON,
 				},
@@ -315,7 +315,7 @@ func TestEditCommand(t *testing.T) {
 			mockEndpoints: getEditEndpoints(editConfig{
 				getURL: postgrest.Endpoint(constants.WorkbenchEndpointImages),
 				getConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(resource-1)",
+					ExpectedQuery:  "or=(controller_id.in.(resource-1),name.in.(resource-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   oneImageJSON,
 				},
@@ -338,7 +338,7 @@ func TestEditCommand(t *testing.T) {
 			mockEndpoints: getEditEndpoints(editConfig{
 				getURL: postgrest.Endpoint(constants.WorkbenchEndpointImages),
 				getConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(resource-1)",
+					ExpectedQuery:  "or=(controller_id.in.(resource-1),name.in.(resource-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   oneImageJSON,
 				},
@@ -362,7 +362,7 @@ func TestEditCommand(t *testing.T) {
 			mockEndpoints: getEditEndpoints(editConfig{
 				getURL: postgrest.Endpoint(constants.WorkbenchEndpointImages),
 				getConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(resource-1)",
+					ExpectedQuery:  "or=(controller_id.in.(resource-1),name.in.(resource-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   oneImageJSON,
 				},
@@ -389,7 +389,7 @@ func TestEditCommand(t *testing.T) {
 			mockEndpoints: getEditEndpoints(editConfig{
 				getURL: postgrest.Endpoint(constants.WorkbenchEndpointImages),
 				getConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(resource-1)",
+					ExpectedQuery:  "or=(controller_id.in.(resource-1),name.in.(resource-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   oneImageJSON,
 				},
@@ -410,7 +410,7 @@ func TestEditCommand(t *testing.T) {
 			mockEndpoints: getEditEndpoints(editConfig{
 				getURL: postgrest.Endpoint(constants.WorkbenchEndpointImages),
 				getConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(resource-1)",
+					ExpectedQuery:  "or=(controller_id.in.(resource-1),name.in.(resource-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   oneImageJSON,
 				},
@@ -433,7 +433,7 @@ func TestEditCommand(t *testing.T) {
 			mockEndpoints: getEditEndpoints(editConfig{
 				getURL: postgrest.Endpoint(constants.WorkbenchEndpointImages),
 				getConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(resource-1)",
+					ExpectedQuery:  "or=(controller_id.in.(resource-1),name.in.(resource-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   oneImageJSON,
 				},
@@ -456,7 +456,7 @@ func TestEditCommand(t *testing.T) {
 			mockEndpoints: getEditEndpoints(editConfig{
 				getURL: postgrest.Endpoint(constants.WorkbenchEndpointImages),
 				getConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(resource-1)",
+					ExpectedQuery:  "or=(controller_id.in.(resource-1),name.in.(resource-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   oneImageJSON,
 				},
@@ -483,7 +483,7 @@ func TestEditCommand(t *testing.T) {
 			mockEndpoints: getEditEndpoints(editConfig{
 				getURL: postgrest.Endpoint(constants.WorkbenchEndpointImages),
 				getConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(resource-1)",
+					ExpectedQuery:  "or=(controller_id.in.(resource-1),name.in.(resource-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   oneImageJSON,
 				},
@@ -510,7 +510,7 @@ func TestEditCommand(t *testing.T) {
 			mockEndpoints: getEditEndpoints(editConfig{
 				getURL: postgrest.Endpoint(constants.WorkbenchEndpointImages),
 				getConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(resource-1)",
+					ExpectedQuery:  "or=(controller_id.in.(resource-1),name.in.(resource-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   oneImageJSON,
 				},
@@ -531,7 +531,7 @@ func TestEditCommand(t *testing.T) {
 			mockEndpoints: getEditEndpoints(editConfig{
 				getURL: postgrest.Endpoint(constants.WorkbenchEndpointWorkbenches),
 				getConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(resource-1)",
+					ExpectedQuery:  "or=(controller_id.in.(resource-1),name.in.(resource-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   oneWorkbenchJSON,
 				},

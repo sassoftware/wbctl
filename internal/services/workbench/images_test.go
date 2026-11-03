@@ -921,19 +921,19 @@ func getImagesDeleteEndpoints(
 	responseStatus int,
 	responseBody string,
 ) []stubs.StubHTTPEndpoint {
-	endpoints := getImagesGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody)
-	return append(endpoints, stubs.StubHTTPEndpoint{
-		Request: stubs.StubHTTPRequest{
-			Method:          http.MethodPost,
-			URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCImageBulkDelete),
-			ExpectedHeaders: authHeaders,
-			ExpectedBody:    expectedBody,
-		},
-		Response: stubs.StubHTTPResponse{
-			Status: responseStatus,
-			Body:   responseBody,
-		},
-	})
+	return append(getImagesGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody),
+		stubs.StubHTTPEndpoint{
+			Request: stubs.StubHTTPRequest{
+				Method:          http.MethodPost,
+				URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCImageBulkDelete),
+				ExpectedHeaders: authHeaders,
+				ExpectedBody:    expectedBody,
+			},
+			Response: stubs.StubHTTPResponse{
+				Status: responseStatus,
+				Body:   responseBody,
+			},
+		})
 }
 
 func getImagesCreateEndpoints(
@@ -964,19 +964,19 @@ func getImagesBulkUpdateEndpoints(
 	responseStatus int,
 	responseBody string,
 ) []stubs.StubHTTPEndpoint {
-	endpoints := getImagesGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody)
-	return append(endpoints, stubs.StubHTTPEndpoint{
-		Request: stubs.StubHTTPRequest{
-			Method:          http.MethodPost,
-			URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCImageBulkUpdate),
-			ExpectedHeaders: authHeaders,
-			ExpectedBody:    expectedBody,
-		},
-		Response: stubs.StubHTTPResponse{
-			Status: responseStatus,
-			Body:   responseBody,
-		},
-	})
+	return append(getImagesGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody),
+		stubs.StubHTTPEndpoint{
+			Request: stubs.StubHTTPRequest{
+				Method:          http.MethodPost,
+				URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCImageBulkUpdate),
+				ExpectedHeaders: authHeaders,
+				ExpectedBody:    expectedBody,
+			},
+			Response: stubs.StubHTTPResponse{
+				Status: responseStatus,
+				Body:   responseBody,
+			},
+		})
 }
 
 func getImagesGetEndpoints(

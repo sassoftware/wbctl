@@ -65,8 +65,9 @@ const (
         }
     }
 }`
-	snapshotUpdateMissingIDErr = "at least one resource ID must be provided for update"
-	snapshotUpdateServerErr    = "POST ${URL}/postgrest/rpc/snapshot_bulk_update failed\n" +
+	expectedResolveSnapshotsQuery = `or=(controller_id.in.(snap-cli-1),name.in.(snap-cli-1))`
+	snapshotUpdateMissingIDErr    = "at least one resource ID must be provided for update"
+	snapshotUpdateServerErr       = "POST ${URL}/postgrest/rpc/snapshot_bulk_update failed\n" +
 		" Caused by:\n" +
 		"\t* 401 unauthorized"
 	snapshotUpdateLongFlagsDryRunOutput = `{
@@ -86,11 +87,12 @@ const (
 	expectedCreateSnapshotInvalidEndpointErr = "failed to get device token" +
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
-	expectedInvlidDataplaneErr = "GET ${URL}/postgrest/dataplanes?id=in.%28invalid%29 failed" +
+	expectedInvalidDataplaneErr = "GET ${URL}/postgrest/dataplanes?id=in.%28invalid%29 failed" +
 		"\n Caused by:" +
 		"\n\t* 400 error"
 	expectedInvalidVolumeErr = "" +
-		"failed to get volume invalid: GET ${URL}/postgrest/workspaces?controller_id=in.%28invalid%29 failed" +
+		"failed to get volume invalid: GET ${URL}/postgrest/workspaces" +
+		"?or=%28controller_id.in.%28invalid%29%2Cname.in.%28invalid%29%29 failed" +
 		"\n Caused by:" + "\n\t* 400 error"
 	expectedCreateImageInvalidFileErr = "unexpected end of JSON input"
 )
@@ -157,7 +159,7 @@ func TestCreateSnapshotCommand(t *testing.T) {
 					ResponseStatus: http.StatusOK,
 				},
 				workspaceConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  `controller_id=in.(ws-1)`,
+					ExpectedQuery:  `or=(controller_id.in.(ws-1),name.in.(ws-1))`,
 					ResponseBody:   `[{"id":"ws-1","controller_id":"ctrl-1"}]`,
 					ResponseStatus: http.StatusOK,
 				},
@@ -189,7 +191,7 @@ func TestCreateSnapshotCommand(t *testing.T) {
 					ResponseStatus: http.StatusOK,
 				},
 				workspaceConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  `controller_id=in.(ws-1)`,
+					ExpectedQuery:  `or=(controller_id.in.(ws-1),name.in.(ws-1))`,
 					ResponseBody:   `[{"id":"ws-1","controller_id":"ctrl-1"}]`,
 					ResponseStatus: http.StatusOK,
 				},
@@ -220,7 +222,7 @@ func TestCreateSnapshotCommand(t *testing.T) {
 					ResponseStatus: http.StatusOK,
 				},
 				workspaceConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  `controller_id=in.(ws-1)`,
+					ExpectedQuery:  `or=(controller_id.in.(ws-1),name.in.(ws-1))`,
 					ResponseBody:   `[{"id":"ws-1","controller_id":"ctrl-1"}]`,
 					ResponseStatus: http.StatusOK,
 				},
@@ -259,7 +261,7 @@ func TestCreateSnapshotCommand(t *testing.T) {
 			},
 			mockEndpoints: getCreateSnapshotEndpoints(snapshotEndpointsConfig{
 				workspaceConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  `controller_id=in.(missing)`,
+					ExpectedQuery:  `or=(controller_id.in.(missing),name.in.(missing))`,
 					ResponseBody:   `[]`,
 					ResponseStatus: http.StatusOK,
 				},
@@ -280,7 +282,7 @@ func TestCreateSnapshotCommand(t *testing.T) {
 			},
 			mockEndpoints: getCreateSnapshotEndpoints(snapshotEndpointsConfig{
 				workspaceConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  `controller_id=in.(invalid)`,
+					ExpectedQuery:  `or=(controller_id.in.(invalid),name.in.(invalid))`,
 					ResponseBody:   `error`,
 					ResponseStatus: http.StatusBadRequest,
 				},
@@ -315,7 +317,7 @@ func TestCreateSnapshotCommand(t *testing.T) {
 			}),
 			expected: createExpected{
 				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
-				err:            expectedInvlidDataplaneErr,
+				err:            expectedInvalidDataplaneErr,
 				dataplaneCalls: 1,
 			},
 		},
@@ -443,7 +445,7 @@ func TestUpdateSnapshotCommand(t *testing.T) {
 			},
 			mockEndpoints: getUpdateSnapshotEndpoints(snapshotEndpointsConfig{
 				workspaceConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  `controller_id=in.(ws-1)`,
+					ExpectedQuery:  `or=(controller_id.in.(ws-1),name.in.(ws-1))`,
 					ResponseBody:   `[{"id":"ws-1","controller_id":"ctrl-1"}]`,
 					ResponseStatus: http.StatusOK,
 				},
@@ -471,6 +473,11 @@ func TestUpdateSnapshotCommand(t *testing.T) {
 				args: []string{"snap-cli-1"},
 			},
 			mockEndpoints: getUpdateSnapshotEndpoints(snapshotEndpointsConfig{
+				snapshotsConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedResolveSnapshotsQuery,
+					ResponseBody:   `[{"id":"snap-cli-1"}]`,
+					ResponseStatus: http.StatusOK,
+				},
 				snapshotConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: snapshotUpdateRequestBodyIDsOnly,
 					ResponseStatus:      http.StatusOK,
@@ -488,6 +495,11 @@ func TestUpdateSnapshotCommand(t *testing.T) {
 				args: []string{"snap-cli-1"},
 			},
 			mockEndpoints: getUpdateSnapshotEndpoints(snapshotEndpointsConfig{
+				snapshotsConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedResolveSnapshotsQuery,
+					ResponseBody:   `[{"id":"snap-cli-1"}]`,
+					ResponseStatus: http.StatusOK,
+				},
 				snapshotConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: snapshotUpdateRequestBodyIDsOnly,
 					ResponseStatus:      http.StatusUnauthorized,
@@ -529,6 +541,11 @@ func TestUpdateSnapshotCommand(t *testing.T) {
 				args: []string{"snap-cli-1"},
 			},
 			mockEndpoints: getUpdateSnapshotEndpoints(snapshotEndpointsConfig{
+				snapshotsConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedResolveSnapshotsQuery,
+					ResponseBody:   `[{"id":"snap-cli-1"}]`,
+					ResponseStatus: http.StatusOK,
+				},
 				snapshotConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: snapshotUpdateRequestBodyIDsOnly,
 					ResponseStatus:      http.StatusOK,
@@ -550,8 +567,13 @@ func TestUpdateSnapshotCommand(t *testing.T) {
 			},
 			mockEndpoints: getUpdateSnapshotEndpoints(snapshotEndpointsConfig{
 				workspaceConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  `controller_id=in.(ws-1)`,
+					ExpectedQuery:  `or=(controller_id.in.(ws-1),name.in.(ws-1))`,
 					ResponseBody:   `[{"id":"ws-1","controller_id":"ctrl-1"}]`,
+					ResponseStatus: http.StatusOK,
+				},
+				snapshotsConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedResolveSnapshotsQuery,
+					ResponseBody:   `[{"id":"snap-cli-1"}]`,
 					ResponseStatus: http.StatusOK,
 				},
 				snapshotConfig: stubs.StubHTTPPartialPostConfig{
@@ -703,6 +725,7 @@ func getUpdateArgs(
 type snapshotEndpointsConfig struct {
 	dataplaneConfig stubs.StubHTTPPartialGetConfig
 	workspaceConfig stubs.StubHTTPPartialGetConfig
+	snapshotsConfig stubs.StubHTTPPartialGetConfig
 	snapshotConfig  stubs.StubHTTPPartialPostConfig
 }
 
@@ -712,6 +735,18 @@ func getSnapshotEndpoints(
 ) []stubs.StubHTTPEndpoint {
 	endpoints := append(stubs.GetStubAuthEndpoints(), stubs.GetStubWorkspaceEndpoints(config.workspaceConfig)...)
 	endpoints = append(endpoints, stubs.GetStubDataplaneEndpoints(config.dataplaneConfig)...)
+	endpoints = append(endpoints, stubs.StubHTTPEndpoint{
+		Request: stubs.StubHTTPRequest{
+			Method:          http.MethodGet,
+			URL:             postgrest.Endpoint(constants.WorkbenchEndpointSnapshots),
+			ExpectedHeaders: stubs.StubAuthHeaders,
+			ExpectedQuery:   config.snapshotsConfig.ExpectedQuery,
+		},
+		Response: stubs.StubHTTPResponse{
+			Status: config.snapshotsConfig.ResponseStatus,
+			Body:   config.snapshotsConfig.ResponseBody,
+		},
+	})
 	return append(endpoints,
 		[]stubs.StubHTTPEndpoint{
 			{

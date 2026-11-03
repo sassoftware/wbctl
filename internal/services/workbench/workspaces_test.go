@@ -953,19 +953,19 @@ func getWorkspaceUpdateEndpoints(
 	responseStatus int,
 	responseBody string,
 ) []stubs.StubHTTPEndpoint {
-	endpoints := getWorkspaceGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody)
-	return append(endpoints, stubs.StubHTTPEndpoint{
-		Request: stubs.StubHTTPRequest{
-			Method:          http.MethodPost,
-			URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCWorkspaceUpdate),
-			ExpectedHeaders: authHeaders,
-			ExpectedBody:    expectedBody,
-		},
-		Response: stubs.StubHTTPResponse{
-			Status: responseStatus,
-			Body:   responseBody,
-		},
-	})
+	return append(getWorkspaceGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody),
+		stubs.StubHTTPEndpoint{
+			Request: stubs.StubHTTPRequest{
+				Method:          http.MethodPost,
+				URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCWorkspaceUpdate),
+				ExpectedHeaders: authHeaders,
+				ExpectedBody:    expectedBody,
+			},
+			Response: stubs.StubHTTPResponse{
+				Status: responseStatus,
+				Body:   responseBody,
+			},
+		})
 }
 
 func getWorkspaceBulkUpdateEndpoints(
@@ -975,19 +975,19 @@ func getWorkspaceBulkUpdateEndpoints(
 	responseStatus int,
 	responseBody string,
 ) []stubs.StubHTTPEndpoint {
-	endpoints := getWorkspaceGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody)
-	return append(endpoints, stubs.StubHTTPEndpoint{
-		Request: stubs.StubHTTPRequest{
-			Method:          http.MethodPost,
-			URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCWorkspaceBulkUpdate),
-			ExpectedHeaders: authHeaders,
-			ExpectedBody:    expectedBody,
-		},
-		Response: stubs.StubHTTPResponse{
-			Status: responseStatus,
-			Body:   responseBody,
-		},
-	})
+	return append(getWorkspaceGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody),
+		stubs.StubHTTPEndpoint{
+			Request: stubs.StubHTTPRequest{
+				Method:          http.MethodPost,
+				URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCWorkspaceBulkUpdate),
+				ExpectedHeaders: authHeaders,
+				ExpectedBody:    expectedBody,
+			},
+			Response: stubs.StubHTTPResponse{
+				Status: responseStatus,
+				Body:   responseBody,
+			},
+		})
 }
 
 func getWorkspaceDeleteEndpoints(
@@ -997,19 +997,19 @@ func getWorkspaceDeleteEndpoints(
 	responseStatus int,
 	responseBody string,
 ) []stubs.StubHTTPEndpoint {
-	endpoints := getWorkspaceGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody)
-	return append(endpoints, stubs.StubHTTPEndpoint{
-		Request: stubs.StubHTTPRequest{
-			Method:          http.MethodPost,
-			URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCWorkspaceBulkDelete),
-			ExpectedHeaders: authHeaders,
-			ExpectedBody:    expectedBody,
-		},
-		Response: stubs.StubHTTPResponse{
-			Body:   responseBody,
-			Status: responseStatus,
-		},
-	})
+	return append(getWorkspaceGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody),
+		stubs.StubHTTPEndpoint{
+			Request: stubs.StubHTTPRequest{
+				Method:          http.MethodPost,
+				URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCWorkspaceBulkDelete),
+				ExpectedHeaders: authHeaders,
+				ExpectedBody:    expectedBody,
+			},
+			Response: stubs.StubHTTPResponse{
+				Body:   responseBody,
+				Status: responseStatus,
+			},
+		})
 }
 
 func getWorkspaceCreateEndpoints(

@@ -875,19 +875,19 @@ func getJobsDeleteEndpoints(
 	responseStatus int,
 	responseBody string,
 ) []stubs.StubHTTPEndpoint {
-	endpoints := getJobsGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody)
-	return append(endpoints, stubs.StubHTTPEndpoint{
-		Request: stubs.StubHTTPRequest{
-			Method:          http.MethodPost,
-			URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCJobBulkDelete),
-			ExpectedHeaders: authHeaders,
-			ExpectedBody:    expectedBody,
-		},
-		Response: stubs.StubHTTPResponse{
-			Status: responseStatus,
-			Body:   responseBody,
-		},
-	})
+	return append(getJobsGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody),
+		stubs.StubHTTPEndpoint{
+			Request: stubs.StubHTTPRequest{
+				Method:          http.MethodPost,
+				URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCJobBulkDelete),
+				ExpectedHeaders: authHeaders,
+				ExpectedBody:    expectedBody,
+			},
+			Response: stubs.StubHTTPResponse{
+				Status: responseStatus,
+				Body:   responseBody,
+			},
+		})
 }
 
 func getJobsCreateEndpoints(
@@ -918,19 +918,19 @@ func getJobsBulkUpdateEndpoints(
 	responseStatus int,
 	responseBody string,
 ) []stubs.StubHTTPEndpoint {
-	endpoints := getJobsGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody)
-	return append(endpoints, stubs.StubHTTPEndpoint{
-		Request: stubs.StubHTTPRequest{
-			Method:          http.MethodPost,
-			URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCJobBulkUpdate),
-			ExpectedHeaders: authHeaders,
-			ExpectedBody:    expectedBody,
-		},
-		Response: stubs.StubHTTPResponse{
-			Status: responseStatus,
-			Body:   responseBody,
-		},
-	})
+	return append(getJobsGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody),
+		stubs.StubHTTPEndpoint{
+			Request: stubs.StubHTTPRequest{
+				Method:          http.MethodPost,
+				URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCJobBulkUpdate),
+				ExpectedHeaders: authHeaders,
+				ExpectedBody:    expectedBody,
+			},
+			Response: stubs.StubHTTPResponse{
+				Status: responseStatus,
+				Body:   responseBody,
+			},
+		})
 }
 
 func getJobsGetEndpoints(

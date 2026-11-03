@@ -86,6 +86,7 @@ const (
         }
     }
 }`
+	expectedResolveWorkspacesQueryOne = `or=(controller_id.in.(ws-cli-1),name.in.(ws-cli-1))`
 	workspaceUpdateRequestBodyIDsOnly = `{"ids":["ws-cli-1"],"workspace":{"pvc_status":{"status":{}}}}`
 	workspaceUpdateFileContent        = `{"id":"ws-file","description":"from file"}`
 	workspaceUpdateFileDryRunOutput   = `{
@@ -114,7 +115,7 @@ const (
 	expectedCreateSnapshotInvalidEndpointErr = "failed to get device token" +
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
-	expectedInvlidDataplaneErr = "GET ${URL}/postgrest/dataplanes?id=in.%28invalid%29 failed" +
+	expectedInvalidDataplaneErr = "GET ${URL}/postgrest/dataplanes?id=in.%28invalid%29 failed" +
 		"\n Caused by:" +
 		"\n\t* 400 error"
 	expectedInvalidInitalizersErr = "" +
@@ -128,7 +129,8 @@ const (
 		"\n Caused by:" +
 		"\n\t* 400 error"
 	expectedInvalidSnapshotErr = "" +
-		"GET ${URL}/postgrest/snapshots?controller_id=in.%28snap-1%29 failed" +
+		"GET ${URL}/postgrest/snapshots?" +
+		"or=%28controller_id.in.%28snap-1%29%2Cname.in.%28snap-1%29%29 failed" +
 		"\n Caused by:" +
 		"\n\t* invalid character 'i' looking for beginning of value"
 )
@@ -271,7 +273,7 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 					ResponseStatus: http.StatusOK,
 				},
 				snapshotsConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  `controller_id=in.(snap-1)`,
+					ExpectedQuery:  `or=(controller_id.in.(snap-1),name.in.(snap-1))`,
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   workspaceSnapshotLookupBody,
 				},
@@ -403,7 +405,7 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 			},
 			mockEndpoints: getCreateWorkspaceEndpoints(workspaceEndpointsConfig{
 				snapshotsConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  `controller_id=in.(invalid-snap)`,
+					ExpectedQuery:  `or=(controller_id.in.(invalid-snap),name.in.(invalid-snap))`,
 					ResponseBody:   `[]`,
 					ResponseStatus: http.StatusOK,
 				},
@@ -423,7 +425,7 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 			},
 			mockEndpoints: getCreateWorkspaceEndpoints(workspaceEndpointsConfig{
 				snapshotsConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery: `controller_id=in.(snap-not-ready)`,
+					ExpectedQuery: `or=(controller_id.in.(snap-not-ready),name.in.(snap-not-ready))`,
 					ResponseBody: `[{"id":"snap-not-ready","controller_id":"","volume_status":{"status":` +
 						`{"readyToUse":false}}}]`,
 					ResponseStatus: http.StatusOK,
@@ -445,7 +447,7 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 			},
 			mockEndpoints: getCreateWorkspaceEndpoints(workspaceEndpointsConfig{
 				snapshotsConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery: `controller_id=in.(snap-no-size)`,
+					ExpectedQuery: `or=(controller_id.in.(snap-no-size),name.in.(snap-no-size))`,
 					ResponseBody: `[{"id":"snap-no-size","controller_id":"ctrl-snap","workspace_source":{` +
 						`"storage_spec":{"accessModes":["ReadWriteOnce"],"storageClassName":"snap-sc"}},` +
 						`"volume_status":{"status":{"readyToUse":true}}}]`,
@@ -468,7 +470,7 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 			},
 			mockEndpoints: getCreateWorkspaceEndpoints(workspaceEndpointsConfig{
 				snapshotsConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery: `controller_id=in.(snap-1)`,
+					ExpectedQuery: `or=(controller_id.in.(snap-1),name.in.(snap-1))`,
 					ResponseBody: `[{"id":"snap-1","controller_id":"ctrl-snap","volume_status":` +
 						`{"status":{"readyToUse":true}}}]`,
 					ResponseStatus: http.StatusOK,
@@ -490,7 +492,7 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 			},
 			mockEndpoints: getCreateWorkspaceEndpoints(workspaceEndpointsConfig{
 				snapshotsConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery: `controller_id=in.(snap-1)`,
+					ExpectedQuery: `or=(controller_id.in.(snap-1),name.in.(snap-1))`,
 					ResponseBody: `[{"id":"snap-1","controller_id":"ctrl-snap","workspace_source":{"storage_spec":` +
 						`{"accessModes":[],"storageClassName":"snap-sc"}},"volume_status":{"status":` +
 						`{"readyToUse":true,"restoreSize":"1Gi"}}}]`,
@@ -528,14 +530,14 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 					ResponseBody:   `error`,
 				},
 				snapshotsConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  `controller_id=in.(snap-1)`,
+					ExpectedQuery:  `or=(controller_id.in.(snap-1),name.in.(snap-1))`,
 					ResponseBody:   workspaceSnapshotLookupBody,
 					ResponseStatus: http.StatusOK,
 				},
 			}),
 			expected: createExpected{
 				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
-				err:            expectedInvlidDataplaneErr,
+				err:            expectedInvalidDataplaneErr,
 				dataplaneCalls: 1,
 				snapshotCalls:  1,
 			},
@@ -591,7 +593,7 @@ func TestCreateWorkspaceCommand(t *testing.T) {
 			},
 			mockEndpoints: getCreateWorkspaceEndpoints(workspaceEndpointsConfig{
 				snapshotsConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  `controller_id=in.(snap-1)`,
+					ExpectedQuery:  `or=(controller_id.in.(snap-1),name.in.(snap-1))`,
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   `[invalid`,
 				},
@@ -771,6 +773,11 @@ func TestUpdateWorkspaceCommand(t *testing.T) {
 				args: []string{"ws-cli-1"},
 			},
 			mockEndpoints: getBulkUpdateWorkspaceEndpoints(workspaceUpdateEndpointsConfig{
+				workspacesConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedResolveWorkspacesQueryOne,
+					ResponseBody:   `[{"id":"ws-cli-1"}]`,
+					ResponseStatus: http.StatusOK,
+				},
 				workspaceConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: workspaceUpdateRequestBodyIDsOnly,
 					ResponseStatus:      http.StatusOK,
@@ -788,6 +795,11 @@ func TestUpdateWorkspaceCommand(t *testing.T) {
 				args: []string{"ws-cli-1"},
 			},
 			mockEndpoints: getBulkUpdateWorkspaceEndpoints(workspaceUpdateEndpointsConfig{
+				workspacesConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedResolveWorkspacesQueryOne,
+					ResponseBody:   `[{"id":"ws-cli-1"}]`,
+					ResponseStatus: http.StatusOK,
+				},
 				workspaceConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: workspaceUpdateRequestBodyIDsOnly,
 					ResponseStatus:      http.StatusUnauthorized,
@@ -829,6 +841,11 @@ func TestUpdateWorkspaceCommand(t *testing.T) {
 				args: []string{"ws-cli-1"},
 			},
 			mockEndpoints: getBulkUpdateWorkspaceEndpoints(workspaceUpdateEndpointsConfig{
+				workspacesConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedResolveWorkspacesQueryOne,
+					ResponseBody:   `[{"id":"ws-cli-1"}]`,
+					ResponseStatus: http.StatusOK,
+				},
 				workspaceConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: workspaceUpdateRequestBodyIDsOnly,
 					ResponseStatus:      http.StatusOK,
@@ -848,6 +865,11 @@ func TestUpdateWorkspaceCommand(t *testing.T) {
 				args:        []string{"ws-cli-1"},
 			},
 			mockEndpoints: getSingleUpdateWorkspaceEndpoints(workspaceUpdateEndpointsConfig{
+				workspacesConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedResolveWorkspacesQueryOne,
+					ResponseBody:   `[{"id":"ws-cli-1"}]`,
+					ResponseStatus: http.StatusOK,
+				},
 				workspaceConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: workspaceUpdateRequestBodyNameDesc,
 					ResponseStatus:      http.StatusOK,
@@ -1045,6 +1067,7 @@ type workspaceEndpointsConfig struct {
 
 type workspaceUpdateEndpointsConfig struct {
 	initializerConfig stubs.StubHTTPPartialGetConfig
+	workspacesConfig  stubs.StubHTTPPartialGetConfig
 	workspaceConfig   stubs.StubHTTPPartialPostConfig
 }
 
@@ -1126,6 +1149,18 @@ func getUpdateWorkspaceEndpoints(
 ) []stubs.StubHTTPEndpoint {
 	endpoints := append(stubs.GetStubAuthEndpoints(),
 		getInitializerEndpoints(config.initializerConfig)...)
+	endpoints = append(endpoints, stubs.StubHTTPEndpoint{
+		Request: stubs.StubHTTPRequest{
+			Method:          http.MethodGet,
+			URL:             postgrest.Endpoint(constants.WorkbenchEndpointWorkspaces),
+			ExpectedHeaders: stubs.StubAuthHeaders,
+			ExpectedQuery:   config.workspacesConfig.ExpectedQuery,
+		},
+		Response: stubs.StubHTTPResponse{
+			Status: config.workspacesConfig.ResponseStatus,
+			Body:   config.workspacesConfig.ResponseBody,
+		},
+	})
 	return append(endpoints, stubs.StubHTTPEndpoint{
 		Request: stubs.StubHTTPRequest{
 			Method:          http.MethodPost,
