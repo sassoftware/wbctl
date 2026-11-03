@@ -1,5 +1,5 @@
 <pre>
-Print the log of the Job-Submission resources identified a list of resource ids. At least one id is required.
+Print the log of the Job-Submission resources identified by a list of resource ids or names. At least one id or name is required.
 
 Usage:
   wbctl logs job-submissions [flags]

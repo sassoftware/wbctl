@@ -61,7 +61,7 @@ func getSubcommands(
 				i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.ImageType)},
 			),
 			Long: i18n.Format(
-				i18n.CmdDescribeTypeDescription,
+				i18n.CmdDescribeTypeDescriptionWithName,
 				i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.ImageType)},
 			),
 		},
@@ -75,7 +75,7 @@ func getSubcommands(
 				i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.ImageBuildType)},
 			),
 			Long: i18n.Format(
-				i18n.CmdDescribeTypeDescription,
+				i18n.CmdDescribeTypeDescriptionWithName,
 				i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.ImageBuildType)},
 			),
 		},
@@ -89,7 +89,7 @@ func getSubcommands(
 				i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.JobType)},
 			),
 			Long: i18n.Format(
-				i18n.CmdDescribeTypeDescription,
+				i18n.CmdDescribeTypeDescriptionWithName,
 				i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.JobType)},
 			),
 		},
@@ -103,7 +103,7 @@ func getSubcommands(
 				i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.JobSubmissionType)},
 			),
 			Long: i18n.Format(
-				i18n.CmdDescribeTypeDescription,
+				i18n.CmdDescribeTypeDescriptionWithName,
 				i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.JobSubmissionType)},
 			),
 		},
@@ -117,7 +117,7 @@ func getSubcommands(
 				i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.SnapshotType)},
 			),
 			Long: i18n.Format(
-				i18n.CmdDescribeTypeDescription,
+				i18n.CmdDescribeTypeDescriptionWithName,
 				i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.SnapshotType)},
 			),
 		},
@@ -145,7 +145,7 @@ func getSubcommands(
 				i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.WorkbenchType)},
 			),
 			Long: i18n.Format(
-				i18n.CmdDescribeTypeDescription,
+				i18n.CmdDescribeTypeDescriptionWithName,
 				i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.WorkbenchType)},
 			),
 		},
@@ -181,7 +181,7 @@ func getSubcommands(
 				i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.VolumeType)},
 			),
 			Long: i18n.Format(
-				i18n.CmdDescribeTypeDescription,
+				i18n.CmdDescribeTypeDescriptionWithName,
 				i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.VolumeType)},
 			),
 		},

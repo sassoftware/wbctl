@@ -1,5 +1,5 @@
 <pre>
-Deletes the Job-Submission resources identified by a list of resource ids. At least one id is required.
+Deletes the Job-Submission resources identified by a list of resource ids or names. At least one id or name is required.
 
 Usage:
   wbctl delete job-submissions [flags]

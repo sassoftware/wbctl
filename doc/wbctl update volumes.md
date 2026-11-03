@@ -1,5 +1,5 @@
 <pre>
-Updates all the Volume resources identified by a list of ids with the options provided.
+Updates all the Volume resources identified by a list of ids or names with the options provided.
 
 Usage:
   wbctl update volumes [flags]

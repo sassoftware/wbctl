@@ -1,5 +1,5 @@
 <pre>
-Edit one Image resource identified by id. One and only one id is required.
+Edit one Image resource identified by id or name. One and only one id or name is required.
 
 Usage:
   wbctl edit image [flags]
