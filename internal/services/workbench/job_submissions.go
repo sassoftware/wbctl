@@ -23,6 +23,7 @@ import (
 // GetJobSubmissions  gets the job submissions in the given WorkbenchService. If
 // given any ids/names, only the matching resources will be returned. Otherwise, all
 // resources are returned.
+// nolint:dupl
 func GetJobSubmissions(
 	ctx context.Context,
 	s *WorkbenchService,

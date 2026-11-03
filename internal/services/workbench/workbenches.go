@@ -22,6 +22,7 @@ import (
 // GetWorkbenches gets the workbenches in the given WorkbenchService. If given
 // any ids/names, only the matching resources will be returned. Otherwise, all
 // resources are returned.
+// nolint:dupl
 func GetWorkbenches(
 	ctx context.Context,
 	s *WorkbenchService,
