@@ -1,0 +1,98 @@
+name: Build and publish binaries
+description: Build, sign, and notarize binaries on macOS, then publish release assets or dry-run publishing for manual tests. Requires id-token write and contents write permissions.
+inputs:
+  signing-mode:
+    description: Signing mode (auto, keyless, or unsigned).
+    default: auto
+  macos-certificate-p12:
+    description: Base64-encoded Developer ID Application PKCS#12 certificate.
+  macos-certificate-password:
+    description: Password for the Apple certificate.
+  macos-sign-identity:
+    description: Developer ID Application signing identity.
+  windows-certificate-p12:
+    description: Base64-encoded Windows code-signing PKCS#12 certificate.
+  windows-sign-password:
+    description: Password for the Windows certificate.
+  apple-id:
+    description: Apple developer account email for notarization.
+  apple-app-specific-password:
+    description: App-specific password for the Apple account.
+  apple-team-id:
+    description: Apple Developer team ID.
+  release-tag:
+    description: Release tag to publish, or dry_run to print commands without publishing.
+runs:
+  using: composite
+  steps:
+    - name: Set up Go
+      uses: actions/setup-go@v7.0.0
+      with:
+        go-version-file: go.mod
+
+    - name: Install Cosign
+      if: inputs.signing-mode != 'unsigned'
+      uses: sigstore/cosign-installer@v4.0.0
+      with:
+        cosign-release: v3.0.2
+
+    - name: Install Windows signing tool
+      if: inputs.signing-mode == 'auto'
+      env:
+        WINDOWS_CERTIFICATE_P12: ${{ inputs.windows-certificate-p12 }}
+      shell: bash
+      run: |
+        if [[ -n "$WINDOWS_CERTIFICATE_P12" ]] && ! command -v osslsigncode >/dev/null; then
+          brew install osslsigncode
+        fi
+
+    - name: Build and sign binaries
+      shell: bash
+      env:
+        SIGNING_MODE: ${{ inputs.signing-mode }}
+        MACOS_SIGN_IDENTITY: ${{ inputs.macos-sign-identity }}
+        MACOS_CERTIFICATE_P12: ${{ inputs.macos-certificate-p12 }}
+        MACOS_CERTIFICATE_PASSWORD: ${{ inputs.macos-certificate-password }}
+        WINDOWS_CERTIFICATE_P12: ${{ inputs.windows-certificate-p12 }}
+        WINDOWS_SIGN_PASSWORD: ${{ inputs.windows-sign-password }}
+      run: make -f Makefile-ci.mk build-sign-binaries
+
+    - name: Notarize native-signed macOS binary
+      if: inputs.signing-mode == 'auto' && inputs.macos-sign-identity != ''
+      shell: bash
+      env:
+        APPLE_ID: ${{ inputs.apple-id }}
+        APPLE_APP_SPECIFIC_PASSWORD: ${{ inputs.apple-app-specific-password }}
+        APPLE_TEAM_ID: ${{ inputs.apple-team-id }}
+      run: make -f Makefile-ci.mk notarize-macos
+
+    - name: Publish release assets
+      env:
+        GH_TOKEN: ${{ github.token }}
+        RELEASE_TAG: ${{ inputs.release-tag }}
+        SIGNING_MODE: ${{ inputs.signing-mode }}
+        DRY_RUN: ${{ inputs.release-tag == 'dry_run' }}
+      shell: bash
+      run: |
+        if [[ "$DRY_RUN" == true ]]; then
+          RELEASE_TAG=${RELEASE_TAG:-dry-run}
+        fi
+        : "${RELEASE_TAG:?Set release-tag when publishing release assets}"
+        run_gh() {
+          if [[ "$DRY_RUN" == true ]]; then
+            printf 'DRY RUN:'
+            printf ' %q' gh "$@"
+            printf '\n'
+          else
+            gh "$@"
+          fi
+        }
+        if [[ "$DRY_RUN" == true ]] || ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+          run_gh release create "$RELEASE_TAG" --verify-tag --generate-notes
+        fi
+        run_gh release upload "$RELEASE_TAG" build/release/wbctl-linux-amd64 \
+          build/release/wbctl-darwin-universal build/release/wbctl-windows-amd64.exe \
+          build/release/checksums.txt scripts/install.sh scripts/install.ps1 CHANGELOG.md --clobber
+        if [[ "$SIGNING_MODE" != unsigned ]]; then
+          run_gh release upload "$RELEASE_TAG" build/release/*.sigstore.json --clobber
+        fi

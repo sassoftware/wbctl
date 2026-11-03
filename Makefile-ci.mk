@@ -11,6 +11,25 @@ SHELL := bash
 
 include .bingo/Variables.mk
 
+BUILDDIR ?= ./build
+GO ?= go
+BINARY ?= $(BUILDDIR)/release/wbctl-darwin-universal
+
+## build-binaries: build release assets on macOS, optionally signing with environment variables
+.PHONY: build-binaries
+build-binaries:
+	GO="$(GO)" bash ./scripts/build-binaries.sh "$(BUILDDIR)/release"
+
+## build-sign-binaries: import optional native certificates, build and sign release assets, then clean up
+.PHONY: build-sign-binaries
+build-sign-binaries:
+	GO="$(GO)" bash ./scripts/build-sign-binaries.sh "$(BUILDDIR)/release"
+
+## notarize-macos: verify and notarize the native-signed macOS executable
+.PHONY: notarize-macos
+notarize-macos:
+	bash ./scripts/notarize-macos.sh "$(BINARY)"
+
 .PHONY: help
 help:
 	@grep '^## ' $(MAKEFILE_LIST) | sed 's/^.*:## //' | sort | column -t -s:

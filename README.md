@@ -4,6 +4,52 @@
 installation.
 
 ## Getting started
+### Install a release binary
+
+Download the latest installers from the
+[releases page](https://github.com/sassoftware/wbctl/releases/latest).
+The installers verify SHA-256 checksums before installing. No Go installation
+or administrator access is required.
+
+On macOS (Intel or Apple Silicon) and Linux x64:
+
+```shell
+curl -fsSL https://github.com/sassoftware/wbctl/releases/latest/download/install.sh -o install.sh
+bash install.sh
+export PATH="$HOME/.local/bin:$PATH"
+wbctl version
+```
+
+Add the `export PATH` line to your shell profile for future sessions. To install
+a specific release, pass its exact tag, for example `bash install.sh v1.2.3`.
+Override the destination with `WBCTL_INSTALL_DIR=/your/bin bash install.sh`.
+
+On Windows x64, run in PowerShell:
+
+```powershell
+Invoke-WebRequest -UseBasicParsing https://github.com/sassoftware/wbctl/releases/latest/download/install.ps1 -OutFile install.ps1
+& .\install.ps1
+wbctl version
+```
+
+The Windows installer uses `%LOCALAPPDATA%\Programs\wbctl` and adds it to your
+user and current-session `PATH`. Use `-Version v1.2.3` to select an exact tag,
+or `-InstallDir C:\your\bin` to change the destination. If local execution policy
+blocks the unsigned installer, review the script first, then run
+`Unblock-File .\install.ps1`. Under a policy that requires signed scripts, follow
+your organization's policy rather than bypassing it.
+
+Alternatively, download `wbctl-linux-amd64`, `wbctl-darwin-universal`, or
+`wbctl-windows-amd64.exe` and `checksums.txt` directly from a release. Verify the
+checksum, rename the binary to `wbctl` (`wbctl.exe` on Windows), and place it in
+a directory on your `PATH`. On macOS/Linux, also run `chmod +x wbctl`.
+
+Release binaries are unsigned by default. macOS Gatekeeper or Windows SmartScreen
+may warn or block execution; checksums detect damaged downloads but do not
+replace publisher signatures. Only approve a binary after verifying its source
+and checksum, following your organization's security policy.
+
+### Install from source
 
 Install with
 
