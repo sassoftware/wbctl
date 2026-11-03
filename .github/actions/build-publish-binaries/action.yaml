@@ -67,7 +67,6 @@ runs:
       run: make -f Makefile-ci.mk notarize-macos
 
     - name: Publish release assets
-      if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
       env:
         GH_TOKEN: ${{ github.token }}
         RELEASE_TAG: ${{ inputs.release-tag }}
