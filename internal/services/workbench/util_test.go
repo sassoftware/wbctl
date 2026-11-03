@@ -61,7 +61,8 @@ func TestIDsControllerIDsOrNamesQuery(t *testing.T) {
 			sort: "id.asc",
 			expected: url.Values{
 				"or": []string{
-					"(id.in.(123e4567-e89b-12d3-a456-426614174000,123e4567-e89b-12d3-a456-426614174001),name.in.(123e4567-e89b-12d3-a456-426614174000,123e4567-e89b-12d3-a456-426614174001))",
+					"(id.in.(123e4567-e89b-12d3-a456-426614174000,123e4567-e89b-12d3-a456-426614174001)," +
+						"name.in.(123e4567-e89b-12d3-a456-426614174000,123e4567-e89b-12d3-a456-426614174001))",
 				},
 				"order": []string{"id.asc"},
 			},
@@ -80,7 +81,9 @@ func TestIDsControllerIDsOrNamesQuery(t *testing.T) {
 			ids:  []string{"123e4567-e89b-12d3-a456-426614174000", "controller-a", "name-a"},
 			expected: url.Values{
 				"or": []string{
-					"(id.in.(123e4567-e89b-12d3-a456-426614174000),controller_id.in.(controller-a,name-a),name.in.(123e4567-e89b-12d3-a456-426614174000,controller-a,name-a))",
+					"(id.in.(123e4567-e89b-12d3-a456-426614174000)," +
+						"controller_id.in.(controller-a,name-a)," +
+						"name.in.(123e4567-e89b-12d3-a456-426614174000,controller-a,name-a))",
 				},
 			},
 		},
@@ -112,7 +115,8 @@ func TestIDsOrNamesQuery(t *testing.T) {
 			sort: "id.asc",
 			expected: url.Values{
 				"or": []string{
-					"(id.in.(123e4567-e89b-12d3-a456-426614174000,123e4567-e89b-12d3-a456-426614174001),name.in.(123e4567-e89b-12d3-a456-426614174000,123e4567-e89b-12d3-a456-426614174001))",
+					"(id.in.(123e4567-e89b-12d3-a456-426614174000,123e4567-e89b-12d3-a456-426614174001)," +
+						"name.in.(123e4567-e89b-12d3-a456-426614174000,123e4567-e89b-12d3-a456-426614174001))",
 				},
 				"order": []string{"id.asc"},
 			},
@@ -129,7 +133,8 @@ func TestIDsOrNamesQuery(t *testing.T) {
 			ids:  []string{"123e4567-e89b-12d3-a456-426614174000", "name-a"},
 			expected: url.Values{
 				"or": []string{
-					"(id.in.(123e4567-e89b-12d3-a456-426614174000),name.in.(123e4567-e89b-12d3-a456-426614174000,name-a))",
+					"(id.in.(123e4567-e89b-12d3-a456-426614174000)," +
+						"name.in.(123e4567-e89b-12d3-a456-426614174000,name-a))",
 				},
 			},
 		},
@@ -161,7 +166,8 @@ func TestIDsControllerIDsOrJobNamesQuery(t *testing.T) {
 			sort: "id.asc",
 			expected: url.Values{
 				"or": []string{
-					"(id.in.(123e4567-e89b-12d3-a456-426614174000,123e4567-e89b-12d3-a456-426614174001),job_name.in.(123e4567-e89b-12d3-a456-426614174000,123e4567-e89b-12d3-a456-426614174001))",
+					"(id.in.(123e4567-e89b-12d3-a456-426614174000,123e4567-e89b-12d3-a456-426614174001)," +
+						"job_name.in.(123e4567-e89b-12d3-a456-426614174000,123e4567-e89b-12d3-a456-426614174001))",
 				},
 				"order": []string{"id.asc"},
 			},
@@ -180,7 +186,9 @@ func TestIDsControllerIDsOrJobNamesQuery(t *testing.T) {
 			ids:  []string{"123e4567-e89b-12d3-a456-426614174000", "controller-a", "job-a"},
 			expected: url.Values{
 				"or": []string{
-					"(id.in.(123e4567-e89b-12d3-a456-426614174000),controller_id.in.(controller-a,job-a),job_name.in.(123e4567-e89b-12d3-a456-426614174000,controller-a,job-a))",
+					"(id.in.(123e4567-e89b-12d3-a456-426614174000)," +
+						"controller_id.in.(controller-a,job-a)," +
+						"job_name.in.(123e4567-e89b-12d3-a456-426614174000,controller-a,job-a))",
 				},
 			},
 		},

@@ -564,6 +564,26 @@ func TestBulkUpdateWorkspaces(t *testing.T) {
 					i18n.A{constants.I18nArgKeyType: constants.VolumesType}),
 			},
 		},
+		{
+			name: "bulk update workspaces with no matching resources returns not found",
+			request: bulkupdateRequest[types.Workspace]{
+				ids:  []string{"missing"},
+				body: types.Workspace{Description: "updated-description"},
+			},
+			mockEndpoints: getWorkspaceBulkUpdateEndpoints(
+				`or=(controller_id.in.(missing),name.in.(missing))`,
+				`[]`,
+				"",
+				http.StatusOK,
+				"",
+			),
+			expected: bulkupdateExpected[types.Workspaces]{
+				err: i18n.Format(i18n.ResourceNotFoundWithID, i18n.A{
+					constants.I18nArgTypeKey: constants.VolumeType,
+					constants.I18nArgKeyID:   "missing",
+				}),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -604,7 +624,9 @@ func TestGetWorkspaces(t *testing.T) {
 				sort: "id.asc",
 			},
 			mockEndpoints: getWorkspaceGetEndpoints(
-				"or=(id.in.(123e4567-e89b-12d3-a456-426614174000),controller_id.in.(controller-ws-2,ws-name),name.in.(123e4567-e89b-12d3-a456-426614174000,controller-ws-2,ws-name))&order=id.asc",
+				"or=(id.in.(123e4567-e89b-12d3-a456-426614174000),"+
+					"controller_id.in.(controller-ws-2,ws-name),"+
+					"name.in.(123e4567-e89b-12d3-a456-426614174000,controller-ws-2,ws-name))&order=id.asc",
 				http.StatusOK,
 				workspacesGetMixedIDsResponseJSON,
 			),

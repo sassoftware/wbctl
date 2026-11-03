@@ -586,7 +586,8 @@ func TestGetJobs(t *testing.T) {
 				sort: "id.asc",
 			},
 			mockEndpoints: getJobsGetEndpoints(
-				"or=(id.in.(123e4567-e89b-12d3-a456-426614174000),name.in.(123e4567-e89b-12d3-a456-426614174000,job-name))&order=id.asc",
+				"or=(id.in.(123e4567-e89b-12d3-a456-426614174000),"+
+					"name.in.(123e4567-e89b-12d3-a456-426614174000,job-name))&order=id.asc",
 				http.StatusOK,
 				jobsGetMixedResponseJSON,
 			),

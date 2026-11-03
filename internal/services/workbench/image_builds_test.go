@@ -244,7 +244,9 @@ func TestGetImageBuilds(t *testing.T) {
 				sort: "id.asc",
 			},
 			mockEndpoints: getImageBuildsGetEndpoints(
-				"or=(id.in.(123e4567-e89b-12d3-a456-426614174000),controller_id.in.(controller-build-2,build-name),name.in.(123e4567-e89b-12d3-a456-426614174000,controller-build-2,build-name))&order=id.asc",
+				"or=(id.in.(123e4567-e89b-12d3-a456-426614174000),"+
+					"controller_id.in.(controller-build-2,build-name),"+
+					"name.in.(123e4567-e89b-12d3-a456-426614174000,controller-build-2,build-name))&order=id.asc",
 				http.StatusOK,
 				imageBuildsGetMixedIDsResponseJSON,
 			),
@@ -323,7 +325,11 @@ func TestGetImageBuilds(t *testing.T) {
 			request: getRequest{
 				ids: []string{"id-a"},
 			},
-			mockEndpoints: getImageBuildsGetEndpoints("or=(controller_id.in.(id-a),name.in.(id-a))", http.StatusUnauthorized, `unauthorized`),
+			mockEndpoints: getImageBuildsGetEndpoints(
+				"or=(controller_id.in.(id-a),name.in.(id-a))",
+				http.StatusUnauthorized,
+				`unauthorized`,
+			),
 			expected: getExpected[types.ImageBuilds]{
 				err: "GET ${URL}/postgrest/image_builds?or=%28controller_id.in.%28id-a%29%2Cname.in.%28id-a%29%29 failed\n" +
 					" Caused by:\n" +

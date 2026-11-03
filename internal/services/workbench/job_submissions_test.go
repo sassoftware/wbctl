@@ -531,7 +531,9 @@ func TestGetJobSubmissions(t *testing.T) {
 				ids: []string{"123e4567-e89b-12d3-a456-426614174000", "controller-job-2", "job-name-job"},
 			},
 			mockEndpoints: getJobSubmissionsGetEndpoints(
-				"or=(id.in.(123e4567-e89b-12d3-a456-426614174000),controller_id.in.(controller-job-2,job-name-job),job_name.in.(123e4567-e89b-12d3-a456-426614174000,controller-job-2,job-name-job))",
+				"or=(id.in.(123e4567-e89b-12d3-a456-426614174000),"+
+					"controller_id.in.(controller-job-2,job-name-job),"+
+					"job_name.in.(123e4567-e89b-12d3-a456-426614174000,controller-job-2,job-name-job))",
 				http.StatusOK,
 				jobSubmissionsGetMixedIDsResponseJSON,
 			),

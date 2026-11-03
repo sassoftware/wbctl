@@ -105,21 +105,7 @@ func selectByIDThenName[T any, TS ~[]T](
 		if arg == "" {
 			continue
 		}
-		var byID, byName []int
-		for i, resource := range resources {
-			switch {
-			case getIDFunc(resource) == arg ||
-				(getControllerIDFunc != nil && getControllerIDFunc(resource) == arg):
-				byID = append(byID, i)
-			case getNameFunc(resource) == arg:
-				byName = append(byName, i)
-			}
-		}
-		matches := byID
-		if len(matches) == 0 {
-			matches = byName
-		}
-		for _, i := range matches {
+		for _, i := range matchIndexesByIDThenName(arg, resources, getIDFunc, getControllerIDFunc, getNameFunc) {
 			selected[i] = true
 		}
 	}
@@ -130,6 +116,32 @@ func selectByIDThenName[T any, TS ~[]T](
 		}
 	}
 	return filtered
+}
+
+// matchIndexesByIDThenName returns the indexes of the resources matching args.
+// Resources matching by ID or controller ID take precedence over those
+// matching by name.
+func matchIndexesByIDThenName[T any, TS ~[]T](
+	arg string,
+	resources TS,
+	getIDFunc func(T) string,
+	getControllerIDFunc func(T) string,
+	getNameFunc func(T) string,
+) []int {
+	var byID, byName []int
+	for i, resource := range resources {
+		switch {
+		case getIDFunc(resource) == arg ||
+			(getControllerIDFunc != nil && getControllerIDFunc(resource) == arg):
+			byID = append(byID, i)
+		case getNameFunc(resource) == arg:
+			byName = append(byName, i)
+		}
+	}
+	if len(byID) > 0 {
+		return byID
+	}
+	return byName
 }
 
 // resolveIDs converts the given args, which may be ids, controller_ids, or names,

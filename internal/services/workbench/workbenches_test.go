@@ -591,6 +591,26 @@ func TestBulkUpdateWorkbenches(t *testing.T) {
 			},
 		},
 		{
+			name: "bulk update workbenches with no matching resources returns not found",
+			request: bulkupdateRequest[types.Workbench]{
+				ids:  []string{"missing"},
+				body: types.Workbench{DesiredState: "STOPPED"},
+			},
+			mockEndpoints: getWorkbenchesBulkUpdateEndpoints(
+				`or=(controller_id.in.(missing),name.in.(missing))`,
+				`[]`,
+				"",
+				http.StatusOK,
+				"",
+			),
+			expected: bulkupdateExpected[types.Workbenches]{
+				err: i18n.Format(i18n.ResourceNotFoundWithID, i18n.A{
+					constants.I18nArgTypeKey: constants.WorkbenchType,
+					constants.I18nArgKeyID:   "missing",
+				}),
+			},
+		},
+		{
 			name: "update single workbench name invalid response",
 			request: bulkupdateRequest[types.Workbench]{
 				ids:  []string{"wb-1"},
@@ -646,7 +666,9 @@ func TestGetWorkbenches(t *testing.T) {
 				sort: "id.asc",
 			},
 			mockEndpoints: getWorkbenchesGetEndpoints(
-				"or=(id.in.(123e4567-e89b-12d3-a456-426614174000),controller_id.in.(controller-wb-2,workbench-name),name.in.(123e4567-e89b-12d3-a456-426614174000,controller-wb-2,workbench-name))&order=id.asc",
+				"or=(id.in.(123e4567-e89b-12d3-a456-426614174000),"+
+					"controller_id.in.(controller-wb-2,workbench-name),"+
+					"name.in.(123e4567-e89b-12d3-a456-426614174000,controller-wb-2,workbench-name))&order=id.asc",
 				http.StatusOK,
 				workbenchesGetMixedIDsResponseJSON,
 			),

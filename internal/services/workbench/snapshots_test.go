@@ -596,7 +596,9 @@ func TestGetSnapshots(t *testing.T) {
 				sort: "id.asc",
 			},
 			mockEndpoints: getSnapshotsGetEndpoints(
-				"or=(id.in.(123e4567-e89b-12d3-a456-426614174000),controller_id.in.(controller-snapshot-2,snapshot-name),name.in.(123e4567-e89b-12d3-a456-426614174000,controller-snapshot-2,snapshot-name))&order=id.asc",
+				"or=(id.in.(123e4567-e89b-12d3-a456-426614174000),"+
+					"controller_id.in.(controller-snapshot-2,snapshot-name),"+
+					"name.in.(123e4567-e89b-12d3-a456-426614174000,controller-snapshot-2,snapshot-name))&order=id.asc",
 				http.StatusOK,
 				snapshotsGetMixedIDsResponseJSON,
 			),
