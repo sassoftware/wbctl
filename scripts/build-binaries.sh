@@ -48,8 +48,8 @@ build windows amd64 "$output/wbctl-windows-amd64.exe"
 build darwin amd64 "$temporary/wbctl-amd64"
 build darwin arm64 "$temporary/wbctl-arm64"
 lipo -create "$temporary/wbctl-amd64" "$temporary/wbctl-arm64" -output "$output/wbctl-darwin-universal"
-lipo -verify_arch x86_64 "$output/wbctl-darwin-universal"
-lipo -verify_arch arm64 "$output/wbctl-darwin-universal"
+lipo "$output/wbctl-darwin-universal" -verify_arch x86_64
+lipo "$output/wbctl-darwin-universal" -verify_arch arm64
 
 if [[ -n ${MACOS_SIGN_IDENTITY:-} ]]; then
     codesign --force --options runtime --timestamp --sign "$MACOS_SIGN_IDENTITY" "$output/wbctl-darwin-universal"

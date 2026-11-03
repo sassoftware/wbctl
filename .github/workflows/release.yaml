@@ -35,7 +35,7 @@ jobs:
   binaries:
     name: Build release binaries
     needs: release
-    if: needs.release.outputs.tag != ''
+    if: needs.release.outputs.tag != '' || inputs.release_tag != ''
     runs-on: macos-latest
     permissions:
       contents: write
@@ -61,4 +61,4 @@ jobs:
           apple-id: ${{ secrets.APPLE_ID }}
           apple-app-specific-password: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           apple-team-id: ${{ vars.APPLE_TEAM_ID }}
-          release-tag: ${{ needs.release.outputs.tag || github.event.inputs.release_tag }}
+          release-tag: ${{ needs.release.outputs.tag || inputs.release_tag }}
