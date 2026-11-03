@@ -21,7 +21,7 @@ inputs:
   apple-team-id:
     description: Apple Developer team ID.
   release-tag:
-    description: Existing release tag to publish on push events.
+    description: Release tag to publish, or dry_run to print commands without publishing.
 runs:
   using: composite
   steps:
@@ -72,7 +72,7 @@ runs:
         GH_TOKEN: ${{ github.token }}
         RELEASE_TAG: ${{ inputs.release-tag }}
         SIGNING_MODE: ${{ inputs.signing-mode }}
-        DRY_RUN: ${{ github.event_name == 'workflow_dispatch' }}
+        DRY_RUN: ${{ inputs.release-tag == 'dry_run' }}
       shell: bash
       run: |
         if [[ "$DRY_RUN" == true ]]; then
@@ -93,7 +93,7 @@ runs:
         fi
         run_gh release upload "$RELEASE_TAG" build/release/wbctl-linux-amd64 \
           build/release/wbctl-darwin-universal build/release/wbctl-windows-amd64.exe \
-          build/release/checksums.txt scripts/install.sh scripts/install.ps1 --clobber
+          build/release/checksums.txt scripts/install.sh scripts/install.ps1 CHANGELOG.md --clobber
         if [[ "$SIGNING_MODE" != unsigned ]]; then
           run_gh release upload "$RELEASE_TAG" build/release/*.sigstore.json --clobber
         fi

@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Release tag for the binaries'
+        description: 'Release tag for the binaries, or dry_run to print commands without publishing'
         required: true
         default: ''
 jobs:
