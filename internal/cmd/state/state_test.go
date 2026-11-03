@@ -51,7 +51,8 @@ const (
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
 	expectedInvalidResourceErr = "" +
-		"GET ${URL}/postgrest/workbenches?controller_id=in.%28controller-1%29 failed" +
+		"GET ${URL}/postgrest/workbenches?" +
+		"or=%28controller_id.in.%28controller-1%29%2Cname.in.%28controller-1%29%29 failed" +
 		"\n Caused by:" +
 		"\n\t* invalid character 'i' looking for beginning of value"
 	expectedInvalidUpdateResponseErr = "" +
@@ -112,7 +113,7 @@ func TestStateCommands(t *testing.T) {
 			},
 			mockEndpoints: getStateEndpoints(stateConfig{
 				getConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(controller-1,controller-2)",
+					ExpectedQuery:  "or=(controller_id.in.(controller-1,controller-2),name.in.(controller-1,controller-2))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   stateGetResponseBodySingular,
 				},
@@ -136,7 +137,7 @@ func TestStateCommands(t *testing.T) {
 			},
 			mockEndpoints: getStateEndpoints(stateConfig{
 				getConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(controller-3)",
+					ExpectedQuery:  "or=(controller_id.in.(controller-3),name.in.(controller-3))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   stateGetResponseBodyPlural,
 				},
@@ -171,7 +172,7 @@ func TestStateCommands(t *testing.T) {
 			},
 			mockEndpoints: getStateEndpoints(stateConfig{
 				getConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(controller-1)",
+					ExpectedQuery:  "or=(controller_id.in.(controller-1),name.in.(controller-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   `[invalid`,
 				},
@@ -190,7 +191,7 @@ func TestStateCommands(t *testing.T) {
 			},
 			mockEndpoints: getStateEndpoints(stateConfig{
 				getConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(controller-3)",
+					ExpectedQuery:  "or=(controller_id.in.(controller-3),name.in.(controller-3))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   stateGetResponseBodyPlural,
 				},
