@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/i18n"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/services/workbench"
 	"github.com/sassoftware/wbctl/internal/stubs"
@@ -408,6 +409,25 @@ func TestDeleteJob(t *testing.T) {
 					"\t* 401 unauthorized",
 			},
 		},
+		{
+			name: "delete jobs not found",
+			request: deleteRequest{
+				ids: []string{"missing"},
+			},
+			mockEndpoints: getJobsDeleteEndpoints(
+				`or=(name.in.(missing))`,
+				`[]`,
+				"",
+				http.StatusOK,
+				"",
+			),
+			expected: deleteExpected{
+				err: i18n.Format(i18n.ResourceNotFoundWithID, i18n.A{
+					constants.I18nArgTypeKey: constants.JobType,
+					constants.I18nArgKeyID:   "missing",
+				}),
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -545,6 +565,26 @@ func TestBulkUpdateJobs(t *testing.T) {
 				err: "POST ${URL}/postgrest/rpc/job_bulk_update failed\n" +
 					" Caused by:\n" +
 					"\t* unexpected EOF",
+			},
+		},
+		{
+			name: "bulk update jobs not found",
+			request: bulkupdateRequest[types.Job]{
+				ids:  []string{"missing"},
+				body: types.Job{Name: "updated-name"},
+			},
+			mockEndpoints: getJobsBulkUpdateEndpoints(
+				`or=(name.in.(missing))`,
+				`[]`,
+				"",
+				http.StatusOK,
+				"",
+			),
+			expected: bulkupdateExpected[types.Jobs]{
+				err: i18n.Format(i18n.ResourceNotFoundWithID, i18n.A{
+					constants.I18nArgTypeKey: constants.JobType,
+					constants.I18nArgKeyID:   "missing",
+				}),
 			},
 		},
 	}

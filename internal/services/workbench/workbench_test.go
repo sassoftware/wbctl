@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/i18n"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/services/workbench"
 	"github.com/sassoftware/wbctl/internal/stubs"
@@ -413,6 +414,18 @@ func TestGetWorkspaceRequests(t *testing.T) {
 				`[]`,
 			),
 			expected: expected{err: "volume not found: missing"},
+		},
+		{
+			name:    "multiple workspaces match one name",
+			request: request{workspaceIDs: []string{"ws-name"}},
+			mockEndpoints: getEndpoints(
+				postgrest.Endpoint(constants.WorkbenchEndpointWorkspaces),
+				"or=(controller_id.in.(ws-name),name.in.(ws-name))",
+				http.StatusOK,
+				`[ {"id":"ws-1","controller_id":"ctrl-a","name":"ws-name","properties":{}},`+
+					`{"id":"ws-2","controller_id":"ctrl-b","name":"ws-name","properties":{}} ]`,
+			),
+			expected: expected{err: i18n.Format(i18n.MultipleElementsFound)},
 		},
 		{
 			name:    "invalid workspace response",

@@ -387,6 +387,25 @@ func TestDeleteWorkspace(t *testing.T) {
 					"\t* 401 unauthorized",
 			},
 		},
+		{
+			name: "delete workspace not found",
+			request: deleteRequest{
+				ids: []string{"missing"},
+			},
+			mockEndpoints: getWorkspaceDeleteEndpoints(
+				`or=(controller_id.in.(missing),name.in.(missing))`,
+				`[]`,
+				"",
+				http.StatusOK,
+				"",
+			),
+			expected: deleteExpected{
+				err: i18n.Format(i18n.ResourceNotFoundWithID, i18n.A{
+					constants.I18nArgTypeKey: constants.VolumeType,
+					constants.I18nArgKeyID:   "missing",
+				}),
+			},
+		},
 	}
 
 	for _, tt := range tests {

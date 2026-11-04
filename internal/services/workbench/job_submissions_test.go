@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/i18n"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/services/workbench"
 	"github.com/sassoftware/wbctl/internal/stubs"
@@ -430,6 +431,25 @@ func TestDeleteJobSubmission(t *testing.T) {
 				err: "POST ${URL}/postgrest/rpc/job_run_bulk_delete failed\n" +
 					" Caused by:\n" +
 					"\t* 401 unauthorized",
+			},
+		},
+		{
+			name: "delete job-submission not found",
+			request: deleteRequest{
+				ids: []string{"missing"},
+			},
+			mockEndpoints: getJobSubmissionDeleteEndpoints(
+				`or=(controller_id.in.(missing),job_name.in.(missing))`,
+				`[]`,
+				"",
+				http.StatusOK,
+				"",
+			),
+			expected: deleteExpected{
+				err: i18n.Format(i18n.ResourceNotFoundWithID, i18n.A{
+					constants.I18nArgTypeKey: constants.JobSubmissionType,
+					constants.I18nArgKeyID:   "missing",
+				}),
 			},
 		},
 	}

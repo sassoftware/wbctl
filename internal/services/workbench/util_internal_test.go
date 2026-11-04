@@ -46,6 +46,12 @@ func TestSelectByIDThenName(t *testing.T) {
 			expected:  testResources{a, b},
 		},
 		{
+			name:      "empty string args are skipped",
+			args:      []string{"", "id-a"},
+			resources: testResources{a, b},
+			expected:  testResources{a},
+		},
+		{
 			name:      "match by id",
 			args:      []string{"id-a"},
 			resources: testResources{a, b},

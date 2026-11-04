@@ -6,7 +6,6 @@ package workbench_test
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -410,9 +409,28 @@ func TestDeleteWorkbench(t *testing.T) {
 				"unauthorized",
 			),
 			expected: deleteExpected{
-				err: "POST %s/postgrest/rpc/workbench_bulk_delete failed\n" +
+				err: "POST ${URL}/postgrest/rpc/workbench_bulk_delete failed\n" +
 					" Caused by:\n" +
 					"\t* 401 unauthorized",
+			},
+		},
+		{
+			name: "delete workbench not found",
+			request: deleteRequest{
+				ids: []string{"missing"},
+			},
+			mockEndpoints: getWorkbenchesDeleteEndpoints(
+				`or=(controller_id.in.(missing),name.in.(missing))`,
+				`[]`,
+				"",
+				http.StatusOK,
+				"",
+			),
+			expected: deleteExpected{
+				err: i18n.Format(i18n.ResourceNotFoundWithID, i18n.A{
+					constants.I18nArgTypeKey: constants.WorkbenchType,
+					constants.I18nArgKeyID:   "missing",
+				}),
 			},
 		},
 	}
@@ -424,7 +442,7 @@ func TestDeleteWorkbench(t *testing.T) {
 			svc := workbench.NewWorkbenchService(srv.URL, "access-token", "csrf-token")
 			actual, err := workbench.BulkDeleteWorkbenches(context.Background(), svc, tt.request.ids)
 			if tt.expected.err != "" {
-				require.EqualError(t, err, fmt.Sprintf(tt.expected.err, srv.URL))
+				require.EqualError(t, err, strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL))
 				return
 			}
 			require.NoError(t, err)
@@ -471,7 +489,7 @@ func TestCreateWorkbench(t *testing.T) {
 				"unauthorized",
 			),
 			expected: createExpected[types.Workbench]{
-				err: "POST %s/postgrest/rpc/workbench_create failed\n" +
+				err: "POST ${URL}/postgrest/rpc/workbench_create failed\n" +
 					" Caused by:\n" +
 					"\t* 401 unauthorized",
 			},
@@ -486,7 +504,7 @@ func TestCreateWorkbench(t *testing.T) {
 
 			actual, err := workbench.CreateWorkbench(context.Background(), svc, tt.request.body)
 			if tt.expected.err != "" {
-				require.EqualError(t, err, fmt.Sprintf(tt.expected.err, srv.URL))
+				require.EqualError(t, err, strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL))
 				return
 			}
 			require.NoError(t, err)
