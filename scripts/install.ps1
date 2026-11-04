@@ -10,7 +10,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-if ($env:OS -ne 'Windows_NT' -or [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -ne 'X64') {
+if ($env:OS -ne 'Windows_NT' -or [System.Runtime.InteropServices.RuntimeInformation, mscorlib]::OSArchitecture -ne 'X64') {
     throw 'This installer requires Windows x64.'
 }
 
