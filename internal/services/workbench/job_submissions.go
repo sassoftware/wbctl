@@ -44,15 +44,12 @@ func GetJobSubmissions(
 	return selectByIDThenName(
 		args,
 		jobSubmissions,
-		func(j types.JobSubmission) string { return j.ID },
-		func(j types.JobSubmission) string { return j.ControllerID },
-		func(j types.JobSubmission) string { return j.JobName },
 	), nil
 }
 
 func resolveJobSubmissionIDs(ctx context.Context, s *WorkbenchService, ids []string) ([]string, error) {
 	return resolveIDs(
-		ctx, s, ids, GetJobSubmissions, func(j types.JobSubmission) string { return j.ID }, constants.JobSubmissionType,
+		ctx, s, ids, GetJobSubmissions, types.JobSubmission.GetID, constants.JobSubmissionType,
 	)
 }
 

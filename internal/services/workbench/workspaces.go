@@ -46,15 +46,12 @@ func GetWorkspaces(
 	return selectByIDThenName(
 		args,
 		workspaces,
-		func(w types.Workspace) string { return w.ID },
-		func(w types.Workspace) string { return w.ControllerID },
-		func(w types.Workspace) string { return w.Name },
 	), nil
 }
 
 func resolveWorkspaceIDs(ctx context.Context, s *WorkbenchService, args []string) ([]string, error) {
 	return resolveIDs(
-		ctx, s, args, GetWorkspaces, func(w types.Workspace) string { return w.ID }, constants.VolumeType,
+		ctx, s, args, GetWorkspaces, types.Workspace.GetID, constants.VolumeType,
 	)
 }
 

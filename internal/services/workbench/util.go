@@ -90,12 +90,9 @@ func buildFilterQuery(args []string, controllerIDColumn, nameColumn, sortSpec st
 // selectByIDThenName narrows resources to those requested by args. It provides precedence
 // for selecting by ID > Name. Each arg is resolved independently and no resource is
 // returned twice.
-func selectByIDThenName[T any, TS ~[]T](
+func selectByIDThenName[T types.IdentifiableResource, TS ~[]T](
 	args []string,
 	resources TS,
-	getIDFunc func(T) string,
-	getControllerIDFunc func(T) string,
-	getNameFunc func(T) string,
 ) TS {
 	if len(args) == 0 {
 		return resources
@@ -105,7 +102,7 @@ func selectByIDThenName[T any, TS ~[]T](
 		if arg == "" {
 			continue
 		}
-		for _, i := range matchIndexesByIDThenName(arg, resources, getIDFunc, getControllerIDFunc, getNameFunc) {
+		for _, i := range matchIndexesByIDThenName(arg, resources) {
 			selected[i] = true
 		}
 	}
@@ -121,20 +118,16 @@ func selectByIDThenName[T any, TS ~[]T](
 // matchIndexesByIDThenName returns the indexes of the resources matching args.
 // Resources matching by ID or controller ID take precedence over those
 // matching by name.
-func matchIndexesByIDThenName[T any, TS ~[]T](
+func matchIndexesByIDThenName[T types.IdentifiableResource, TS ~[]T](
 	arg string,
 	resources TS,
-	getIDFunc func(T) string,
-	getControllerIDFunc func(T) string,
-	getNameFunc func(T) string,
 ) []int {
 	var byID, byName []int
 	for i, resource := range resources {
 		switch {
-		case getIDFunc(resource) == arg ||
-			(getControllerIDFunc != nil && getControllerIDFunc(resource) == arg):
+		case resource.GetID() == arg || resource.GetControllerID() == arg:
 			byID = append(byID, i)
-		case getNameFunc(resource) == arg:
+		case resource.GetName() == arg:
 			byName = append(byName, i)
 		}
 	}

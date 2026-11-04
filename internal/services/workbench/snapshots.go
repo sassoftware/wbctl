@@ -47,15 +47,12 @@ func GetSnapshots(
 	return selectByIDThenName(
 		args,
 		snapshots,
-		func(s types.Snapshot) string { return s.ID },
-		func(s types.Snapshot) string { return s.ControllerID },
-		func(s types.Snapshot) string { return s.Name },
 	), nil
 }
 
 func resolveSnapshotIDs(ctx context.Context, s *WorkbenchService, args []string) ([]string, error) {
 	return resolveIDs(
-		ctx, s, args, GetSnapshots, func(s types.Snapshot) string { return s.ID }, constants.SnapshotType,
+		ctx, s, args, GetSnapshots, types.Snapshot.GetID, constants.SnapshotType,
 	)
 }
 

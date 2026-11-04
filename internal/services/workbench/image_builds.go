@@ -40,9 +40,6 @@ func GetImageBuilds(
 	return selectByIDThenName(
 		args,
 		imageBuilds,
-		func(b types.ImageBuild) string { return b.ID },
-		func(b types.ImageBuild) string { return b.ControllerID },
-		func(b types.ImageBuild) string { return b.Name },
 	), nil
 }
 

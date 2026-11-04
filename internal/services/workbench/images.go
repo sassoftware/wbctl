@@ -48,15 +48,12 @@ func GetImages(
 	return selectByIDThenName(
 		args,
 		images,
-		func(i types.Image) string { return i.ID },
-		func(i types.Image) string { return i.ControllerID },
-		func(i types.Image) string { return i.Name },
 	), nil
 }
 
 func resolveImageIDs(ctx context.Context, s *WorkbenchService, args []string) ([]string, error) {
 	return resolveIDs(
-		ctx, s, args, GetImages, func(i types.Image) string { return i.ID }, constants.ImageType,
+		ctx, s, args, GetImages, types.Image.GetID, constants.ImageType,
 	)
 }
 

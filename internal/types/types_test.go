@@ -470,6 +470,108 @@ func TestAsWorkspaceSlice(t *testing.T) {
 	}
 }
 
+func TestIdentifiableResourceGetters(t *testing.T) {
+	cases := []struct {
+		name                 string
+		resource             types.IdentifiableResource
+		expectedID           string
+		expectedControllerID string
+		expectedName         string
+	}{
+		{
+			name:                 "zero value job returns empty strings",
+			resource:             types.Job{},
+			expectedID:           "",
+			expectedControllerID: "",
+			expectedName:         "",
+		},
+		{
+			name: "image build returns ID, controller ID, and name",
+			resource: types.ImageBuild{
+				ID:           "image-build-1",
+				ControllerID: "controller-1",
+				Name:         "image-build-name",
+			},
+			expectedID:           "image-build-1",
+			expectedControllerID: "controller-1",
+			expectedName:         "image-build-name",
+		},
+		{
+			name: "image returns ID, controller ID, and name",
+			resource: types.Image{
+				ID:           "image-1",
+				ControllerID: "controller-1",
+				Name:         "image-name",
+			},
+			expectedID:           "image-1",
+			expectedControllerID: "controller-1",
+			expectedName:         "image-name",
+		},
+		{
+			name: "job submission returns job name as name",
+			resource: types.JobSubmission{
+				ID:           "job-submission-1",
+				ControllerID: "controller-1",
+				JobName:      "job-name",
+			},
+			expectedID:           "job-submission-1",
+			expectedControllerID: "controller-1",
+			expectedName:         "job-name",
+		},
+		{
+			name: "job returns ID and name with empty controller ID",
+			resource: types.Job{
+				ID:   "job-1",
+				Name: "job-name",
+			},
+			expectedID:           "job-1",
+			expectedControllerID: "",
+			expectedName:         "job-name",
+		},
+		{
+			name: "snapshot returns ID, controller ID, and name",
+			resource: types.Snapshot{
+				ID:           "snapshot-1",
+				ControllerID: "controller-1",
+				Name:         "snapshot-name",
+			},
+			expectedID:           "snapshot-1",
+			expectedControllerID: "controller-1",
+			expectedName:         "snapshot-name",
+		},
+		{
+			name: "workspace returns ID, controller ID, and name",
+			resource: types.Workspace{
+				ID:           "workspace-1",
+				ControllerID: "controller-1",
+				Name:         "workspace-name",
+			},
+			expectedID:           "workspace-1",
+			expectedControllerID: "controller-1",
+			expectedName:         "workspace-name",
+		},
+		{
+			name: "workbench returns ID, controller ID, and name",
+			resource: types.Workbench{
+				ID:           "workbench-1",
+				ControllerID: "controller-1",
+				Name:         "workbench-name",
+			},
+			expectedID:           "workbench-1",
+			expectedControllerID: "controller-1",
+			expectedName:         "workbench-name",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.expectedID, tc.resource.GetID())
+			require.Equal(t, tc.expectedControllerID, tc.resource.GetControllerID())
+			require.Equal(t, tc.expectedName, tc.resource.GetName())
+		})
+	}
+}
+
 func TestGetFunction(t *testing.T) {
 	metadata := []types.FunctionMetadata[string]{
 		{

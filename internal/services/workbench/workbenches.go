@@ -43,15 +43,12 @@ func GetWorkbenches(
 	return selectByIDThenName(
 		args,
 		workbenches,
-		func(w types.Workbench) string { return w.ID },
-		func(w types.Workbench) string { return w.ControllerID },
-		func(w types.Workbench) string { return w.Name },
 	), nil
 }
 
 func resolveWorkbenchIDs(ctx context.Context, s *WorkbenchService, args []string) ([]string, error) {
 	return resolveIDs(
-		ctx, s, args, GetWorkbenches, func(w types.Workbench) string { return w.ID }, constants.WorkbenchType,
+		ctx, s, args, GetWorkbenches, types.Workbench.GetID, constants.WorkbenchType,
 	)
 }
 

@@ -21,9 +21,9 @@ type testResource struct {
 
 type testResources []testResource
 
-func (r testResource) id() string           { return r.ID }
-func (r testResource) controllerID() string { return r.ControllerID }
-func (r testResource) name() string         { return r.Name }
+func (r testResource) GetID() string           { return r.ID }
+func (r testResource) GetControllerID() string { return r.ControllerID }
+func (r testResource) GetName() string         { return r.Name }
 
 func TestSelectByIDThenName(t *testing.T) {
 	a := testResource{ID: "id-a", ControllerID: "ctrl-a", Name: "name-a"}
@@ -100,9 +100,6 @@ func TestSelectByIDThenName(t *testing.T) {
 			actual := selectByIDThenName(
 				tt.args,
 				tt.resources,
-				testResource.id,
-				testResource.controllerID,
-				testResource.name,
 			)
 			require.Equal(t, tt.expected, actual)
 		})
@@ -163,7 +160,7 @@ func TestResolveIDs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			actual, err := resolveIDs(
-				context.Background(), nil, tt.args, tt.getter, testResource.id, constants.VolumeType,
+				context.Background(), nil, tt.args, tt.getter, testResource.GetID, constants.VolumeType,
 			)
 			if tt.expectedErr != "" {
 				require.EqualError(t, err, tt.expectedErr)

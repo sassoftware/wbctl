@@ -13,6 +13,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// IdentifiableResource is implemented by resources that can be identified by
+// an ID, (optionally) a controller ID, and a name.
+type IdentifiableResource interface {
+	GetID() string
+	GetControllerID() string
+	GetName() string
+}
+
 // Config holds CLI configuration values.
 type Config struct {
 	Endpoint string `json:"endpoint,omitempty"`
@@ -93,6 +101,24 @@ type Job struct {
 	Mounts                    []MountRequest         `json:"mounts,omitempty" wbctl:"alias:volumes,editable"`
 }
 
+// GetID returns the ID of the job.
+func (r Job) GetID() string {
+	return r.ID
+}
+
+// GetControllerID returns the controller ID of the job. Jobs do not have a
+// controller ID, so this always returns an empty string.
+func (r Job) GetControllerID() string {
+	return ""
+}
+
+// GetName returns the name of the job.
+func (r Job) GetName() string {
+	return r.Name
+}
+
+var _ IdentifiableResource = (*Job)(nil)
+
 // Jobs is a slice of Job values.
 type Jobs []Job
 
@@ -130,6 +156,23 @@ type JobSubmission struct {
 	Scheduled    bool                        `json:"scheduled,omitempty"`
 	LogURL       string                      `json:"log_url,omitempty"`
 }
+
+// GetID returns the ID of the job submission.
+func (r JobSubmission) GetID() string {
+	return r.ID
+}
+
+// GetControllerID returns the controller ID of the job submission.
+func (r JobSubmission) GetControllerID() string {
+	return r.ControllerID
+}
+
+// GetName returns the job name of the job submission.
+func (r JobSubmission) GetName() string {
+	return r.JobName
+}
+
+var _ IdentifiableResource = (*JobSubmission)(nil)
 
 // JobSubmissions is a slice of JobSubmission values.
 type JobSubmissions []JobSubmission
@@ -186,6 +229,23 @@ type Workspace struct {
 	Username     string                            `json:"username,omitempty"`
 }
 
+// GetID returns the ID of the workspace.
+func (r Workspace) GetID() string {
+	return r.ID
+}
+
+// GetControllerID returns the controller ID of the workspace.
+func (r Workspace) GetControllerID() string {
+	return r.ControllerID
+}
+
+// GetName returns the name of the workspace.
+func (r Workspace) GetName() string {
+	return r.Name
+}
+
+var _ IdentifiableResource = (*Workspace)(nil)
+
 // Workspaces is a slice of Workspace values.
 type Workspaces []Workspace
 
@@ -222,6 +282,23 @@ type Workbench struct {
 	Workspaces     []WorkspaceRequest          `json:"workspaces,omitempty" wbctl:"alias:volumes,editable"`
 	Mounts         []MountRequest              `json:"mounts,omitempty" wbctl:"alias:volumes,editable"`
 }
+
+// GetID returns the ID of the workbench.
+func (r Workbench) GetID() string {
+	return r.ID
+}
+
+// GetControllerID returns the controller ID of the workbench.
+func (r Workbench) GetControllerID() string {
+	return r.ControllerID
+}
+
+// GetName returns the name of the workbench.
+func (r Workbench) GetName() string {
+	return r.Name
+}
+
+var _ IdentifiableResource = (*Workbench)(nil)
 
 // Workbenches is a slice of Workbench values.
 type Workbenches []Workbench
@@ -312,6 +389,23 @@ type ImageBuild struct {
 	PodStatus    []ExecuteableResourceStatus `json:"pod_status,omitempty"`
 }
 
+// GetID returns the ID of the image build.
+func (r ImageBuild) GetID() string {
+	return r.ID
+}
+
+// GetControllerID returns the controller ID of the image build.
+func (r ImageBuild) GetControllerID() string {
+	return r.ControllerID
+}
+
+// GetName returns the name of the image build.
+func (r ImageBuild) GetName() string {
+	return r.Name
+}
+
+var _ IdentifiableResource = (*ImageBuild)(nil)
+
 // ImageBuilds is a slice of ImageBuild values.
 type ImageBuilds []ImageBuild
 
@@ -347,6 +441,23 @@ type Image struct {
 	TenantID                     string                      `json:"tenant_id,omitempty"`
 	Username                     string                      `json:"username,omitempty"`
 }
+
+// GetID returns the ID of the image.
+func (r Image) GetID() string {
+	return r.ID
+}
+
+// GetControllerID returns the controller ID of the image.
+func (r Image) GetControllerID() string {
+	return r.ControllerID
+}
+
+// GetName returns the name of the image.
+func (r Image) GetName() string {
+	return r.Name
+}
+
+var _ IdentifiableResource = (*Image)(nil)
 
 // Images is a slice of Image values.
 type Images []Image
@@ -416,6 +527,23 @@ type Snapshot struct {
 	VolumeStatus    *VolumeStatus                 `json:"volume_status,omitempty"`
 	WorkspaceSource *Workspace                    `json:"workspace_source,omitempty" wbctl:"alias:volume_source"`
 }
+
+// GetID returns the ID of the snapshot.
+func (r Snapshot) GetID() string {
+	return r.ID
+}
+
+// GetControllerID returns the controller ID of the snapshot.
+func (r Snapshot) GetControllerID() string {
+	return r.ControllerID
+}
+
+// GetName returns the name of the snapshot.
+func (r Snapshot) GetName() string {
+	return r.Name
+}
+
+var _ IdentifiableResource = (*Snapshot)(nil)
 
 // VolumeStatus describes a snapshot volume status.
 type VolumeStatus struct {
