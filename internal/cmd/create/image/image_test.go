@@ -818,7 +818,7 @@ func getUpdateArgs(
 }
 
 func getUpdateImageEndpoints(
-	expectedResolveQuery string,
+	expectedQuery string,
 	resolveResponseBody string,
 	expectedRequestBody string,
 	responseStatus int,
@@ -831,7 +831,7 @@ func getUpdateImageEndpoints(
 					Method:          http.MethodGet,
 					URL:             postgrest.Endpoint(constants.WorkbenchEndpointImages),
 					ExpectedHeaders: stubs.StubAuthHeaders,
-					ExpectedQuery:   expectedResolveQuery,
+					ExpectedQuery:   expectedQuery,
 				},
 				Response: stubs.StubHTTPResponse{
 					Status: http.StatusOK,

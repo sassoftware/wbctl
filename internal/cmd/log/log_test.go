@@ -61,19 +61,20 @@ func TestLogCommand(t *testing.T) {
 			name: "new log function image build list non-200 from server",
 			input: logInput{
 				resourceType: constants.ImageBuildsType,
-				resourceIDs:  []string{"controller-1"},
+				resourceIDs:  []string{"image-build-1"},
 			},
 			mockEndpoints: getLogEndpoints(logConfig{
 				resourceURL: postgrest.Endpoint(constants.WorkbenchEndpointImageBuilds),
 				getResourceConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(controller-1)",
+					ExpectedQuery:  "or=(controller_id.in.(image-build-1),name.in.(image-build-1))",
 					ResponseStatus: http.StatusInternalServerError,
 					ResponseBody:   `resource-error`,
 				},
 			}),
 			expected: logExpected{
 				displays: []string{stubs.ExpectedDeviceAuthDisplay},
-				err: "GET ${URL}/postgrest/image_builds?controller_id=in.%28controller-1%29 failed\n" +
+				err: "GET ${URL}/postgrest/image_builds" +
+					"?or=%28controller_id.in.%28image-build-1%29%2Cname.in.%28image-build-1%29%29 failed\n" +
 					" Caused by:\n" +
 					"\t* 500 resource-error",
 				resourceCalls: 1},
@@ -82,12 +83,12 @@ func TestLogCommand(t *testing.T) {
 			name: "new log function image build raw log non-200 from server",
 			input: logInput{
 				resourceType: constants.ImageBuildsType,
-				resourceIDs:  []string{"controller-1"},
+				resourceIDs:  []string{"image-build-1"},
 			},
 			mockEndpoints: getLogEndpoints(logConfig{
 				resourceURL: postgrest.Endpoint(constants.WorkbenchEndpointImageBuilds),
 				getResourceConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(controller-1)",
+					ExpectedQuery:  "or=(controller_id.in.(image-build-1),name.in.(image-build-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   logImageBuildsResponseBody,
 				},
@@ -108,19 +109,20 @@ func TestLogCommand(t *testing.T) {
 			name: "new log function job submission list non-200 from server",
 			input: logInput{
 				resourceType: constants.JobSubmissionsType,
-				resourceIDs:  []string{"controller-1"},
+				resourceIDs:  []string{"job-submission-1"},
 			},
 			mockEndpoints: getLogEndpoints(logConfig{
 				resourceURL: postgrest.Endpoint(constants.WorkbenchEndpointJobRuns),
 				getResourceConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(controller-1)",
+					ExpectedQuery:  "or=(controller_id.in.(job-submission-1),job_name.in.(job-submission-1))",
 					ResponseStatus: http.StatusInternalServerError,
 					ResponseBody:   "resource-error",
 				},
 			}),
 			expected: logExpected{
 				displays: []string{stubs.ExpectedDeviceAuthDisplay},
-				err: "GET ${URL}/postgrest/job_runs?controller_id=in.%28controller-1%29 failed\n" +
+				err: "GET ${URL}/postgrest/job_runs" +
+					"?or=%28controller_id.in.%28job-submission-1%29%2Cjob_name.in.%28job-submission-1%29%29 failed\n" +
 					" Caused by:\n" +
 					"\t* 500 resource-error",
 				resourceCalls: 1},
@@ -129,12 +131,12 @@ func TestLogCommand(t *testing.T) {
 			name: "new log function job submission raw log non-200 from server",
 			input: logInput{
 				resourceType: constants.JobSubmissionsType,
-				resourceIDs:  []string{"controller-1"},
+				resourceIDs:  []string{"job-submission-1"},
 			},
 			mockEndpoints: getLogEndpoints(logConfig{
 				resourceURL: postgrest.Endpoint(constants.WorkbenchEndpointJobRuns),
 				getResourceConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(controller-1)",
+					ExpectedQuery:  "or=(controller_id.in.(job-submission-1),job_name.in.(job-submission-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   logJobSubmissionsResponseBody,
 				},
@@ -153,11 +155,11 @@ func TestLogCommand(t *testing.T) {
 		},
 		{
 			name:  "new log function prints image build logs by singular type",
-			input: logInput{resourceType: constants.ImageBuildType, resourceIDs: []string{"controller-1"}},
+			input: logInput{resourceType: constants.ImageBuildType, resourceIDs: []string{"image-build-1"}},
 			mockEndpoints: getLogEndpoints(logConfig{
 				resourceURL: postgrest.Endpoint(constants.WorkbenchEndpointImageBuilds),
 				getResourceConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(controller-1)",
+					ExpectedQuery:  "or=(controller_id.in.(image-build-1),name.in.(image-build-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   logImageBuildsResponseBody,
 				},
@@ -177,12 +179,12 @@ func TestLogCommand(t *testing.T) {
 			name: "new log function prints image build logs by plural type",
 			input: logInput{
 				resourceType: constants.ImageBuildsType,
-				resourceIDs:  []string{"controller-1"},
+				resourceIDs:  []string{"image-build-1"},
 			},
 			mockEndpoints: getLogEndpoints(logConfig{
 				resourceURL: postgrest.Endpoint(constants.WorkbenchEndpointImageBuilds),
 				getResourceConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(controller-1)",
+					ExpectedQuery:  "or=(controller_id.in.(image-build-1),name.in.(image-build-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   logImageBuildsResponseBody,
 				},
@@ -200,11 +202,11 @@ func TestLogCommand(t *testing.T) {
 		},
 		{
 			name:  "new log function prints job submission logs by singular type",
-			input: logInput{resourceType: constants.JobSubmissionType, resourceIDs: []string{"controller-2"}},
+			input: logInput{resourceType: constants.JobSubmissionType, resourceIDs: []string{"job-submission-1"}},
 			mockEndpoints: getLogEndpoints(logConfig{
 				resourceURL: postgrest.Endpoint(constants.WorkbenchEndpointJobRuns),
 				getResourceConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(controller-2)",
+					ExpectedQuery:  "or=(controller_id.in.(job-submission-1),job_name.in.(job-submission-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   logJobSubmissionsResponseBody,
 				},
@@ -222,11 +224,11 @@ func TestLogCommand(t *testing.T) {
 		},
 		{
 			name:  "new log function prints job submission logs by plural type",
-			input: logInput{resourceType: constants.JobSubmissionsType, resourceIDs: []string{"controller-2"}},
+			input: logInput{resourceType: constants.JobSubmissionsType, resourceIDs: []string{"job-submission-1"}},
 			mockEndpoints: getLogEndpoints(logConfig{
 				resourceURL: postgrest.Endpoint(constants.WorkbenchEndpointJobRuns),
 				getResourceConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(controller-2)",
+					ExpectedQuery:  "or=(controller_id.in.(job-submission-1),job_name.in.(job-submission-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   logJobSubmissionsResponseBody,
 				},
