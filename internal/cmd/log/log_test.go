@@ -255,6 +255,38 @@ func TestLogCommand(t *testing.T) {
 				err: expectedInvalidEndpointErr,
 			},
 		},
+		{
+			name:  "empty job submission log url",
+			input: logInput{resourceType: constants.JobSubmissionsType, resourceIDs: []string{"job-submission-2"}},
+			mockEndpoints: getLogEndpoints(logConfig{
+				resourceURL: postgrest.Endpoint(constants.WorkbenchEndpointJobRuns),
+				getResourceConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  "or=(controller_id.in.(job-submission-2),job_name.in.(job-submission-2))",
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   logJobSubmissionsResponseBody,
+				},
+			}),
+			expected: logExpected{
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay},
+				resourceCalls: 1,
+			},
+		},
+		{
+			name:  "empty build log url",
+			input: logInput{resourceType: constants.ImageBuildType, resourceIDs: []string{"image-build-2"}},
+			mockEndpoints: getLogEndpoints(logConfig{
+				resourceURL: postgrest.Endpoint(constants.WorkbenchEndpointImageBuilds),
+				getResourceConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  "or=(controller_id.in.(image-build-2),name.in.(image-build-2))",
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   logImageBuildsResponseBody,
+				},
+			}),
+			expected: logExpected{
+				displays:      []string{stubs.ExpectedDeviceAuthDisplay},
+				resourceCalls: 1,
+			},
+		},
 	}
 
 	for _, tt := range tests {
