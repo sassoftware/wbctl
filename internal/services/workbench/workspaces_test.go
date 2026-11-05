@@ -50,6 +50,12 @@ const (
     "controller_id": "controller-ws-2",
     "name": "workspace-controller",
     "username": "bob"
+  },
+  {
+    "id": "ws-name",
+    "controller_id": "ctrl-name",
+    "name": "workspace-name",
+    "username": "carol"
   }
 ]
 `
@@ -299,6 +305,9 @@ Properties:
   }
 ]
 `
+	workspaceResolveIDsQuery               = "or=(controller_id.in.(ws-1,ws-2),name.in.(ws-1,ws-2))"
+	workspaceResolveIDsResponseJSON        = `[{"id":"ws-1"},{"id":"ws-2"}]`
+	workspaceDeleteSuccessResponseJSON     = `["ws-1", "ws-2"]`
 	expectedDeleteWorkspaceRequestJSON     = `{"ids":["ws-1", "ws-2"]}`
 	expectedBulkUpdateWorkspaceRequestJSON = `{"ids":["ws-1","ws-2"],"workspace":` +
 		`{"description":"updated-description","pvc_status":{"status":{}}}}`
@@ -333,6 +342,12 @@ var (
 			Name:         "workspace-controller",
 			Username:     "bob",
 		},
+		{
+			ID:           "ws-name",
+			ControllerID: "ctrl-name",
+			Name:         "workspace-name",
+			Username:     "carol",
+		},
 	}
 )
 
@@ -344,9 +359,11 @@ func TestDeleteWorkspace(t *testing.T) {
 				ids: []string{"ws-1", "ws-2"},
 			},
 			mockEndpoints: getWorkspaceDeleteEndpoints(
+				workspaceResolveIDsQuery,
+				workspaceResolveIDsResponseJSON,
 				expectedDeleteWorkspaceRequestJSON,
 				http.StatusOK,
-				`["ws-1", "ws-2"]`,
+				workspaceDeleteSuccessResponseJSON,
 			),
 			expected: deleteExpected{
 				result: []string{"ws-1", "ws-2"},
@@ -358,6 +375,8 @@ func TestDeleteWorkspace(t *testing.T) {
 				ids: []string{"ws-1", "ws-2"},
 			},
 			mockEndpoints: getWorkspaceDeleteEndpoints(
+				workspaceResolveIDsQuery,
+				workspaceResolveIDsResponseJSON,
 				expectedDeleteWorkspaceRequestJSON,
 				http.StatusUnauthorized,
 				`unauthorized`,
@@ -366,6 +385,25 @@ func TestDeleteWorkspace(t *testing.T) {
 				err: "POST ${URL}/postgrest/rpc/workspace_bulk_delete failed\n" +
 					" Caused by:\n" +
 					"\t* 401 unauthorized",
+			},
+		},
+		{
+			name: "delete workspace not found",
+			request: deleteRequest{
+				ids: []string{"missing"},
+			},
+			mockEndpoints: getWorkspaceDeleteEndpoints(
+				`or=(controller_id.in.(missing),name.in.(missing))`,
+				`[]`,
+				"",
+				http.StatusOK,
+				"",
+			),
+			expected: deleteExpected{
+				err: i18n.Format(i18n.ResourceNotFoundWithID, i18n.A{
+					constants.I18nArgTypeKey: constants.VolumeType,
+					constants.I18nArgKeyID:   "missing",
+				}),
 			},
 		},
 	}
@@ -459,6 +497,8 @@ func TestBulkUpdateWorkspaces(t *testing.T) {
 				body: types.Workspace{Description: "updated-description"},
 			},
 			mockEndpoints: getWorkspaceBulkUpdateEndpoints(
+				workspaceResolveIDsQuery,
+				workspaceResolveIDsResponseJSON,
 				expectedBulkUpdateWorkspaceRequestJSON,
 				http.StatusOK,
 				workspacesBulkUpdateResponseJSON,
@@ -477,6 +517,8 @@ func TestBulkUpdateWorkspaces(t *testing.T) {
 				body: types.Workspace{Description: "updated-description"},
 			},
 			mockEndpoints: getWorkspaceBulkUpdateEndpoints(
+				workspaceResolveIDsQuery,
+				workspaceResolveIDsResponseJSON,
 				expectedBulkUpdateWorkspaceRequestJSON,
 				http.StatusUnauthorized,
 				`unauthorized`,
@@ -494,6 +536,8 @@ func TestBulkUpdateWorkspaces(t *testing.T) {
 				body: types.Workspace{Description: "updated-description"},
 			},
 			mockEndpoints: getWorkspaceBulkUpdateEndpoints(
+				workspaceResolveIDsQuery,
+				workspaceResolveIDsResponseJSON,
 				expectedBulkUpdateWorkspaceRequestJSON,
 				http.StatusOK,
 				`[`,
@@ -511,6 +555,8 @@ func TestBulkUpdateWorkspaces(t *testing.T) {
 				body: types.Workspace{Name: "workspace-one-renamed"},
 			},
 			mockEndpoints: getWorkspaceUpdateEndpoints(
+				`or=(controller_id.in.(ws-1),name.in.(ws-1))`,
+				`[{"id":"ws-1"}]`,
 				expectedUpdateWorkspaceRequestJSON,
 				http.StatusOK,
 				createWorkspaceRenamedResponseJSON,
@@ -525,9 +571,36 @@ func TestBulkUpdateWorkspaces(t *testing.T) {
 				ids:  []string{"ws-1", "ws-2"},
 				body: types.Workspace{Name: "workspace-one-renamed"},
 			},
+			mockEndpoints: getWorkspaceBulkUpdateEndpoints(
+				workspaceResolveIDsQuery,
+				workspaceResolveIDsResponseJSON,
+				"",
+				http.StatusOK,
+				"",
+			),
 			expected: bulkupdateExpected[types.Workspaces]{
 				err: i18n.Format(i18n.BulkUpdateNameError,
 					i18n.A{constants.I18nArgKeyType: constants.VolumesType}),
+			},
+		},
+		{
+			name: "bulk update workspaces with no matching resources returns not found",
+			request: bulkupdateRequest[types.Workspace]{
+				ids:  []string{"missing"},
+				body: types.Workspace{Description: "updated-description"},
+			},
+			mockEndpoints: getWorkspaceBulkUpdateEndpoints(
+				`or=(controller_id.in.(missing),name.in.(missing))`,
+				`[]`,
+				"",
+				http.StatusOK,
+				"",
+			),
+			expected: bulkupdateExpected[types.Workspaces]{
+				err: i18n.Format(i18n.ResourceNotFoundWithID, i18n.A{
+					constants.I18nArgTypeKey: constants.VolumeType,
+					constants.I18nArgKeyID:   "missing",
+				}),
 			},
 		},
 	}
@@ -564,14 +637,15 @@ func TestGetWorkspaces(t *testing.T) {
 			},
 		},
 		{
-			name: "get workspaces success with mixed uuid and controller ids query",
+			name: "get workspaces success with mixed uuid, controller ids, names query",
 			request: getRequest{
-				ids:  []string{"123e4567-e89b-12d3-a456-426614174000", "controller-ws-2"},
+				ids:  []string{"123e4567-e89b-12d3-a456-426614174000", "controller-ws-2", "ws-name"},
 				sort: "id.asc",
 			},
 			mockEndpoints: getWorkspaceGetEndpoints(
 				"or=(id.in.(123e4567-e89b-12d3-a456-426614174000),"+
-					"controller_id.in.(controller-ws-2))&order=id.asc",
+					"controller_id.in.(controller-ws-2,ws-name),"+
+					"name.in.(123e4567-e89b-12d3-a456-426614174000,controller-ws-2,ws-name))&order=id.asc",
 				http.StatusOK,
 				workspacesGetMixedIDsResponseJSON,
 			),
@@ -725,12 +799,12 @@ func TestGetWorkspaces(t *testing.T) {
 				ids: []string{"id-a"},
 			},
 			mockEndpoints: getWorkspaceGetEndpoints(
-				"controller_id=in.(id-a)",
+				"or=(controller_id.in.(id-a),name.in.(id-a))",
 				http.StatusOK,
 				`[`,
 			),
 			expected: getExpected[types.Workspaces]{
-				err: "GET ${URL}/postgrest/workspaces?controller_id=in.%28id-a%29 failed\n" +
+				err: "GET ${URL}/postgrest/workspaces?or=%28controller_id.in.%28id-a%29%2Cname.in.%28id-a%29%29 failed\n" +
 					" Caused by:\n" +
 					"\t* unexpected EOF",
 			},
@@ -741,12 +815,12 @@ func TestGetWorkspaces(t *testing.T) {
 				ids: []string{"id-a"},
 			},
 			mockEndpoints: getWorkspaceGetEndpoints(
-				"controller_id=in.(id-a)",
+				"or=(controller_id.in.(id-a),name.in.(id-a))",
 				http.StatusUnauthorized,
 				`unauthorized`,
 			),
 			expected: getExpected[types.Workspaces]{
-				err: "GET ${URL}/postgrest/workspaces?controller_id=in.%28id-a%29 failed\n" +
+				err: "GET ${URL}/postgrest/workspaces?or=%28controller_id.in.%28id-a%29%2Cname.in.%28id-a%29%29 failed\n" +
 					" Caused by:\n" +
 					"\t* 401 unauthorized",
 			},
@@ -892,12 +966,14 @@ func TestDescribeWorkspaces(t *testing.T) {
 }
 
 func getWorkspaceUpdateEndpoints(
+	expectedQuery string,
+	resolveResponseBody string,
 	expectedBody string,
 	responseStatus int,
 	responseBody string,
 ) []stubs.StubHTTPEndpoint {
-	return []stubs.StubHTTPEndpoint{
-		{
+	return append(getWorkspaceGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody),
+		stubs.StubHTTPEndpoint{
 			Request: stubs.StubHTTPRequest{
 				Method:          http.MethodPost,
 				URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCWorkspaceUpdate),
@@ -908,17 +984,18 @@ func getWorkspaceUpdateEndpoints(
 				Status: responseStatus,
 				Body:   responseBody,
 			},
-		},
-	}
+		})
 }
 
 func getWorkspaceBulkUpdateEndpoints(
+	expectedQuery string,
+	resolveResponseBody string,
 	expectedBody string,
 	responseStatus int,
 	responseBody string,
 ) []stubs.StubHTTPEndpoint {
-	return []stubs.StubHTTPEndpoint{
-		{
+	return append(getWorkspaceGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody),
+		stubs.StubHTTPEndpoint{
 			Request: stubs.StubHTTPRequest{
 				Method:          http.MethodPost,
 				URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCWorkspaceBulkUpdate),
@@ -929,17 +1006,18 @@ func getWorkspaceBulkUpdateEndpoints(
 				Status: responseStatus,
 				Body:   responseBody,
 			},
-		},
-	}
+		})
 }
 
 func getWorkspaceDeleteEndpoints(
+	expectedQuery string,
+	resolveResponseBody string,
 	expectedBody string,
 	responseStatus int,
 	responseBody string,
 ) []stubs.StubHTTPEndpoint {
-	return []stubs.StubHTTPEndpoint{
-		{
+	return append(getWorkspaceGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody),
+		stubs.StubHTTPEndpoint{
 			Request: stubs.StubHTTPRequest{
 				Method:          http.MethodPost,
 				URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCWorkspaceBulkDelete),
@@ -950,8 +1028,7 @@ func getWorkspaceDeleteEndpoints(
 				Body:   responseBody,
 				Status: responseStatus,
 			},
-		},
-	}
+		})
 }
 
 func getWorkspaceCreateEndpoints(

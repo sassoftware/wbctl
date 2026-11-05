@@ -19,16 +19,16 @@ import (
 	"github.com/sassoftware/wbctl/internal/ui"
 )
 
-// GetImages gets the images in the given WorkbenchService. If given any ids,
-// only the matching resources will be returned. Otherwise, all resources are
-// returned.
+// GetImages gets the images in the given WorkbenchService. If given any
+// ids/names, only the matching resources will be returned. Otherwise, all
+// resources are returned.
 func GetImages(
 	ctx context.Context,
 	s *WorkbenchService,
-	ids []string,
+	args []string,
 	sortSpec string,
 ) (types.Images, error) {
-	logutil.GetLogger().Info("getting images", "ids", ids, "sort", sortSpec)
+	logutil.GetLogger().Info("getting images", "args", args, "sort", sortSpec)
 	sortSpec = normalizeSortSpec(sortSpec, map[string][]string{
 		constants.SortKeyAge:          {constants.SortKeyCreatedAt},
 		constants.SortKeyImageBuildID: {constants.SortKeyLatestImageBuildID},
@@ -39,14 +39,31 @@ func GetImages(
 			constants.SortKeyImageTag,
 		},
 	})
-	return result.Split(Get[types.Images](
-		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointImages), IDsOrControllerIDsQuery(ids, sortSpec),
+	images, err := result.Split(Get[types.Images](
+		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointImages), IDsControllerIDsOrNamesQuery(args, sortSpec),
 	))
+	if err != nil {
+		return nil, err
+	}
+	return selectByIDThenName(
+		args,
+		images,
+	), nil
 }
 
-// BulkDeleteImages deletes the images with the given ids.
-func BulkDeleteImages(ctx context.Context, s *WorkbenchService, ids []string) ([]string, error) {
-	logutil.GetLogger().Info("deleting images", "ids", ids)
+func resolveImageIDs(ctx context.Context, s *WorkbenchService, args []string) ([]string, error) {
+	return resolveIDs(
+		ctx, s, args, GetImages, types.Image.GetID, constants.ImageType,
+	)
+}
+
+// BulkDeleteImages deletes the images with the given ids/names.
+func BulkDeleteImages(ctx context.Context, s *WorkbenchService, args []string) ([]string, error) {
+	logutil.GetLogger().Info("deleting images", "args", args)
+	ids, err := resolveImageIDs(ctx, s, args)
+	if err != nil {
+		return nil, err
+	}
 	return result.Split(Post[[]string](
 		ctx,
 		s,
@@ -57,7 +74,7 @@ func BulkDeleteImages(ctx context.Context, s *WorkbenchService, ids []string) ([
 
 // CreateImage creates an image.
 func CreateImage(ctx context.Context, s *WorkbenchService, body types.Image) (types.Image, error) {
-	logutil.GetLogger().Info("deleting images", "body", body)
+	logutil.GetLogger().Info("creating image", "body", body)
 	return result.Split(Post[types.Image](
 		ctx,
 		s,
@@ -75,14 +92,18 @@ func RebuildImage(ctx context.Context, s *WorkbenchService, id string) (bool, er
 }
 
 // BulkUpdateImages applies the given types.Image to all the images with the
-// given ids.
+// given ids/names.
 func BulkUpdateImages(
 	ctx context.Context,
 	s *WorkbenchService,
-	ids []string,
+	args []string,
 	body types.Image,
 ) (types.Images, error) {
-	logutil.GetLogger().Info("updating images", "ids", ids, "body", body)
+	logutil.GetLogger().Info("updating images", "args", args, "body", body)
+	ids, err := resolveImageIDs(ctx, s, args)
+	if err != nil {
+		return nil, err
+	}
 	return result.Split(Post[types.Images](
 		ctx,
 		s,

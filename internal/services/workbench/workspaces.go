@@ -21,29 +21,47 @@ import (
 )
 
 // GetWorkspaces gets the workspaces in the given WorkbenchService. If given any
-// ids, only the matching resources will be returned. Otherwise, all resources
+// ids/names, only the matching resources will be returned. Otherwise, all resources
 // are returned.
+// nolint:dupl
 func GetWorkspaces(
 	ctx context.Context,
 	s *WorkbenchService,
-	ids []string,
+	args []string,
 	sortSpec string,
 ) (types.Workspaces, error) {
-	logutil.GetLogger().Info("getting volumes", "ids", ids, "sort", sortSpec)
+	logutil.GetLogger().Info("getting volumes", "args", args, "sort", sortSpec)
 	sortSpec = normalizeSortSpec(sortSpec, map[string][]string{
 		constants.SortKeyAge:              {constants.SortKeyCreatedAt},
 		constants.SortKeySize:             {constants.SortKeyStorageSizeG},
 		constants.SortKeyHomeDir:          {constants.SortKeyPropertiesHomeDirectory},
 		constants.SortKeyStorageClassName: {constants.SortKeyStorageSpecStorageClassName},
 	})
-	return result.Split(Get[types.Workspaces](
-		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointWorkspaces), IDsOrControllerIDsQuery(ids, sortSpec),
+	workspaces, err := result.Split(Get[types.Workspaces](
+		ctx, s, postgrest.Endpoint(constants.WorkbenchEndpointWorkspaces), IDsControllerIDsOrNamesQuery(args, sortSpec),
 	))
+	if err != nil {
+		return nil, err
+	}
+	return selectByIDThenName(
+		args,
+		workspaces,
+	), nil
 }
 
-// BulkDeleteWorkspaces deletes the workspaces with the given ids.
-func BulkDeleteWorkspaces(ctx context.Context, s *WorkbenchService, ids []string) ([]string, error) {
-	logutil.GetLogger().Info("deleting volumes", "ids", ids)
+func resolveWorkspaceIDs(ctx context.Context, s *WorkbenchService, args []string) ([]string, error) {
+	return resolveIDs(
+		ctx, s, args, GetWorkspaces, types.Workspace.GetID, constants.VolumeType,
+	)
+}
+
+// BulkDeleteWorkspaces deletes the workspaces with the given ids/names.
+func BulkDeleteWorkspaces(ctx context.Context, s *WorkbenchService, args []string) ([]string, error) {
+	logutil.GetLogger().Info("deleting volumes", "args", args)
+	ids, err := resolveWorkspaceIDs(ctx, s, args)
+	if err != nil {
+		return nil, err
+	}
 	return result.Split(Post[[]string](
 		ctx,
 		s,
@@ -67,15 +85,19 @@ func CreateWorkspace(
 	))
 }
 
-// BulkUpdateWorkspaces  applies the given types.Workspace to all the workspaces
-// with the given ids.
+// BulkUpdateWorkspaces applies the given types.Workspace to all the
+// workspaces with the given ids/names.
 func BulkUpdateWorkspaces(
 	ctx context.Context,
 	s *WorkbenchService,
-	ids []string,
+	args []string,
 	body types.Workspace,
 ) (types.Workspaces, error) {
-	logutil.GetLogger().Info("updating volumes", "ids", ids)
+	logutil.GetLogger().Info("updating volumes", "args", args)
+	ids, err := resolveWorkspaceIDs(ctx, s, args)
+	if err != nil {
+		return nil, err
+	}
 	return bulkUpdateForUniqueNameConstrainedResources[types.Workspace, types.Workspaces](
 		ctx,
 		s,

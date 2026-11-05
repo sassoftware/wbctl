@@ -38,6 +38,24 @@ const (
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
 )
 
+const (
+	expectedImageResolveQuery      = `or=(controller_id.in.(image-1,image-2),name.in.(image-1,image-2))`
+	expectedJobResolveQuery        = `or=(name.in.(job-1,job-2))`
+	expectedSnapshotResolveQuery   = `or=(controller_id.in.(snapshot-1,snapshot-2),name.in.(snapshot-1,snapshot-2))`
+	expectedSubmissionResolveQuery = `or=(controller_id.in.(submission-1,submission-2),` +
+		`job_name.in.(submission-1,submission-2))`
+	expectedWorkbenchResolveQuery    = `or=(controller_id.in.(workbench-1,workbench-2),name.in.(workbench-1,workbench-2))`
+	expectedWorkspaceResolveQueryOne = `or=(controller_id.in.(workspace-1),name.in.(workspace-1))`
+	expectedWorkspaceResolveQueryTwo = `or=(controller_id.in.(workspace-1,workspace-2),name.in.(workspace-1,workspace-2))`
+	imageResolveResponseBody         = `[{"id":"image-1"},{"id":"image-2"}]`
+	jobResolveResponseBody           = `[{"id":"job-1"},{"id":"job-2"}]`
+	snapshotResolveResponseBody      = `[{"id":"snapshot-1"},{"id":"snapshot-2"}]`
+	submissionResolveResponseBody    = `[{"id":"submission-1"},{"id":"submission-2"}]`
+	workbenchResolveResponseBody     = `[{"id":"workbench-1"},{"id":"workbench-2"}]`
+	workspaceResolveResponseBodyOne  = `[{"id":"workspace-1"}]`
+	workspaceResolveResponseBodyTwo  = `[{"id":"workspace-1"},{"id":"workspace-2"}]`
+)
+
 var (
 	expectedImageDisplay          = strings.Join([]string{image1ID, image2ID}, "\n")
 	expectedJobDisplay            = strings.Join([]string{job1ID, job2ID}, "\n")
@@ -99,6 +117,12 @@ func TestDeleteCommand(t *testing.T) {
 				resourceIDs:  []string{workspace1ID},
 			},
 			mockEndpoints: getDeleteEndpoints(
+				postgrest.Endpoint(constants.WorkbenchEndpointWorkspaces),
+				stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedWorkspaceResolveQueryOne,
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   workspaceResolveResponseBodyOne,
+				},
 				postgrest.Endpoint(constants.WorkbenchEndpointRPCWorkspaceBulkDelete),
 				stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: `{"ids":["workspace-1"]}`,
@@ -121,6 +145,12 @@ func TestDeleteCommand(t *testing.T) {
 				resourceIDs:  []string{image1ID, image2ID},
 			},
 			mockEndpoints: getDeleteEndpoints(
+				postgrest.Endpoint(constants.WorkbenchEndpointImages),
+				stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedImageResolveQuery,
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   imageResolveResponseBody,
+				},
 				postgrest.Endpoint(constants.WorkbenchEndpointRPCImageBulkDelete),
 				stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: expectedImageRequestBody,
@@ -140,6 +170,12 @@ func TestDeleteCommand(t *testing.T) {
 				resourceIDs:  []string{image1ID, image2ID},
 			},
 			mockEndpoints: getDeleteEndpoints(
+				postgrest.Endpoint(constants.WorkbenchEndpointImages),
+				stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedImageResolveQuery,
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   imageResolveResponseBody,
+				},
 				postgrest.Endpoint(constants.WorkbenchEndpointRPCImageBulkDelete),
 				stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: expectedImageRequestBody,
@@ -159,6 +195,12 @@ func TestDeleteCommand(t *testing.T) {
 				resourceIDs:  []string{submission1ID, submission2ID},
 			},
 			mockEndpoints: getDeleteEndpoints(
+				postgrest.Endpoint(constants.WorkbenchEndpointJobRuns),
+				stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedSubmissionResolveQuery,
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   submissionResolveResponseBody,
+				},
 				postgrest.Endpoint(constants.WorkbenchEndpointRPCJobRunBulkDelete),
 				stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: expectedSubmissionRequestBody,
@@ -178,6 +220,12 @@ func TestDeleteCommand(t *testing.T) {
 				resourceIDs:  []string{submission1ID, submission2ID},
 			},
 			mockEndpoints: getDeleteEndpoints(
+				postgrest.Endpoint(constants.WorkbenchEndpointJobRuns),
+				stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedSubmissionResolveQuery,
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   submissionResolveResponseBody,
+				},
 				postgrest.Endpoint(constants.WorkbenchEndpointRPCJobRunBulkDelete),
 				stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: expectedSubmissionRequestBody,
@@ -197,6 +245,12 @@ func TestDeleteCommand(t *testing.T) {
 				resourceIDs:  []string{job1ID, job2ID},
 			},
 			mockEndpoints: getDeleteEndpoints(
+				postgrest.Endpoint(constants.WorkbenchEndpointJobs),
+				stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedJobResolveQuery,
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   jobResolveResponseBody,
+				},
 				postgrest.Endpoint(constants.WorkbenchEndpointRPCJobBulkDelete),
 				stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: expectedJobRequestBody,
@@ -216,6 +270,12 @@ func TestDeleteCommand(t *testing.T) {
 				resourceIDs:  []string{job1ID, job2ID},
 			},
 			mockEndpoints: getDeleteEndpoints(
+				postgrest.Endpoint(constants.WorkbenchEndpointJobs),
+				stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedJobResolveQuery,
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   jobResolveResponseBody,
+				},
 				postgrest.Endpoint(constants.WorkbenchEndpointRPCJobBulkDelete),
 				stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: expectedJobRequestBody,
@@ -235,6 +295,12 @@ func TestDeleteCommand(t *testing.T) {
 				resourceIDs:  []string{snapshot1ID, snapshot2ID},
 			},
 			mockEndpoints: getDeleteEndpoints(
+				postgrest.Endpoint(constants.WorkbenchEndpointSnapshots),
+				stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedSnapshotResolveQuery,
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   snapshotResolveResponseBody,
+				},
 				postgrest.Endpoint(constants.WorkbenchEndpointRPCSnapshotBulkDelete),
 				stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: expectedSnapshotRequestBody,
@@ -254,6 +320,12 @@ func TestDeleteCommand(t *testing.T) {
 				resourceIDs:  []string{snapshot1ID, snapshot2ID},
 			},
 			mockEndpoints: getDeleteEndpoints(
+				postgrest.Endpoint(constants.WorkbenchEndpointSnapshots),
+				stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedSnapshotResolveQuery,
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   snapshotResolveResponseBody,
+				},
 				postgrest.Endpoint(constants.WorkbenchEndpointRPCSnapshotBulkDelete),
 				stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: expectedSnapshotRequestBody,
@@ -273,6 +345,12 @@ func TestDeleteCommand(t *testing.T) {
 				resourceIDs:  []string{workbench1ID, workbench2ID},
 			},
 			mockEndpoints: getDeleteEndpoints(
+				postgrest.Endpoint(constants.WorkbenchEndpointWorkbenches),
+				stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedWorkbenchResolveQuery,
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   workbenchResolveResponseBody,
+				},
 				postgrest.Endpoint(constants.WorkbenchEndpointRPCWorkbenchBulkDelete),
 				stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: expectedWorkbenchRequestBody,
@@ -292,6 +370,12 @@ func TestDeleteCommand(t *testing.T) {
 				resourceIDs:  []string{workbench1ID, workbench2ID},
 			},
 			mockEndpoints: getDeleteEndpoints(
+				postgrest.Endpoint(constants.WorkbenchEndpointWorkbenches),
+				stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedWorkbenchResolveQuery,
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   workbenchResolveResponseBody,
+				},
 				postgrest.Endpoint(constants.WorkbenchEndpointRPCWorkbenchBulkDelete),
 				stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: expectedWorkbenchRequestBody,
@@ -311,6 +395,12 @@ func TestDeleteCommand(t *testing.T) {
 				resourceIDs:  []string{workspace1ID, workspace2ID},
 			},
 			mockEndpoints: getDeleteEndpoints(
+				postgrest.Endpoint(constants.WorkbenchEndpointWorkspaces),
+				stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedWorkspaceResolveQueryTwo,
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   workspaceResolveResponseBodyTwo,
+				},
 				postgrest.Endpoint(constants.WorkbenchEndpointRPCWorkspaceBulkDelete),
 				stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: expectedWorkspaceRequestBody,
@@ -330,6 +420,12 @@ func TestDeleteCommand(t *testing.T) {
 				resourceIDs:  []string{workspace1ID, workspace2ID},
 			},
 			mockEndpoints: getDeleteEndpoints(
+				postgrest.Endpoint(constants.WorkbenchEndpointWorkspaces),
+				stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedWorkspaceResolveQueryTwo,
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   workspaceResolveResponseBodyTwo,
+				},
 				postgrest.Endpoint(constants.WorkbenchEndpointRPCWorkspaceBulkDelete),
 				stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: expectedWorkspaceRequestBody,
@@ -432,10 +528,23 @@ func getDeleteArgs(
 }
 
 func getDeleteEndpoints(
+	resolveEndpoint string,
+	resolveConfig stubs.StubHTTPPartialGetConfig,
 	urlUnderTest string,
 	config ...stubs.StubHTTPPartialPostConfig,
 ) []stubs.StubHTTPEndpoint {
-	endpoints := stubs.GetStubAuthEndpoints()
+	endpoints := append(stubs.GetStubAuthEndpoints(), stubs.StubHTTPEndpoint{
+		Request: stubs.StubHTTPRequest{
+			Method:          http.MethodGet,
+			URL:             resolveEndpoint,
+			ExpectedHeaders: stubs.StubAuthHeaders,
+			ExpectedQuery:   resolveConfig.ExpectedQuery,
+		},
+		Response: stubs.StubHTTPResponse{
+			Status: resolveConfig.ResponseStatus,
+			Body:   resolveConfig.ResponseBody,
+		},
+	})
 	for _, cfg := range config {
 		endpoints = append(endpoints,
 			stubs.StubHTTPEndpoint{

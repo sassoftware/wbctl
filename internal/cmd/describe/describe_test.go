@@ -589,7 +589,7 @@ func TestDescribeCommand(t *testing.T) {
 			mockEndpoints: getDescribeEndpoints(
 				postgrest.Endpoint(constants.WorkbenchEndpointImageBuilds),
 				stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(resource-1)",
+					ExpectedQuery:  "or=(controller_id.in.(resource-1),name.in.(resource-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   describeGenericResourceBySingularTypeExpectedResponseBody,
 				},
@@ -608,7 +608,7 @@ func TestDescribeCommand(t *testing.T) {
 			mockEndpoints: getDescribeEndpoints(
 				postgrest.Endpoint(constants.WorkbenchEndpointImages),
 				stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(resource-1)",
+					ExpectedQuery:  "or=(controller_id.in.(resource-1),name.in.(resource-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   describeGenericResourceBySingularTypeExpectedResponseBody,
 				},
@@ -627,7 +627,7 @@ func TestDescribeCommand(t *testing.T) {
 			mockEndpoints: getDescribeEndpoints(
 				postgrest.Endpoint(constants.WorkbenchEndpointJobRuns),
 				stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(resource-1)",
+					ExpectedQuery:  "or=(controller_id.in.(resource-1),job_name.in.(resource-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   describeGenericResourceBySingularTypeExpectedResponseBody,
 				},
@@ -646,7 +646,7 @@ func TestDescribeCommand(t *testing.T) {
 			mockEndpoints: getDescribeEndpoints(
 				postgrest.Endpoint(constants.WorkbenchEndpointJobs),
 				stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "id=in.(resource-1)",
+					ExpectedQuery:  "or=(name.in.(resource-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   describeGenericResourceBySingularTypeExpectedResponseBody,
 				},
@@ -665,7 +665,7 @@ func TestDescribeCommand(t *testing.T) {
 			mockEndpoints: getDescribeEndpoints(
 				postgrest.Endpoint(constants.WorkbenchEndpointSnapshots),
 				stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(resource-1)",
+					ExpectedQuery:  "or=(controller_id.in.(resource-1),name.in.(resource-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   describeGenericResourceBySingularTypeExpectedResponseBody,
 				},
@@ -703,7 +703,7 @@ func TestDescribeCommand(t *testing.T) {
 			mockEndpoints: getDescribeEndpoints(
 				postgrest.Endpoint(constants.WorkbenchEndpointWorkbenches),
 				stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(resource-1)",
+					ExpectedQuery:  "or=(controller_id.in.(resource-1),name.in.(resource-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   describeGenericResourceBySingularTypeExpectedResponseBody,
 				},
@@ -722,7 +722,7 @@ func TestDescribeCommand(t *testing.T) {
 			mockEndpoints: getDescribeEndpoints(
 				postgrest.Endpoint(constants.WorkbenchEndpointWorkspaces),
 				stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(resource-1)",
+					ExpectedQuery:  "or=(controller_id.in.(resource-1),name.in.(resource-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   describeGenericResourceBySingularTypeExpectedResponseBody,
 				},

@@ -56,6 +56,8 @@ const (
 	expectedCreateImageServerErr         = "POST ${URL}/postgrest/rpc/image_create failed\n" +
 		" Caused by:\n" +
 		"\t* 401 unauthorized"
+	expectedResolveImagesQueryOne   = `or=(controller_id.in.(img-cli-1),name.in.(img-cli-1))`
+	expectedResolveImagesQueryTwo   = `or=(controller_id.in.(img-cli-1,img-cli-2),name.in.(img-cli-1,img-cli-2))`
 	expectedUpdateImageDryRunOutput = `{
     "ids": [
         "img-cli-1",
@@ -120,7 +122,7 @@ const (
 	expectedInvalidEndpointErr = "failed to get device token" +
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
-	expectedInvlidDataplaneErr = "GET ${URL}/postgrest/dataplanes?id=in.%28invalid%29 failed" +
+	expectedInvalidDataplaneErr = "GET ${URL}/postgrest/dataplanes?id=in.%28invalid%29 failed" +
 		"\n Caused by:" +
 		"\n\t* 400 error"
 	expectedInvalidSpecErr            = "invalid character 'i' looking for beginning of value"
@@ -374,7 +376,7 @@ func TestCreateImageCommand(t *testing.T) {
 				dataplanesResponseBody:   `error`,
 			}),
 			expected: createExpected{
-				err:            expectedInvlidDataplaneErr,
+				err:            expectedInvalidDataplaneErr,
 				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 				dataplaneCalls: 1,
 			},
@@ -546,6 +548,8 @@ func TestUpdateImageCommand(t *testing.T) {
 			name:  "update success prints IDs only",
 			input: updateInput{args: []string{"img-cli-1"}},
 			mockEndpoints: getUpdateImageEndpoints(
+				expectedResolveImagesQueryOne,
+				`[{"id":"img-cli-1"}]`,
 				expectedUpdateImageRequestBodyIDsOnly,
 				http.StatusOK,
 				`[{"id":"img-a"},{"id":"img-b"}]`,
@@ -559,6 +563,8 @@ func TestUpdateImageCommand(t *testing.T) {
 			name:  "server error",
 			input: updateInput{args: []string{"img-cli-1"}},
 			mockEndpoints: getUpdateImageEndpoints(
+				expectedResolveImagesQueryOne,
+				`[{"id":"img-cli-1"}]`,
 				expectedUpdateImageRequestBodyIDsOnly,
 				http.StatusUnauthorized,
 				`unauthorized`,
@@ -594,6 +600,8 @@ func TestUpdateImageCommand(t *testing.T) {
 			name:  "ids only with empty body accepted",
 			input: updateInput{args: []string{"img-cli-1"}},
 			mockEndpoints: getUpdateImageEndpoints(
+				expectedResolveImagesQueryOne,
+				`[{"id":"img-cli-1"}]`,
 				expectedUpdateImageRequestBodyIDsOnly,
 				http.StatusOK,
 				`[{"id":"img-cli-1"}]`,
@@ -614,6 +622,8 @@ func TestUpdateImageCommand(t *testing.T) {
 				args:        []string{"img-cli-1", "img-cli-2"},
 			},
 			mockEndpoints: getUpdateImageEndpoints(
+				expectedResolveImagesQueryTwo,
+				`[{"id":"img-cli-1"},{"id":"img-cli-2"}]`,
 				expectedUpdateImageRequestBodyMapping,
 				http.StatusOK,
 				`[{"id":"img-cli-1"},{"id":"img-cli-2"}]`,
@@ -636,6 +646,8 @@ func TestUpdateImageCommand(t *testing.T) {
 				args:        []string{"img-cli-1"},
 			},
 			mockEndpoints: getUpdateImageEndpoints(
+				expectedResolveImagesQueryOne,
+				`[{"id":"img-cli-1"}]`,
 				expectedUpdateImageRequestBodyAllFlags,
 				http.StatusOK,
 				`[{"id":"img-cli-1"}]`,
@@ -806,12 +818,26 @@ func getUpdateArgs(
 }
 
 func getUpdateImageEndpoints(
+	expectedQuery string,
+	resolveResponseBody string,
 	expectedRequestBody string,
 	responseStatus int,
 	responseBody string,
 ) []stubs.StubHTTPEndpoint {
 	return append(stubs.GetStubAuthEndpoints(),
 		[]stubs.StubHTTPEndpoint{
+			{
+				Request: stubs.StubHTTPRequest{
+					Method:          http.MethodGet,
+					URL:             postgrest.Endpoint(constants.WorkbenchEndpointImages),
+					ExpectedHeaders: stubs.StubAuthHeaders,
+					ExpectedQuery:   expectedQuery,
+				},
+				Response: stubs.StubHTTPResponse{
+					Status: http.StatusOK,
+					Body:   resolveResponseBody,
+				},
+			},
 			{
 				Request: stubs.StubHTTPRequest{
 					Method:          http.MethodPost,

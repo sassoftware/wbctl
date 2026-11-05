@@ -6,7 +6,6 @@ package workbench_test
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -55,6 +54,13 @@ const (
     "name": "wb-controller",
     "username": "bob",
     "application_id": "app-2"
+  },
+  {
+    "id": "wb-name",
+    "controller_id": "ctrl-name",
+    "name": "workbench-name",
+    "username": "carol",
+    "application_id": "app-3"
   }
 ]
 `
@@ -323,6 +329,9 @@ Properties:
 		"POST ${URL}/postgrest/rpc/workbench_update failed" +
 		"\n Caused by:" +
 		"\n\t* invalid character 'i' looking for beginning of value"
+	workbenchResolveIDsQuery               = "or=(controller_id.in.(wb-1,wb-2),name.in.(wb-1,wb-2))"
+	workbenchResolveIDsResponseJSON        = `[{"id":"wb-1"},{"id":"wb-2"}]`
+	workbenchDeleteSuccessResponseJSON     = `["wb-1", "wb-2"]`
 	expectedDeleteWorkbenchRequestJSON     = `{"ids":["wb-1","wb-2"]}`
 	createWorkbenchResponseJSON            = `{"id":"wb-1","name":"wb-one"}`
 	expectedBulkUpdateWorkbenchRequestJSON = `{"ids":["wb-1","wb-2"],"workbench":{"desired_state":"STOPPED"}}`
@@ -344,7 +353,7 @@ var (
 		},
 	}
 
-	expectedResponseTwoWorkbenches = types.Workbenches{
+	expectedResponseMixedWorkbenches = types.Workbenches{
 		{
 			ID:            "123e4567-e89b-12d3-a456-426614174000",
 			ControllerID:  "ctrl-uuid",
@@ -359,6 +368,13 @@ var (
 			Username:      "bob",
 			ApplicationID: "app-2",
 		},
+		{
+			ID:            "wb-name",
+			ControllerID:  "ctrl-name",
+			Name:          "workbench-name",
+			Username:      "carol",
+			ApplicationID: "app-3",
+		},
 	}
 )
 
@@ -370,9 +386,11 @@ func TestDeleteWorkbench(t *testing.T) {
 				ids: []string{"wb-1", "wb-2"},
 			},
 			mockEndpoints: getWorkbenchesDeleteEndpoints(
+				workbenchResolveIDsQuery,
+				workbenchResolveIDsResponseJSON,
 				expectedDeleteWorkbenchRequestJSON,
 				http.StatusOK,
-				`["wb-1", "wb-2"]`,
+				workbenchDeleteSuccessResponseJSON,
 			),
 			expected: deleteExpected{
 				result: []string{"wb-1", "wb-2"},
@@ -384,14 +402,35 @@ func TestDeleteWorkbench(t *testing.T) {
 				ids: []string{"wb-1", "wb-2"},
 			},
 			mockEndpoints: getWorkbenchesDeleteEndpoints(
+				workbenchResolveIDsQuery,
+				workbenchResolveIDsResponseJSON,
 				expectedDeleteWorkbenchRequestJSON,
 				http.StatusUnauthorized,
 				"unauthorized",
 			),
 			expected: deleteExpected{
-				err: "POST %s/postgrest/rpc/workbench_bulk_delete failed\n" +
+				err: "POST ${URL}/postgrest/rpc/workbench_bulk_delete failed\n" +
 					" Caused by:\n" +
 					"\t* 401 unauthorized",
+			},
+		},
+		{
+			name: "delete workbench not found",
+			request: deleteRequest{
+				ids: []string{"missing"},
+			},
+			mockEndpoints: getWorkbenchesDeleteEndpoints(
+				`or=(controller_id.in.(missing),name.in.(missing))`,
+				`[]`,
+				"",
+				http.StatusOK,
+				"",
+			),
+			expected: deleteExpected{
+				err: i18n.Format(i18n.ResourceNotFoundWithID, i18n.A{
+					constants.I18nArgTypeKey: constants.WorkbenchType,
+					constants.I18nArgKeyID:   "missing",
+				}),
 			},
 		},
 	}
@@ -403,7 +442,7 @@ func TestDeleteWorkbench(t *testing.T) {
 			svc := workbench.NewWorkbenchService(srv.URL, "access-token", "csrf-token")
 			actual, err := workbench.BulkDeleteWorkbenches(context.Background(), svc, tt.request.ids)
 			if tt.expected.err != "" {
-				require.EqualError(t, err, fmt.Sprintf(tt.expected.err, srv.URL))
+				require.EqualError(t, err, strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL))
 				return
 			}
 			require.NoError(t, err)
@@ -450,7 +489,7 @@ func TestCreateWorkbench(t *testing.T) {
 				"unauthorized",
 			),
 			expected: createExpected[types.Workbench]{
-				err: "POST %s/postgrest/rpc/workbench_create failed\n" +
+				err: "POST ${URL}/postgrest/rpc/workbench_create failed\n" +
 					" Caused by:\n" +
 					"\t* 401 unauthorized",
 			},
@@ -465,7 +504,7 @@ func TestCreateWorkbench(t *testing.T) {
 
 			actual, err := workbench.CreateWorkbench(context.Background(), svc, tt.request.body)
 			if tt.expected.err != "" {
-				require.EqualError(t, err, fmt.Sprintf(tt.expected.err, srv.URL))
+				require.EqualError(t, err, strings.ReplaceAll(tt.expected.err, "${URL}", srv.URL))
 				return
 			}
 			require.NoError(t, err)
@@ -483,6 +522,8 @@ func TestBulkUpdateWorkbenches(t *testing.T) {
 				body: types.Workbench{DesiredState: "STOPPED"},
 			},
 			mockEndpoints: getWorkbenchesBulkUpdateEndpoints(
+				workbenchResolveIDsQuery,
+				workbenchResolveIDsResponseJSON,
 				expectedBulkUpdateWorkbenchRequestJSON,
 				http.StatusOK,
 				workbenchesBulkUpdateResponseJSON,
@@ -501,6 +542,8 @@ func TestBulkUpdateWorkbenches(t *testing.T) {
 				body: types.Workbench{DesiredState: "STOPPED"},
 			},
 			mockEndpoints: getWorkbenchesBulkUpdateEndpoints(
+				workbenchResolveIDsQuery,
+				workbenchResolveIDsResponseJSON,
 				expectedBulkUpdateWorkbenchRequestJSON,
 				http.StatusUnauthorized,
 				"unauthorized",
@@ -518,6 +561,8 @@ func TestBulkUpdateWorkbenches(t *testing.T) {
 				body: types.Workbench{DesiredState: "STOPPED"},
 			},
 			mockEndpoints: getWorkbenchesBulkUpdateEndpoints(
+				workbenchResolveIDsQuery,
+				workbenchResolveIDsResponseJSON,
 				expectedBulkUpdateWorkbenchRequestJSON,
 				http.StatusOK,
 				"[",
@@ -535,6 +580,8 @@ func TestBulkUpdateWorkbenches(t *testing.T) {
 				body: types.Workbench{Name: "wb-one-renamed"},
 			},
 			mockEndpoints: getWorkbenchesUpdateEndpoints(
+				`or=(controller_id.in.(wb-1),name.in.(wb-1))`,
+				`[{"id":"wb-1"}]`,
 				expectedUpdateWorkbenchRequest2JSON,
 				http.StatusOK,
 				`{"id":"wb-1","name":"wb-one-renamed"}`,
@@ -549,9 +596,36 @@ func TestBulkUpdateWorkbenches(t *testing.T) {
 				ids:  []string{"wb-1", "wb-2"},
 				body: types.Workbench{Name: "wb-one-renamed"},
 			},
+			mockEndpoints: getWorkbenchesBulkUpdateEndpoints(
+				workbenchResolveIDsQuery,
+				workbenchResolveIDsResponseJSON,
+				"",
+				http.StatusOK,
+				"",
+			),
 			expected: bulkupdateExpected[types.Workbenches]{
 				err: i18n.Format(i18n.BulkUpdateNameError,
 					i18n.A{constants.I18nArgKeyType: constants.WorkbenchesType}),
+			},
+		},
+		{
+			name: "bulk update workbenches with no matching resources returns not found",
+			request: bulkupdateRequest[types.Workbench]{
+				ids:  []string{"missing"},
+				body: types.Workbench{DesiredState: "STOPPED"},
+			},
+			mockEndpoints: getWorkbenchesBulkUpdateEndpoints(
+				`or=(controller_id.in.(missing),name.in.(missing))`,
+				`[]`,
+				"",
+				http.StatusOK,
+				"",
+			),
+			expected: bulkupdateExpected[types.Workbenches]{
+				err: i18n.Format(i18n.ResourceNotFoundWithID, i18n.A{
+					constants.I18nArgTypeKey: constants.WorkbenchType,
+					constants.I18nArgKeyID:   "missing",
+				}),
 			},
 		},
 		{
@@ -561,6 +635,8 @@ func TestBulkUpdateWorkbenches(t *testing.T) {
 				body: types.Workbench{Name: "UPDATED"},
 			},
 			mockEndpoints: getWorkbenchesUpdateEndpoints(
+				`or=(controller_id.in.(wb-1),name.in.(wb-1))`,
+				`[{"id":"wb-1"}]`,
 				expectedUpdateWorkbenchRequestJSON,
 				http.StatusOK,
 				"[invalid",
@@ -602,19 +678,20 @@ func TestGetWorkbenches(t *testing.T) {
 			},
 		},
 		{
-			name: "get workbench success with mixed uuid and controller ids query",
+			name: "get workbench success with mixed uuid, controller ids, names query",
 			request: getRequest{
-				ids:  []string{"123e4567-e89b-12d3-a456-426614174000", "controller-wb-2"},
+				ids:  []string{"123e4567-e89b-12d3-a456-426614174000", "controller-wb-2", "workbench-name"},
 				sort: "id.asc",
 			},
 			mockEndpoints: getWorkbenchesGetEndpoints(
 				"or=(id.in.(123e4567-e89b-12d3-a456-426614174000),"+
-					"controller_id.in.(controller-wb-2))&order=id.asc",
+					"controller_id.in.(controller-wb-2,workbench-name),"+
+					"name.in.(123e4567-e89b-12d3-a456-426614174000,controller-wb-2,workbench-name))&order=id.asc",
 				http.StatusOK,
 				workbenchesGetMixedIDsResponseJSON,
 			),
 			expected: getExpected[types.Workbenches]{
-				result: expectedResponseTwoWorkbenches,
+				result: expectedResponseMixedWorkbenches,
 			},
 		},
 		{
@@ -763,12 +840,12 @@ func TestGetWorkbenches(t *testing.T) {
 				ids: []string{"id-a"},
 			},
 			mockEndpoints: getWorkbenchesGetEndpoints(
-				"controller_id=in.(id-a)",
+				"or=(controller_id.in.(id-a),name.in.(id-a))",
 				http.StatusOK,
 				"[",
 			),
 			expected: getExpected[types.Workbenches]{
-				err: "GET ${URL}/postgrest/workbenches?controller_id=in.%28id-a%29 failed\n" +
+				err: "GET ${URL}/postgrest/workbenches?or=%28controller_id.in.%28id-a%29%2Cname.in.%28id-a%29%29 failed\n" +
 					" Caused by:\n" +
 					"\t* unexpected EOF",
 			},
@@ -779,12 +856,12 @@ func TestGetWorkbenches(t *testing.T) {
 				ids: []string{"id-a"},
 			},
 			mockEndpoints: getWorkbenchesGetEndpoints(
-				"controller_id=in.(id-a)",
+				"or=(controller_id.in.(id-a),name.in.(id-a))",
 				http.StatusUnauthorized,
 				"unauthorized",
 			),
 			expected: getExpected[types.Workbenches]{
-				err: "GET ${URL}/postgrest/workbenches?controller_id=in.%28id-a%29 failed\n" +
+				err: "GET ${URL}/postgrest/workbenches?or=%28controller_id.in.%28id-a%29%2Cname.in.%28id-a%29%29 failed\n" +
 					" Caused by:\n" +
 					"\t* 401 unauthorized",
 			},
@@ -922,12 +999,14 @@ func TestDescribeWorkbenches(t *testing.T) {
 }
 
 func getWorkbenchesDeleteEndpoints(
+	expectedQuery string,
+	resolveResponseBody string,
 	expectedBody string,
 	responseStatus int,
 	responseBody string,
 ) []stubs.StubHTTPEndpoint {
-	return []stubs.StubHTTPEndpoint{
-		{
+	return append(getWorkbenchesGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody),
+		stubs.StubHTTPEndpoint{
 			Request: stubs.StubHTTPRequest{
 				Method:          http.MethodPost,
 				URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCWorkbenchBulkDelete),
@@ -938,8 +1017,7 @@ func getWorkbenchesDeleteEndpoints(
 				Status: responseStatus,
 				Body:   responseBody,
 			},
-		},
-	}
+		})
 }
 
 func getWorkbenchesCreateEndpoints(
@@ -964,12 +1042,14 @@ func getWorkbenchesCreateEndpoints(
 }
 
 func getWorkbenchesBulkUpdateEndpoints(
+	expectedQuery string,
+	resolveResponseBody string,
 	expectedBody string,
 	responseStatus int,
 	responseBody string,
 ) []stubs.StubHTTPEndpoint {
-	return []stubs.StubHTTPEndpoint{
-		{
+	return append(getWorkbenchesGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody),
+		stubs.StubHTTPEndpoint{
 			Request: stubs.StubHTTPRequest{
 				Method:          http.MethodPost,
 				URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCWorkbenchBulkUpdate),
@@ -980,17 +1060,18 @@ func getWorkbenchesBulkUpdateEndpoints(
 				Status: responseStatus,
 				Body:   responseBody,
 			},
-		},
-	}
+		})
 }
 
 func getWorkbenchesUpdateEndpoints(
+	expectedQuery string,
+	resolveResponseBody string,
 	expectedBody string,
 	responseStatus int,
 	responseBody string,
 ) []stubs.StubHTTPEndpoint {
-	return []stubs.StubHTTPEndpoint{
-		{
+	return append(getWorkbenchesGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody),
+		stubs.StubHTTPEndpoint{
 			Request: stubs.StubHTTPRequest{
 				Method:          http.MethodPost,
 				URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCWorkbenchUpdate),
@@ -1001,8 +1082,7 @@ func getWorkbenchesUpdateEndpoints(
 				Status: responseStatus,
 				Body:   responseBody,
 			},
-		},
-	}
+		})
 }
 
 func getWorkbenchesGetEndpoints(

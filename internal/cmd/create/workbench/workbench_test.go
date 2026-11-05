@@ -112,20 +112,24 @@ const (
 	expectedCreateSnapshotInvalidEndpointErr = "failed to get device token" +
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
-	expectedInvlidDataplaneErr = "GET ${URL}/postgrest/dataplanes?id=in.%28invalid%29 failed" +
+	expectedInvalidDataplaneErr = "GET ${URL}/postgrest/dataplanes?id=in.%28invalid%29 failed" +
 		"\n Caused by:" +
 		"\n\t* 400 error"
-	expectedInvlidWorkspaceErr = "GET ${URL}/postgrest/workspaces?controller_id=in.%28invalid%29 failed" +
+	expectedInvalidWorkspaceErr = "GET ${URL}/postgrest/workspaces" +
+		"?or=%28controller_id.in.%28invalid%29%2Cname.in.%28invalid%29%29 failed" +
 		"\n Caused by:" +
 		"\n\t* 400 error"
-	expectedInvlidApplicationErr = "GET ${URL}/postgrest/dataplane_workbench_applications?id=in.%28invalid%29 failed" +
+	expectedInvalidApplicationErr = "GET ${URL}/postgrest/dataplane_workbench_applications" +
+		"?id=in.%28invalid%29 failed" +
 		"\n Caused by:" +
 		"\n\t* 400 error"
 	expectedApplicationQuery = "id=in.(app-1)"
 	applicationResponseBody  = `[{"id":"app-1","services":["svc-a","svc-b"]}]`
 	servicesResponseBody     = `[{"id":"service-1","name":"service 1"},` +
 		`{"id":"service-2","name":"service 2"}]`
-	expectedCreateImageInvalidFileErr = "unexpected end of JSON input"
+	expectedResolveWorkbenchesQueryOne = `or=(controller_id.in.(wb-cli-1),name.in.(wb-cli-1))`
+	expectedResolveWorkbenchesQueryTwo = `or=(controller_id.in.(wb-cli-1,wb-cli-2),name.in.(wb-cli-1,wb-cli-2))`
+	expectedCreateImageInvalidFileErr  = "unexpected end of JSON input"
 )
 
 type createInput struct {
@@ -454,7 +458,7 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 			}),
 			expected: createExpected{
 				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
-				err:            expectedInvlidDataplaneErr,
+				err:            expectedInvalidDataplaneErr,
 				dataplaneCalls: 1,
 			},
 		},
@@ -466,7 +470,7 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 			},
 			mockEndpoints: getCreateWorkbenchEndpoints(workbenchEndpointsConfig{
 				workspacesConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  `controller_id=in.(invalid)`,
+					ExpectedQuery:  `or=(controller_id.in.(invalid),name.in.(invalid))`,
 					ResponseStatus: http.StatusBadRequest,
 					ResponseBody:   `error`,
 				},
@@ -474,7 +478,7 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 			expected: createExpected{
 				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 				workspaceCalls: 1,
-				err:            expectedInvlidWorkspaceErr,
+				err:            expectedInvalidWorkspaceErr,
 			},
 		},
 		{
@@ -493,7 +497,7 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 			expected: createExpected{
 				displays:          []string{stubs.ExpectedDeviceAuthDisplay},
 				applicationsCalls: 1,
-				err:               expectedInvlidApplicationErr,
+				err:               expectedInvalidApplicationErr,
 			},
 		},
 	}
@@ -733,6 +737,11 @@ func TestUpdateWorkbenchCommand(t *testing.T) {
 				args: []string{"wb-cli-1"},
 			},
 			mockEndpoints: getBulkUpdateWorkbenchEndpoints(workbenchEndpointsConfig{
+				workbenchesResolveConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedResolveWorkbenchesQueryOne,
+					ResponseBody:   `[{"id":"wb-cli-1"}]`,
+					ResponseStatus: http.StatusOK,
+				},
 				workbenchesConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: workbenchUpdateRequestBodyIDsOnly,
 					ResponseStatus:      http.StatusUnauthorized,
@@ -774,6 +783,11 @@ func TestUpdateWorkbenchCommand(t *testing.T) {
 				args: []string{"wb-cli-1"},
 			},
 			mockEndpoints: getBulkUpdateWorkbenchEndpoints(workbenchEndpointsConfig{
+				workbenchesResolveConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedResolveWorkbenchesQueryOne,
+					ResponseBody:   `[{"id":"wb-cli-1"}]`,
+					ResponseStatus: http.StatusOK,
+				},
 				workbenchesConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: workbenchUpdateRequestBodyIDsOnly,
 					ResponseStatus:      http.StatusOK,
@@ -799,6 +813,11 @@ func TestUpdateWorkbenchCommand(t *testing.T) {
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   applicationResponseBody,
 				},
+				workbenchesResolveConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedResolveWorkbenchesQueryTwo,
+					ResponseBody:   `[{"id":"wb-cli-1"},{"id":"wb-cli-2"}]`,
+					ResponseStatus: http.StatusOK,
+				},
 				workbenchesConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: workbenchUpdateRequestBodyMapping,
 					ResponseStatus:      http.StatusOK,
@@ -818,6 +837,11 @@ func TestUpdateWorkbenchCommand(t *testing.T) {
 				args:       []string{"wb-cli-1"},
 			},
 			mockEndpoints: getBulkUpdateWorkbenchEndpoints(workbenchEndpointsConfig{
+				workbenchesResolveConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedResolveWorkbenchesQueryOne,
+					ResponseBody:   `[{"id":"wb-cli-1"}]`,
+					ResponseStatus: http.StatusOK,
+				},
 				workbenchesConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: workbenchUpdateRequestBodyWorkspace,
 					ResponseStatus:      http.StatusOK,
@@ -838,6 +862,11 @@ func TestUpdateWorkbenchCommand(t *testing.T) {
 				args:   []string{"wb-cli-1"},
 			},
 			mockEndpoints: getUpdateWorkbenchEndpoints(workbenchEndpointsConfig{
+				workbenchesResolveConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedResolveWorkbenchesQueryOne,
+					ResponseBody:   `[{"id":"wb-cli-1"}]`,
+					ResponseStatus: http.StatusOK,
+				},
 				workbenchesConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: workbenchUpdateRequestBodyNameLabels,
 					ResponseStatus:      http.StatusOK,
@@ -1030,12 +1059,13 @@ func getUpdateArgs(
 }
 
 type workbenchEndpointsConfig struct {
-	dataplaneConfig    stubs.StubHTTPPartialGetConfig
-	applicationsConfig stubs.StubHTTPPartialGetConfig
-	servicesConfig     stubs.StubHTTPPartialGetConfig
-	nodepoolsConfig    stubs.StubHTTPPartialGetConfig
-	workspacesConfig   stubs.StubHTTPPartialGetConfig
-	workbenchesConfig  stubs.StubHTTPPartialPostConfig
+	dataplaneConfig          stubs.StubHTTPPartialGetConfig
+	applicationsConfig       stubs.StubHTTPPartialGetConfig
+	servicesConfig           stubs.StubHTTPPartialGetConfig
+	nodepoolsConfig          stubs.StubHTTPPartialGetConfig
+	workspacesConfig         stubs.StubHTTPPartialGetConfig
+	workbenchesResolveConfig stubs.StubHTTPPartialGetConfig
+	workbenchesConfig        stubs.StubHTTPPartialPostConfig
 }
 
 func getWorkbenchEndpoints(
@@ -1047,6 +1077,18 @@ func getWorkbenchEndpoints(
 	endpoints = append(endpoints, stubs.GetStubApplicationsEndpoints(config.applicationsConfig)...)
 	endpoints = append(endpoints, stubs.GetStubServicesEndpoints(config.servicesConfig)...)
 	endpoints = append(endpoints, stubs.GetStubNodepoolsEndpoints(config.nodepoolsConfig)...)
+	endpoints = append(endpoints, stubs.StubHTTPEndpoint{
+		Request: stubs.StubHTTPRequest{
+			Method:          http.MethodGet,
+			URL:             postgrest.Endpoint(constants.WorkbenchEndpointWorkbenches),
+			ExpectedHeaders: stubs.StubAuthHeaders,
+			ExpectedQuery:   config.workbenchesResolveConfig.ExpectedQuery,
+		},
+		Response: stubs.StubHTTPResponse{
+			Status: config.workbenchesResolveConfig.ResponseStatus,
+			Body:   config.workbenchesResolveConfig.ResponseBody,
+		},
+	})
 	return append(endpoints,
 		[]stubs.StubHTTPEndpoint{
 			{
@@ -1071,6 +1113,7 @@ func getCreateWorkbenchEndpoints(config workbenchEndpointsConfig) []stubs.StubHT
 func getUpdateWorkbenchEndpoints(config workbenchEndpointsConfig) []stubs.StubHTTPEndpoint {
 	return getWorkbenchEndpoints(postgrest.Endpoint(constants.WorkbenchEndpointRPCWorkbenchUpdate), config)
 }
+
 func getBulkUpdateWorkbenchEndpoints(config workbenchEndpointsConfig) []stubs.StubHTTPEndpoint {
 	return getWorkbenchEndpoints(postgrest.Endpoint(constants.WorkbenchEndpointRPCWorkbenchBulkUpdate), config)
 }

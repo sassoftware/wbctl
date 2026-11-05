@@ -1,5 +1,5 @@
 <pre>
-Updates all the Image resources identified by a list of ids with the options provided.
+Updates all the Image resources identified by a list of ids or names with the options provided.
 
 Usage:
   wbctl update images [flags]

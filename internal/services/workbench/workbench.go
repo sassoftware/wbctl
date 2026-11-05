@@ -17,6 +17,7 @@ import (
 	"github.com/sassoftware/wbctl/internal/httputil"
 	"github.com/sassoftware/wbctl/internal/i18n"
 	"github.com/sassoftware/wbctl/internal/maputil"
+	"github.com/sassoftware/wbctl/internal/sliceutil"
 	"github.com/sassoftware/wbctl/internal/types"
 )
 
@@ -127,7 +128,7 @@ func GetValidDataplaneID(ctx context.Context, svc *WorkbenchService, dataplaneID
 	return dataplanes[0].ID, nil
 }
 
-// GetValidWorkspaceRequests takes the given worksaceIDs, fetches those
+// GetValidWorkspaceRequests takes the given workspaceIDs, fetches those
 // workspaces from the server, and returns the database id and full workspace
 // request body for each.
 func GetValidWorkspaceRequests(
@@ -149,12 +150,16 @@ func GetValidWorkspaceRequests(
 				),
 			)
 		}
-		id := workspaces[0].ControllerID
-		if id == "" {
-			id = workspaces[0].ID
+		workspace, err := sliceutil.GetAndEnsureOnlyOne(workspaces)
+		if err != nil {
+			return nil, err
 		}
-		mountName := workspaces[0].Name
-		homeDir := isHomeDir(workspaces[0])
+		id := workspace.ControllerID
+		if id == "" {
+			id = workspace.ID
+		}
+		mountName := workspace.Name
+		homeDir := isHomeDir(workspace)
 		if homeDir {
 			mountName = "sas"
 		}
@@ -164,7 +169,7 @@ func GetValidWorkspaceRequests(
 				MountName: mountName,
 			},
 			HomeDir: homeDir,
-			DbID:    workspaces[0].ID,
+			DbID:    workspace.ID,
 		})
 	}
 	return validWorkspaces, nil

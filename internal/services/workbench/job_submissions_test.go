@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/i18n"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/services/workbench"
 	"github.com/sassoftware/wbctl/internal/stubs"
@@ -54,6 +55,15 @@ const (
     "controller_id": "controller-job-2",
     "job_name": "controller-job",
     "username": "bob",
+    "current_state": "Queued",
+    "runtime": 0.00,
+    "log_url": "https://logs/controller"
+  },
+  {
+    "id": "js-job-name",
+    "controller_id": "ctrl-job-name",
+    "job_name": "job-name-job",
+    "username": "carol",
     "current_state": "Queued",
     "runtime": 0.00,
     "log_url": "https://logs/controller"
@@ -334,6 +344,9 @@ Pod pod-1:
   Nominated node:   node-a
   IPs:              10.0.0.1
 `
+	jobRunResolveIDsQuery           = "or=(controller_id.in.(js-1,js-2),job_name.in.(js-1,js-2))"
+	jobRunResolveIDsResponseJSON    = `[{"id":"js-1"},{"id":"js-2"}]`
+	jobRunDeleteSuccessResponseJSON = `["js-1", "js-2"]`
 	expectedDeleteJobRunRequestJSON = `{"ids":["js-1", "js-2"]}`
 	expectedCreateJobRunRequestJSON = `{"param":{"job_name":"daily-job"}}`
 	createJobRunOneResponseBodyJSON = `{"id":"js-1","job_name":"daily-job"}`
@@ -353,7 +366,7 @@ var (
 		},
 	}
 
-	expectedResponseTwoSubmissions = types.JobSubmissions{
+	expectedResponseMixedSubmissions = types.JobSubmissions{
 		{
 			ID:           "123e4567-e89b-12d3-a456-426614174000",
 			ControllerID: "ctrl-uuid",
@@ -372,6 +385,15 @@ var (
 			Runtime:      0,
 			LogURL:       "https://logs/controller",
 		},
+		{
+			ID:           "js-job-name",
+			ControllerID: "ctrl-job-name",
+			JobName:      "job-name-job",
+			Username:     "carol",
+			CurrentState: "Queued",
+			Runtime:      0,
+			LogURL:       "https://logs/controller",
+		},
 	}
 )
 
@@ -383,9 +405,11 @@ func TestDeleteJobSubmission(t *testing.T) {
 				ids: []string{"js-1", "js-2"},
 			},
 			mockEndpoints: getJobSubmissionDeleteEndpoints(
+				jobRunResolveIDsQuery,
+				jobRunResolveIDsResponseJSON,
 				expectedDeleteJobRunRequestJSON,
 				http.StatusOK,
-				`["js-1", "js-2"]`,
+				jobRunDeleteSuccessResponseJSON,
 			),
 			expected: deleteExpected{
 				result: []string{"js-1", "js-2"},
@@ -397,6 +421,8 @@ func TestDeleteJobSubmission(t *testing.T) {
 				ids: []string{"js-1", "js-2"},
 			},
 			mockEndpoints: getJobSubmissionDeleteEndpoints(
+				jobRunResolveIDsQuery,
+				jobRunResolveIDsResponseJSON,
 				expectedDeleteJobRunRequestJSON,
 				http.StatusUnauthorized,
 				"unauthorized",
@@ -405,6 +431,25 @@ func TestDeleteJobSubmission(t *testing.T) {
 				err: "POST ${URL}/postgrest/rpc/job_run_bulk_delete failed\n" +
 					" Caused by:\n" +
 					"\t* 401 unauthorized",
+			},
+		},
+		{
+			name: "delete job-submission not found",
+			request: deleteRequest{
+				ids: []string{"missing"},
+			},
+			mockEndpoints: getJobSubmissionDeleteEndpoints(
+				`or=(controller_id.in.(missing),job_name.in.(missing))`,
+				`[]`,
+				"",
+				http.StatusOK,
+				"",
+			),
+			expected: deleteExpected{
+				err: i18n.Format(i18n.ResourceNotFoundWithID, i18n.A{
+					constants.I18nArgTypeKey: constants.JobSubmissionType,
+					constants.I18nArgKeyID:   "missing",
+				}),
 			},
 		},
 	}
@@ -498,6 +543,22 @@ func TestGetJobSubmissions(t *testing.T) {
 			),
 			expected: getExpected[types.JobSubmissions]{
 				result: expectedResponseOneSubmission,
+			},
+		},
+		{
+			name: "get success with mixed uuid, controller ids, names query",
+			request: getRequest{
+				ids: []string{"123e4567-e89b-12d3-a456-426614174000", "controller-job-2", "job-name-job"},
+			},
+			mockEndpoints: getJobSubmissionsGetEndpoints(
+				"or=(id.in.(123e4567-e89b-12d3-a456-426614174000),"+
+					"controller_id.in.(controller-job-2,job-name-job),"+
+					"job_name.in.(123e4567-e89b-12d3-a456-426614174000,controller-job-2,job-name-job))",
+				http.StatusOK,
+				jobSubmissionsGetMixedIDsResponseJSON,
+			),
+			expected: getExpected[types.JobSubmissions]{
+				result: expectedResponseMixedSubmissions,
 			},
 		},
 		{
@@ -669,31 +730,17 @@ func TestGetJobSubmissions(t *testing.T) {
 			},
 		},
 		{
-			name: "success with mixed uuid and controller ids query",
-			request: getRequest{
-				ids: []string{"123e4567-e89b-12d3-a456-426614174000", "controller-job-2"},
-			},
-			mockEndpoints: getJobSubmissionsGetEndpoints(
-				"or=(id.in.(123e4567-e89b-12d3-a456-426614174000),controller_id.in.(controller-job-2))",
-				http.StatusOK,
-				jobSubmissionsGetMixedIDsResponseJSON,
-			),
-			expected: getExpected[types.JobSubmissions]{
-				result: expectedResponseTwoSubmissions,
-			},
-		},
-		{
 			name: "invalid json response",
 			request: getRequest{
 				ids: []string{"id-a"},
 			},
 			mockEndpoints: getJobSubmissionsGetEndpoints(
-				"controller_id=in.(id-a)",
+				"or=(controller_id.in.(id-a),job_name.in.(id-a))",
 				http.StatusOK,
 				"[",
 			),
 			expected: getExpected[types.JobSubmissions]{
-				err: "GET ${URL}/postgrest/job_runs?controller_id=in.%28id-a%29 failed\n" +
+				err: "GET ${URL}/postgrest/job_runs?or=%28controller_id.in.%28id-a%29%2Cjob_name.in.%28id-a%29%29 failed\n" +
 					" Caused by:\n" +
 					"\t* unexpected EOF",
 			},
@@ -704,12 +751,12 @@ func TestGetJobSubmissions(t *testing.T) {
 				ids: []string{"id-a"},
 			},
 			mockEndpoints: getJobSubmissionsGetEndpoints(
-				"controller_id=in.(id-a)",
+				"or=(controller_id.in.(id-a),job_name.in.(id-a))",
 				http.StatusUnauthorized,
 				"unauthorized",
 			),
 			expected: getExpected[types.JobSubmissions]{
-				err: "GET ${URL}/postgrest/job_runs?controller_id=in.%28id-a%29 failed\n" +
+				err: "GET ${URL}/postgrest/job_runs?or=%28controller_id.in.%28id-a%29%2Cjob_name.in.%28id-a%29%29 failed\n" +
 					" Caused by:\n" +
 					"\t* 401 unauthorized",
 			},
@@ -852,12 +899,14 @@ func TestDescribeJobSubmissions(t *testing.T) {
 }
 
 func getJobSubmissionDeleteEndpoints(
+	expectedQuery string,
+	resolveResponseBody string,
 	expectedBody string,
 	responseStatus int,
 	responseBody string,
 ) []stubs.StubHTTPEndpoint {
-	return []stubs.StubHTTPEndpoint{
-		{
+	return append(getJobSubmissionsGetEndpoints(expectedQuery, http.StatusOK, resolveResponseBody),
+		stubs.StubHTTPEndpoint{
 			Request: stubs.StubHTTPRequest{
 				Method:          http.MethodPost,
 				URL:             postgrest.Endpoint(constants.WorkbenchEndpointRPCJobRunBulkDelete),
@@ -868,8 +917,7 @@ func getJobSubmissionDeleteEndpoints(
 				Body:   responseBody,
 				Status: responseStatus,
 			},
-		},
-	}
+		})
 }
 
 func getJobSubmissionCreateEndpoints(

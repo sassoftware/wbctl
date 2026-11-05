@@ -54,6 +54,8 @@ const (
 		`"description":"R app","services":["svc-a","svc-b"]}]`
 	expectedServicesResponseBody = `[{"id":"service-1","name":"service 1"},` +
 		`{"id":"service-2","name":"service 2"}]`
+	expectedResolveImagesQueryOne           = `or=(name.in.(job-cli-1))`
+	expectedResolveImagesQueryTwo           = `or=(name.in.(job-cli-1,job-cli-2))`
 	expectedCreateJobRequestBodyWithContext = `
 {
   "param": {
@@ -388,13 +390,15 @@ const (
 	expectedInvalidEndpointErr = "failed to get device token" +
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
-	expectedInvlidDataplaneErr = "GET ${URL}/postgrest/dataplanes?id=in.%28invalid%29 failed" +
+	expectedInvalidDataplaneErr = "GET ${URL}/postgrest/dataplanes?id=in.%28invalid%29 failed" +
 		"\n Caused by:" +
 		"\n\t* 400 error"
-	expectedInvlidWorkspaceErr = "GET ${URL}/postgrest/workspaces?controller_id=in.%28invalid%29 failed" +
+	expectedInvalidWorkspaceErr = "GET ${URL}/postgrest/workspaces" +
+		"?or=%28controller_id.in.%28invalid%29%2Cname.in.%28invalid%29%29 failed" +
 		"\n Caused by:" +
 		"\n\t* 400 error"
-	expectedInvlidApplicationErr = "GET ${URL}/postgrest/dataplane_workbench_applications?id=in.%28invalid%29 failed" +
+	expectedInvalidApplicationErr = "GET ${URL}/postgrest/dataplane_workbench_applications" +
+		"?id=in.%28invalid%29 failed" +
 		"\n Caused by:" +
 		"\n\t* 400 error"
 	expectedCreateImageInvalidFileErr = "unexpected end of JSON input"
@@ -763,7 +767,7 @@ func TestCreateJobCommand(t *testing.T) {
 			}),
 			expected: createExpected{
 				displays:        []string{stubs.ExpectedDeviceAuthDisplay},
-				err:             expectedInvlidDataplaneErr,
+				err:             expectedInvalidDataplaneErr,
 				dataplanesCalls: 1,
 			},
 		},
@@ -775,7 +779,7 @@ func TestCreateJobCommand(t *testing.T) {
 			},
 			mockEndpoints: getCreateJobEndpoints(jobEndpointsConfig{
 				workspaceConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(invalid)",
+					ExpectedQuery:  "or=(controller_id.in.(invalid),name.in.(invalid))",
 					ResponseBody:   `error`,
 					ResponseStatus: http.StatusBadRequest,
 				},
@@ -783,7 +787,7 @@ func TestCreateJobCommand(t *testing.T) {
 			expected: createExpected{
 				displays:        []string{stubs.ExpectedDeviceAuthDisplay},
 				workspacesCalls: 1,
-				err:             expectedInvlidWorkspaceErr,
+				err:             expectedInvalidWorkspaceErr,
 			},
 		},
 		{
@@ -802,7 +806,7 @@ func TestCreateJobCommand(t *testing.T) {
 			expected: createExpected{
 				displays:          []string{stubs.ExpectedDeviceAuthDisplay},
 				applicationsCalls: 1,
-				err:               expectedInvlidApplicationErr,
+				err:               expectedInvalidApplicationErr,
 			},
 		},
 	}
@@ -1033,6 +1037,11 @@ func TestUpdateJobCommand(t *testing.T) {
 				args: []string{"job-cli-1"},
 			},
 			mockEndpoints: getUpdateJobEndpoints(jobEndpointsConfig{
+				jobsConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedResolveImagesQueryOne,
+					ResponseBody:   `[{"id":"job-cli-1"}]`,
+					ResponseStatus: http.StatusOK,
+				},
 				jobConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: expectedUpdateJobRequestBodyIDsOnly,
 					ResponseStatus:      http.StatusOK,
@@ -1050,6 +1059,11 @@ func TestUpdateJobCommand(t *testing.T) {
 				args: []string{"job-cli-1"},
 			},
 			mockEndpoints: getUpdateJobEndpoints(jobEndpointsConfig{
+				jobsConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedResolveImagesQueryOne,
+					ResponseBody:   `[{"id":"job-cli-1"}]`,
+					ResponseStatus: http.StatusOK,
+				},
 				jobConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: expectedUpdateJobRequestBodyIDsOnly,
 					ResponseStatus:      http.StatusUnauthorized,
@@ -1096,6 +1110,11 @@ func TestUpdateJobCommand(t *testing.T) {
 				args:        []string{"job-cli-1", "job-cli-2"},
 			},
 			mockEndpoints: getUpdateJobEndpoints(jobEndpointsConfig{
+				jobsConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedResolveImagesQueryTwo,
+					ResponseBody:   `[{"id":"job-cli-1"},{"id":"job-cli-2"}]`,
+					ResponseStatus: http.StatusOK,
+				},
 				jobConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: expectedUpdateJobRequestBodyMapping,
 					ResponseStatus:      http.StatusOK,
@@ -1125,6 +1144,11 @@ func TestUpdateJobCommand(t *testing.T) {
 				args:        []string{"job-cli-1"},
 			},
 			mockEndpoints: getUpdateJobEndpoints(jobEndpointsConfig{
+				jobsConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedResolveImagesQueryOne,
+					ResponseBody:   `[{"id":"job-cli-1"}]`,
+					ResponseStatus: http.StatusOK,
+				},
 				jobConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: expectedUpdateJobRequestBodyAllFlags,
 					ResponseStatus:      http.StatusOK,
@@ -1341,6 +1365,7 @@ type jobEndpointsConfig struct {
 	servicesConfig     stubs.StubHTTPPartialGetConfig
 	nodepoolsConfig    stubs.StubHTTPPartialGetConfig
 	workspaceConfig    stubs.StubHTTPPartialGetConfig
+	jobsConfig         stubs.StubHTTPPartialGetConfig
 	jobConfig          stubs.StubHTTPPartialPostConfig
 }
 
@@ -1353,6 +1378,18 @@ func getJobEndpoints(
 	endpoints = append(endpoints, stubs.GetStubApplicationsEndpoints(config.applicationsConfig)...)
 	endpoints = append(endpoints, stubs.GetStubServicesEndpoints(config.servicesConfig)...)
 	endpoints = append(endpoints, stubs.GetStubNodepoolsEndpoints(config.nodepoolsConfig)...)
+	endpoints = append(endpoints, stubs.StubHTTPEndpoint{
+		Request: stubs.StubHTTPRequest{
+			Method:          http.MethodGet,
+			URL:             postgrest.Endpoint(constants.WorkbenchEndpointJobs),
+			ExpectedHeaders: stubs.StubAuthHeaders,
+			ExpectedQuery:   config.jobsConfig.ExpectedQuery,
+		},
+		Response: stubs.StubHTTPResponse{
+			Status: config.jobsConfig.ResponseStatus,
+			Body:   config.jobsConfig.ResponseBody,
+		},
+	})
 	return append(endpoints,
 		[]stubs.StubHTTPEndpoint{
 			{

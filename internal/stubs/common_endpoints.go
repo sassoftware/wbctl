@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	expectedWorkspaceQueryHome        = "controller_id=in.(ws-home)"
-	expectedWorkspaceQueryData        = "controller_id=in.(ws-data)"
+	expectedWorkspaceQueryHome        = "or=(controller_id.in.(ws-home),name.in.(ws-home))"
+	expectedWorkspaceQueryData        = "or=(controller_id.in.(ws-data),name.in.(ws-data))"
 	expectedWorkspaceResponseBodyHome = `[{"id":"ws-home","controller_id":"ctrl-home","name":"home",` +
 		`"properties":{"HOME_DIRECTORY":"true"}}]`
 	expectedWorkspaceResponseBodyData = `[{"id":"ws-data","controller_id":"ctrl-data","name":"data",` +

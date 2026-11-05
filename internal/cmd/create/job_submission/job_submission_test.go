@@ -44,10 +44,11 @@ const (
 	expectedCreateJobInvalidEndpointErr            = "failed to get device token" +
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
-	expectedInvlidDataplaneErr = "GET ${URL}/postgrest/dataplanes?id=in.%28invalid%29 failed" +
+	expectedInvalidDataplaneErr = "GET ${URL}/postgrest/dataplanes?id=in.%28invalid%29 failed" +
 		"\n Caused by:" +
 		"\n\t* 400 error"
-	expectedInvlidWorkspaceErr = "GET ${URL}/postgrest/workspaces?controller_id=in.%28invalid%29 failed" +
+	expectedInvalidWorkspaceErr = "GET ${URL}/postgrest/workspaces" +
+		"?or=%28controller_id.in.%28invalid%29%2Cname.in.%28invalid%29%29 failed" +
 		"\n Caused by:" +
 		"\n\t* 400 error"
 )
@@ -236,7 +237,7 @@ func TestCreateJobSubmissionCommand(t *testing.T) {
 			}),
 			expected: createExpected{
 				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
-				err:            expectedInvlidDataplaneErr,
+				err:            expectedInvalidDataplaneErr,
 				dataplaneCalls: 1,
 			},
 		},
@@ -254,7 +255,7 @@ func TestCreateJobSubmissionCommand(t *testing.T) {
 					ResponseStatus: http.StatusOK,
 				},
 				workspaceConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(invalid)",
+					ExpectedQuery:  "or=(controller_id.in.(invalid),name.in.(invalid))",
 					ResponseStatus: http.StatusBadRequest,
 					ResponseBody:   `error`,
 				},
@@ -263,7 +264,7 @@ func TestCreateJobSubmissionCommand(t *testing.T) {
 				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 				dataplaneCalls: 1,
 				workspaceCalls: 1,
-				err:            expectedInvlidWorkspaceErr,
+				err:            expectedInvalidWorkspaceErr,
 			},
 		},
 	}
@@ -465,7 +466,7 @@ func TestStartJobCommand(t *testing.T) {
 			}),
 			expected: createExpected{
 				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
-				err:            expectedInvlidDataplaneErr,
+				err:            expectedInvalidDataplaneErr,
 				dataplaneCalls: 1,
 			},
 		},
@@ -484,7 +485,7 @@ func TestStartJobCommand(t *testing.T) {
 					ResponseStatus: http.StatusOK,
 				},
 				workspaceConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(invalid)",
+					ExpectedQuery:  "or=(controller_id.in.(invalid),name.in.(invalid))",
 					ResponseStatus: http.StatusBadRequest,
 					ResponseBody:   `error`,
 				},
@@ -493,7 +494,7 @@ func TestStartJobCommand(t *testing.T) {
 				displays:       []string{stubs.ExpectedDeviceAuthDisplay},
 				dataplaneCalls: 1,
 				workspaceCalls: 1,
-				err:            expectedInvlidWorkspaceErr,
+				err:            expectedInvalidWorkspaceErr,
 			},
 		},
 	}

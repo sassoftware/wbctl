@@ -29,7 +29,8 @@ const (
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
 	expectedInvalidResourceErr = "" +
-		"GET ${URL}/postgrest/images?controller_id=in.%28controller-1%29 failed" +
+		"GET ${URL}/postgrest/images?" +
+		"or=%28controller_id.in.%28image-1%29%2Cname.in.%28image-1%29%29 failed" +
 		"\n Caused by:" +
 		"\n\t* invalid character 'i' looking for beginning of value"
 )
@@ -59,10 +60,10 @@ func TestRebuildCommand(t *testing.T) {
 	tests := []rebuildTestCase{
 		{
 			name:  "rebuild images by singular type",
-			input: rebuildInput{resourceType: constants.ImageType, resourceIDs: []string{"controller-1"}},
+			input: rebuildInput{resourceType: constants.ImageType, resourceIDs: []string{"image-1", "image-2"}},
 			mockEndpoints: getRebuildEndpoints(rebuildConfig{
 				getConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(controller-1)",
+					ExpectedQuery:  "or=(controller_id.in.(image-1,image-2),name.in.(image-1,image-2))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   rebuildImagesResponseBody,
 				},
@@ -79,10 +80,10 @@ func TestRebuildCommand(t *testing.T) {
 		},
 		{
 			name:  "rebuild images by plural type",
-			input: rebuildInput{resourceType: constants.ImagesType, resourceIDs: []string{"controller-2"}},
+			input: rebuildInput{resourceType: constants.ImagesType, resourceIDs: []string{"image-1", "image-2"}},
 			mockEndpoints: getRebuildEndpoints(rebuildConfig{
 				getConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(controller-2)",
+					ExpectedQuery:  "or=(controller_id.in.(image-1,image-2),name.in.(image-1,image-2))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   rebuildImagesResponseBody,
 				},
@@ -99,10 +100,10 @@ func TestRebuildCommand(t *testing.T) {
 		},
 		{
 			name:  "returns error when rebuild call fails",
-			input: rebuildInput{resourceType: constants.ImagesType, resourceIDs: []string{"controller-2"}},
+			input: rebuildInput{resourceType: constants.ImagesType, resourceIDs: []string{"image-1"}},
 			mockEndpoints: getRebuildEndpoints(rebuildConfig{
 				getConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(controller-2)",
+					ExpectedQuery:  "or=(controller_id.in.(image-1),name.in.(image-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   rebuildImagesResponseBody,
 				},
@@ -122,7 +123,7 @@ func TestRebuildCommand(t *testing.T) {
 			input: rebuildInput{
 				endpoint:     "a\nb",
 				resourceType: constants.ImageType,
-				resourceIDs:  []string{"controller-1"},
+				resourceIDs:  []string{"image-1"},
 			},
 			expected: rebuildExpected{
 				err: expectedInvalidEndpointErr,
@@ -132,11 +133,11 @@ func TestRebuildCommand(t *testing.T) {
 			name: "invalid image response",
 			input: rebuildInput{
 				resourceType: constants.ImageType,
-				resourceIDs:  []string{"controller-1"},
+				resourceIDs:  []string{"image-1"},
 			},
 			mockEndpoints: getRebuildEndpoints(rebuildConfig{
 				getConfig: stubs.StubHTTPPartialGetConfig{
-					ExpectedQuery:  "controller_id=in.(controller-1)",
+					ExpectedQuery:  "or=(controller_id.in.(image-1),name.in.(image-1))",
 					ResponseStatus: http.StatusOK,
 					ResponseBody:   `[invalid`,
 				},

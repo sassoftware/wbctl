@@ -1,5 +1,5 @@
 <pre>
-Rebuild the Image resources identified by a list of resource ids. At least one id is required.
+Rebuild the Image resources identified by a list of resource ids or names. At least one id or name is required.
 
 Usage:
   wbctl rebuild images [flags]

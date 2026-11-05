@@ -1,5 +1,5 @@
 <pre>
-Stop the Workbench resources identified by a list of resource ids. At least one id is required.
+Stop the Workbench resources identified by a list of resource ids or names. At least one id or name is required.
 
 Usage:
   wbctl stop workbenches [flags]

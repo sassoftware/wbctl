@@ -105,12 +105,7 @@ func setWorkbenchDesiredState(
 	desiredState string,
 	svc *workbench.WorkbenchService,
 ) error {
-	workbenches, err := workbench.GetWorkbenches(ctx, svc, ids, "")
-	if err != nil {
-		return err
-	}
-	resolvedIDs := getIDs(workbenches)
-	changedIDs, err := bulkUpdateState(ctx, svc, desiredState, resolvedIDs)
+	changedIDs, err := bulkUpdateState(ctx, svc, desiredState, ids)
 	if err != nil {
 		return err
 	}
