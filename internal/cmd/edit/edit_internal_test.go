@@ -22,17 +22,26 @@ func TestGetEditor(t *testing.T) {
 		name           string
 		editorEnv      string
 		expectedEditor string
+		expectedArgs   []string
 		expectedErr    string
 	}{
 		{
 			name:           "returns default when EDITOR not set",
 			editorEnv:      "",
 			expectedEditor: osutil.Executable(osutil.DefaultBinDir(), osutil.DefaultEditor()),
+			expectedArgs:   []string{},
 		},
 		{
 			name:           "returns EDITOR env var when set",
 			editorEnv:      osutil.ExecutableScript("testdata", "no-change"),
 			expectedEditor: osutil.ExecutableScript("testdata", "no-change"),
+			expectedArgs:   []string{},
+		},
+		{
+			name:           "returns EDITOR args when set",
+			editorEnv:      osutil.ExecutableScript("testdata", "no-change") + " -w",
+			expectedEditor: osutil.ExecutableScript("testdata", "no-change"),
+			expectedArgs:   []string{"-w"},
 		},
 		{
 			name:        "returns error when env set to missing file",
@@ -49,12 +58,13 @@ func TestGetEditor(t *testing.T) {
 				t.Setenv("EDITOR", "")
 			}
 
-			editor, err := getEditor()
+			editor, args, err := getEditor()
 			if tt.expectedErr != "" {
 				require.EqualError(t, err, tt.expectedErr)
 			} else {
 				require.NoError(t, err)
 				require.Equal(t, tt.expectedEditor, editor)
+				require.Equal(t, tt.expectedArgs, args)
 			}
 		})
 	}

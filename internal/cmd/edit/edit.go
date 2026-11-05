@@ -217,12 +217,17 @@ func edit[T, TS any](
 	return loadEditedFile[T](fs, originalJSON, tmpFileName)
 }
 
-func getEditor() (string, error) {
-	editor := os.Getenv("EDITOR")
+func getEditor() (string, []string, error) {
+	editor := strings.TrimSpace(os.Getenv("EDITOR"))
 	if editor == "" {
 		editor = osutil.DefaultEditor()
 	}
-	return exec.LookPath(editor)
+	fields := strings.Fields(editor)
+	path, err := exec.LookPath(fields[0])
+	if err != nil {
+		return "", nil, err
+	}
+	return path, fields[1:], nil
 }
 
 func cleanJSON[T any](originalJSON []byte) []byte {
@@ -260,11 +265,12 @@ func editFile(
 	ctx context.Context,
 	fileName string,
 ) error {
-	editor, err := getEditor()
+	editor, args, err := getEditor()
 	if err != nil {
 		return err
 	}
-	cmd := exec.CommandContext(ctx, editor, fileName)
+	args = append(args, fileName)
+	cmd := exec.CommandContext(ctx, editor, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
