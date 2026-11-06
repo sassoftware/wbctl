@@ -55,6 +55,7 @@ func CreateCommand(
 	flags.AddApplicationFlag(cmd, constants.WorkbenchType)
 	flags.AddServiceFlag(cmd, constants.WorkbenchType)
 	flags.AddDesiredStateFlag(cmd, constants.WorkbenchType)
+	flags.AddCapabilityFlag(cmd, constants.WorkbenchType)
 	return cmd
 }
 
@@ -193,6 +194,7 @@ func getWorkbenchRequestBody(
 		volumes = v.GetStringSlice(constants.WorkspaceFlag)
 	}
 	services := v.GetStringSlice(constants.ServiceFlag)
+	capabilities := v.GetStringSlice(constants.CapabilityFlag)
 
 	serviceRequests, err := workbench.GetServiceRequests(ctx, svc, application, services)
 	if err != nil {
@@ -212,6 +214,16 @@ func getWorkbenchRequestBody(
 		ApplicationID: application,
 	}
 	setWorkspaceRequests(&wkbnch, workspaceRequests)
+	if len(capabilities) > 0 {
+		wkbnch.Mounts = make([]types.MountRequest, 0, len(capabilities))
+		for _, capability := range capabilities {
+			wkbnch.Mounts = append(wkbnch.Mounts, types.MountRequest{
+				Capability: &types.CapabilityRequest{
+					ID: capability,
+				},
+			})
+		}
+	}
 	return wkbnch, nil
 }
 

@@ -27,6 +27,7 @@ const (
 	BuildSettingGOOSKey                             = "GOOS"
 	BuildSettingVCSRevisionKey                      = "vcs.revision"
 	CancelCommandName                               = "cancel"
+	CapabilityFlag                                  = "capability"
 	ClientIDEnvVar                                  = "WBCLIENTID"
 	ClientIDFlag                                    = "client-id"
 	ClientSecretEnvVar                              = "WBCLIENTSECRET"

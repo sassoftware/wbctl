@@ -610,6 +610,21 @@ func TestExportedFlags(t *testing.T) {
 			viperKey:      constants.ProfileFlag,
 			expectedValue: "Default",
 		},
+		{
+			name: "CapabilityFlag",
+			call: withType(flags.AddCapabilityFlag, constants.JobType),
+			args: []string{"--" + constants.CapabilityFlag, "capability-value1",
+				"--" + constants.CapabilityFlag, "capability-value2",
+				"--" + constants.CapabilityFlag, "capability-value3"},
+			viperKey:      constants.CapabilityFlag,
+			expectedValue: []string{"capability-value1", "capability-value2", "capability-value3"},
+		},
+		{
+			name:          "CapabilityFlagDefault",
+			call:          withType(flags.AddCapabilityFlag, constants.JobType),
+			viperKey:      constants.CapabilityFlag,
+			expectedValue: []string{},
+		},
 	}
 
 	for _, tt := range tests {
