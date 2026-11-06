@@ -9,6 +9,7 @@ Aliases:
 
 Flags:
   -a, --application string     The application to run in the workbench. Not required if at least one service is specified.
+      --capability strings     The capability to include in the workbench.
       --dataplane string       The ID of the dataplane where the workbench will be created. If only one dataplane is available, this flag can be omitted.
       --desired-state string   The desired state of the workbench (e.g., RUNNING, STOPPED).
   -d, --dry-run                Only print the object that would be sent, without sending it.

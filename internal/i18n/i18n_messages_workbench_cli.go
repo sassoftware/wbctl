@@ -109,6 +109,7 @@ var wbctlMessages = "\n" +
 	"wbctl-cli-icu.falling.back.to.full.reauthorization.msg=falling back to full reauthorization\n" +
 	"wbctl-cli-icu.flag.application.usage.msg=The application to run in the {type}. Not required if at least one service is specified.\n" +
 	"wbctl-cli-icu.flag.auth.mode.usage.msg=Authentication mode. One of: device, pkce.\n" +
+	"wbctl-cli-icu.flag.capability.usage.msg=The capability to include in the {type}.\n" +
 	"wbctl-cli-icu.flag.client.id.usage.msg=The client-id to authenticate with the Workbench API ($WBCLIENTID).\n" +
 	"wbctl-cli-icu.flag.client.secret.usage.msg=The client-secret to authenticate with the Workbench API ($WBCLIENTSECRET).\n" +
 	"wbctl-cli-icu.flag.command.usage.msg=The command to run in the job.\n" +

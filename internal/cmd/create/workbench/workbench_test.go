@@ -23,92 +23,255 @@ import (
 
 const (
 	workbenchFileJSON       = `{"name":"wb-file","nodepool":"np-file","state":"RUNNING", "application_id":"vscode"}`
-	workbenchFilePrettyJSON = `{
-    "application_id": "vscode",
-    "dataplane_id": "dp-1",
-    "name": "wb-file",
-    "nodepool": "np-file",
-    "state": "RUNNING"
-}`
+	workbenchFilePrettyJSON = `
+{
+  "application_id": "vscode",
+  "dataplane_id": "dp-1",
+  "name": "wb-file",
+  "nodepool": "np-file",
+  "state": "RUNNING"
+}
+`
 	workbenchIncompleteFileJSON = `{"name":"wb-file","nodepool":"np-file","state":"RUNNING"}`
 	workbenchIncompleteFileErr  = "either --application or at least one --service is required\n" +
 		"  Valid Applications: application-1, application-2\n" +
 		"  Valid Services: service-1, service-2"
-	workbenchNoWorkspaceCreateBody = `{"param":{"application_id":"app-1", "dataplane_id":"dp-1","name":"wb-1",` +
-		`"services":[{"id":"svc-a"},{"id":"svc-b"}],"nodepool":"np-1","state":"STOPPED"}}`
-	workbenchWithWorkspaceCreateBody = `{"param":{"application_id":"app-1", "dataplane_id":"dp-1","name":"wb-2",` +
-		`"services":[{"id":"svc-a","env":{"DEFAULT_MOUNTNAME":"data"}},` +
-		`{"id":"svc-b","env":{"DEFAULT_MOUNTNAME":"data"}}],` +
-		`"workspaces":[{"id":"ctrl-home","mountName":"sas"},{"id":"ctrl-data",` +
-		`"mountName":"data"}],"nodepool":"np-2","state":"STOPPED"}}`
-	workbenchWithServicesCreateBody = `{"param":{"dataplane_id":"dp-1","name":"wb-2",` +
-		`"services":[{"id":"service-1","env":{"DEFAULT_MOUNTNAME":"data"}},` +
-		`{"id":"service-2","env":{"DEFAULT_MOUNTNAME":"data"}}],` +
-		`"workspaces":[{"id":"ctrl-home","mountName":"sas"},{"id":"ctrl-data",` +
-		`"mountName":"data"}],"nodepool":"np-2","state":"STOPPED"}}`
-	workbenchUpdateDryRunOutput = `{
-    "ids": [
-        "wb-cli-1",
-        "wb-cli-2"
+	workbenchNoWorkspaceCreateBody = `
+{
+  "param": {
+    "application_id": "app-1",
+    "dataplane_id": "dp-1",
+    "name": "wb-1",
+    "services": [
+      {
+        "id": "svc-a"
+      },
+      {
+        "id": "svc-b"
+      }
     ],
-    "workbench": {
-        "application_id": "app-1",
-        "nodepool": "np-1",
-        "services": [
-            {
-                "id": "svc-a"
-            },
-            {
-                "id": "svc-b"
-            }
-        ],
-        "state": "STOPPED"
-    }
-}`
-	workbenchUpdateRequestBodyMapping = `{"ids":["wb-cli-1","wb-cli-2"],` +
-		`"workbench":{"application_id":"app-1","nodepool":"np-1",` +
-		`"services":[{"id":"svc-a"},{"id":"svc-b"}],"state":"STOPPED"}}`
-	workbenchUpdateRequestBodyWorkspace = `{"ids":["wb-cli-1"],` +
-		`"workbench":{"workspaces":[{"id":"ctrl-home","mountName":"sas"}]}}`
+    "nodepool": "np-1",
+    "state": "STOPPED"
+  }
+}
+`
+	workbenchWithWorkspaceCreateBody = `
+{
+  "param": {
+    "application_id": "app-1",
+    "dataplane_id": "dp-1",
+    "name": "wb-2",
+    "services": [
+      {
+        "id": "svc-a",
+        "env": {
+          "DEFAULT_MOUNTNAME": "data"
+        }
+      },
+      {
+        "id": "svc-b",
+        "env": {
+          "DEFAULT_MOUNTNAME": "data"
+        }
+      }
+    ],
+    "workspaces": [
+      {
+        "id": "ctrl-home",
+        "mountName": "sas"
+      },
+      {
+        "id": "ctrl-data",
+        "mountName": "data"
+      }
+    ],
+    "nodepool": "np-2",
+    "state": "STOPPED"
+  }
+}
+`
+	workbenchWithServicesCreateBody = `
+{
+  "param": {
+    "dataplane_id": "dp-1",
+    "name": "wb-2",
+    "services": [
+      {
+        "id": "service-1",
+        "env": {
+          "DEFAULT_MOUNTNAME": "data"
+        }
+      },
+      {
+        "id": "service-2",
+        "env": {
+          "DEFAULT_MOUNTNAME": "data"
+        }
+      }
+    ],
+    "workspaces": [
+      {
+        "id": "ctrl-home",
+        "mountName": "sas"
+      },
+      {
+        "id": "ctrl-data",
+        "mountName": "data"
+      }
+    ],
+    "nodepool": "np-2",
+    "state": "STOPPED"
+  }
+}
+`
+	workbenchWithCapabilitiesCreateBody = `
+{
+  "param": {
+    "dataplane_id": "dp-1",
+    "name": "wb-2",
+    "services": [
+      {
+        "id": "service-1",
+        "env": {
+          "DEFAULT_MOUNTNAME": "data"
+        }
+      },
+      {
+        "id": "service-2",
+        "env": {
+          "DEFAULT_MOUNTNAME": "data"
+        }
+      }
+    ],
+    "workspaces": [
+      {
+        "id": "ctrl-home",
+        "mountName": "sas"
+      },
+      {
+        "id": "ctrl-data",
+        "mountName": "data"
+      }
+    ],
+    "mounts": [
+      {
+        "capability": {
+          "id": "capability1"
+        }
+      },
+      {
+        "capability": {
+          "id": "capability2"
+        }
+      }
+    ],
+    "nodepool": "np-2",
+    "state": "STOPPED"
+  }
+}
+`
+	workbenchUpdateDryRunOutput = `
+{
+  "ids": [
+    "wb-cli-1",
+    "wb-cli-2"
+  ],
+  "workbench": {
+    "application_id": "app-1",
+    "nodepool": "np-1",
+    "services": [
+      {
+        "id": "svc-a"
+      },
+      {
+        "id": "svc-b"
+      }
+    ],
+    "state": "STOPPED"
+  }
+}
+`
+	workbenchUpdateRequestBodyMapping = `
+{
+  "ids": [
+    "wb-cli-1",
+    "wb-cli-2"
+  ],
+  "workbench": {
+    "application_id": "app-1",
+    "nodepool": "np-1",
+    "services": [
+      {
+        "id": "svc-a"
+      },
+      {
+        "id": "svc-b"
+      }
+    ],
+    "state": "STOPPED"
+  }
+}
+`
+	workbenchUpdateRequestBodyWorkspace = `
+{
+  "ids": [
+    "wb-cli-1"
+  ],
+  "workbench": {
+    "workspaces": [
+      {
+        "id": "ctrl-home",
+        "mountName": "sas"
+      }
+    ]
+  }
+}
+`
 	workbenchUpdateRequestBodyIDsOnly = `{"ids":["wb-cli-1"],"workbench":{}}`
 	workbenchUpdateFileContent        = `{"id":"wb-file","nodepool":"np-file"}`
-	workbenchUpdateFileDryRunOutput   = `{
-    "ids": [
-        "wb-file"
-    ],
-    "workbench": {
-        "nodepool": "np-file"
-    }
-}`
+	workbenchUpdateFileDryRunOutput   = `
+{
+  "ids": [
+    "wb-file"
+  ],
+  "workbench": {
+    "nodepool": "np-file"
+  }
+}
+`
 	workbenchUpdateMissingIDErr  = "at least one resource ID must be provided for update"
 	workbenchBulkUpdateServerErr = "POST ${URL}/postgrest/rpc/workbench_bulk_update failed\n" +
 		" Caused by:\n" +
 		"\t* 401 unauthorized"
 	workbenchUpdateRequestBodyNameLabels  = `{"param":{"id":"wb-cli-1","labels":{"team":"core"},"name":"wb-name"}}`
-	workbenchUpdateNameLabelsDryRunOutput = `{
-    "ids": [
-        "wb-cli-1"
-    ],
-    "workbench": {
-        "labels": {
-            "team": "core"
-        },
-        "name": "wb-name"
-    }
-}`
-	workbenchUpdateWorkspaceDryRunOutput = `{
-    "ids": [
-        "wb-cli-1"
-    ],
-    "workbench": {
-        "workspaces": [
-            {
-                "id": "ctrl-home",
-                "mountName": "sas"
-            }
-        ]
-    }
-}`
+	workbenchUpdateNameLabelsDryRunOutput = `
+{
+  "ids": [
+    "wb-cli-1"
+  ],
+  "workbench": {
+    "labels": {
+      "team": "core"
+    },
+    "name": "wb-name"
+  }
+}
+`
+	workbenchUpdateWorkspaceDryRunOutput = `
+{
+  "ids": [
+    "wb-cli-1"
+  ],
+  "workbench": {
+    "workspaces": [
+      {
+        "id": "ctrl-home",
+        "mountName": "sas"
+      }
+    ]
+  }
+}
+`
 	expectedCreateSnapshotInvalidEndpointErr = "failed to get device token" +
 		"\n Caused by:" +
 		"\n\t* parse \"a\\nb\": net/url: invalid control character in URL"
@@ -133,17 +296,18 @@ const (
 )
 
 type createInput struct {
-	endpoint    string
-	filename    string
-	fileContent string
-	dataplane   string
-	name        string
-	labels      []string
-	application string
-	nodepool    string
-	workspaces  []string
-	services    []string
-	dryRun      bool
+	endpoint     string
+	filename     string
+	fileContent  string
+	dataplane    string
+	name         string
+	labels       []string
+	application  string
+	nodepool     string
+	workspaces   []string
+	services     []string
+	capabilities []string
+	dryRun       bool
 }
 
 type createExpected struct {
@@ -303,6 +467,40 @@ func TestCreateWorkbenchCommand(t *testing.T) {
 				},
 				workbenchesConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: workbenchWithServicesCreateBody,
+					ResponseStatus:      http.StatusOK,
+					ResponseBody:        `{"id":"wb-2"}`,
+				},
+			}),
+			expected: createExpected{
+				displays:       []string{stubs.ExpectedDeviceAuthDisplay, "wb-2"},
+				createCalls:    1,
+				dataplaneCalls: 1,
+				servicesCalls:  1,
+				workspaceCalls: 2,
+			},
+		},
+		{
+			name: "create success with capabilities",
+			input: createInput{
+				dataplane:    "dp-1",
+				name:         "wb-2",
+				services:     []string{"service-1", "service-2"},
+				nodepool:     "np-2",
+				workspaces:   []string{"ws-home", "ws-data"},
+				capabilities: []string{"capability1", "capability2"},
+			},
+			mockEndpoints: getCreateWorkbenchEndpoints(workbenchEndpointsConfig{
+				dataplaneConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  `id=in.(dp-1)`,
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   `[{"id":"dp-1"}]`,
+				},
+				servicesConfig: stubs.StubHTTPPartialGetConfig{
+					ResponseStatus: http.StatusOK,
+					ResponseBody:   servicesResponseBody,
+				},
+				workbenchesConfig: stubs.StubHTTPPartialPostConfig{
+					ExpectedRequestBody: workbenchWithCapabilitiesCreateBody,
 					ResponseStatus:      http.StatusOK,
 					ResponseBody:        `{"id":"wb-2"}`,
 				},
@@ -1016,6 +1214,9 @@ func getCreateArgs(
 	}
 	for _, serviceID := range tt.input.services {
 		args = append(args, "--"+constants.ServiceFlag, serviceID)
+	}
+	for _, capabilityID := range tt.input.capabilities {
+		args = append(args, "--"+constants.CapabilityFlag, capabilityID)
 	}
 	return args
 }
