@@ -2312,6 +2312,7 @@ func TestSupportedResourceTypes(t *testing.T) {
 			name: "returns sorted supported get resource types",
 			expectedTypes: []string{
 				constants.ApplicationsType,
+				constants.CapabilitiesType,
 				constants.DataplanesType,
 				constants.EventsType,
 				constants.ImagesType,

@@ -50,6 +50,36 @@ func TestAsApplicationSlice(t *testing.T) {
 	}
 }
 
+func TestAsCapabilitySlice(t *testing.T) {
+	cases := []struct {
+		name     string
+		source   types.Capabilities
+		expected []types.Capability
+	}{
+		{
+			name:     "nil slice",
+			source:   nil,
+			expected: nil,
+		},
+		{
+			name: "non-empty slice",
+			source: types.Capabilities{
+				{ID: "application-1"},
+			},
+			expected: []types.Capability{
+				{ID: "application-1"},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			actual := types.AsCapabilitySlice(tc.source)
+			require.Equal(t, tc.expected, actual)
+		})
+	}
+}
+
 func TestAsConflictSlice(t *testing.T) {
 	cases := []struct {
 		name     string

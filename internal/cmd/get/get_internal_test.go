@@ -39,6 +39,7 @@ func TestNewGetFunctionErrorPaths(t *testing.T) {
 
 	supportedTypes := []string{
 		constants.ApplicationsType,
+		constants.CapabilitiesType,
 		constants.DataplanesType,
 		constants.EventsType,
 		constants.ImagesType,

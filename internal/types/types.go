@@ -44,9 +44,22 @@ type WorkspaceRequest struct {
 	EphemeralPVC *corev1.PersistentVolumeClaimSpec `json:"ephemeralPVC,omitempty"`
 }
 
-// MountRequest identifies a mount path and volume source to be mounted into a
-// Job or Workbench.
+// MountRequest identifies a volume or capability to be mounted into a Job or
+// Workbench.
 type MountRequest struct {
+	Capability *CapabilityRequest `json:"capability,omitempty"`
+	Volume     *VolumeRequest     `json:"volume,omitempty"`
+}
+
+// CapabilityRequest identifies a capability to be mounted into a Job or
+// Workbench.
+type CapabilityRequest struct {
+	ID string `json:"id,omitempty"`
+}
+
+// VolumeRequest identifies a mount path and volume source to be mounted into a
+// Job or Workbench.
+type VolumeRequest struct {
 	MountPath    string        `json:"mountPath,omitempty"`
 	VolumeSource *VolumeSource `json:"volumeSource,omitempty"`
 }
@@ -649,6 +662,26 @@ type Conflicts []Conflict
 
 // AsConflictSlice converts Conflicts to a plain slice.
 func AsConflictSlice(source Conflicts) []Conflict {
+	return source
+}
+
+// Capability represents a capability.
+type Capability struct {
+	Category    string `json:"category,omitempty"`
+	DataplaneID string `json:"dataplane_id,omitempty"`
+	Description string `json:"description,omitempty"`
+	Disabled    bool   `json:"disabled,omitempty"`
+	ID          string `json:"id,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Recommended bool   `json:"recommended,omitempty"`
+	Version     string `json:"version,omitempty"`
+}
+
+// Capabilities is a slice of Capability values.
+type Capabilities []Capability
+
+// AsCapabilitySlice converts Capabilities to a plain slice.
+func AsCapabilitySlice(source Capabilities) []Capability {
 	return source
 }
 
