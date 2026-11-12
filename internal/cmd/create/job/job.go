@@ -60,6 +60,7 @@ func CreateCommand(
 	flags.AddApplicationFlag(cmd, constants.JobType)
 	flags.AddServiceFlag(cmd, constants.JobType)
 	flags.AddEnvironmentFlag(cmd, constants.JobType)
+	flags.AddCapabilityFlag(cmd, constants.JobType)
 	return cmd
 }
 
@@ -210,7 +211,7 @@ func getJobRequestBody(
 	}
 	services := v.GetStringSlice(constants.ServiceFlag)
 	envs := v.GetStringSlice(constants.EnvironmentFlag)
-
+	capabilities := v.GetStringSlice(constants.CapabilityFlag)
 	workspaceRequests, err := workbench.GetValidWorkspaceRequests(ctx, svc, volumes)
 	if err != nil {
 		return types.Job{}, err
@@ -245,6 +246,16 @@ func getJobRequestBody(
 			"id":            workspaceRequests[0].DbID,
 			"controller_id": workspaceRequests[0].ID,
 			"folderName":    workspaceRequests[0].MountName,
+		}
+	}
+	if len(capabilities) > 0 {
+		job.Mounts = make([]types.MountRequest, 0, len(capabilities))
+		for _, capability := range capabilities {
+			job.Mounts = append(job.Mounts, types.MountRequest{
+				Capability: &types.CapabilityRequest{
+					ID: capability,
+				},
+			})
 		}
 	}
 	job.Properties = properties

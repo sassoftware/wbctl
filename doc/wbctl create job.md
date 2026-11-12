@@ -9,6 +9,7 @@ Aliases:
 
 Flags:
   -a, --application string    The application to run in the job. Not required if at least one service is specified.
+      --capability strings    Capabilit(y|ies) to include in the job.
   -c, --command string        The command to run in the job.
       --context string        The context (volume, snapshot, or s3 bucket) for the job.
       --dataplane string      The ID of the dataplane where the job will be created. If only one dataplane is available, this flag can be omitted.

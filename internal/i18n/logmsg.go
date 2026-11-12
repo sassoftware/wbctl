@@ -121,6 +121,7 @@ const (
 	FallingBackToFullReauthorization     = BundleID + ".falling.back.to.full.reauthorization.msg"
 	FlagApplicationUsage                 = BundleID + ".flag.application.usage.msg"
 	FlagAuthModeUsage                    = BundleID + ".flag.auth.mode.usage.msg"
+	FlagCapabilityUsage                  = BundleID + ".flag.capability.usage.msg"
 	FlagClientIDUsage                    = BundleID + ".flag.client.id.usage.msg"
 	FlagClientSecretUsage                = BundleID + ".flag.client.secret.usage.msg"
 	FlagCommandUsage                     = BundleID + ".flag.command.usage.msg"

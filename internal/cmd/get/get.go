@@ -42,6 +42,11 @@ var getFunctions = []types.FunctionMetadata[getterF]{
 		F:        getImpl[types.Applications](workbench.GetApplications, workbench.PrintApplications),
 	},
 	{
+		Singular: constants.CapabilityType,
+		Plural:   constants.CapabilitiesType,
+		F:        getImpl[types.Capabilities](workbench.GetCapabilities, workbench.PrintCapabilities),
+	},
+	{
 		Singular: constants.DataplaneType,
 		Plural:   constants.DataplanesType,
 		F:        getImpl[types.Dataplanes](workbench.GetDataplanes, workbench.PrintDataplanes),

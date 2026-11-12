@@ -204,6 +204,70 @@ const (
   }
 }
 `
+	expectedCreateJobRequestBodyWithCapabilities = `
+{
+  "param": {
+    "dataplane_id": "123e4567-e89b-12d3-a456-426614174000",
+    "description": "job desc",
+    "name": "job-2",
+    "nodepool": "np-2",
+    "services": [
+      {
+        "id": "service-1",
+        "env": {
+          "DEFAULT_MOUNTNAME": "data"
+        }
+      },
+      {
+        "id": "service-2",
+        "env": {
+          "DEFAULT_MOUNTNAME": "data"
+        }
+      }
+    ],
+    "spec": {
+      "tasks": {
+        "default": {
+          "cmds": [
+            "run.sh"
+          ]
+        }
+      },
+      "version": "3"
+    },
+    "workspaces": [
+      {
+        "id": "ctrl-home",
+        "mountName": "sas"
+      },
+      {
+        "id": "ctrl-data",
+        "mountName": "data"
+      }
+    ],
+    "mounts": [
+      {
+        "capability": {
+          "id": "capability1"
+        }
+      },
+      {
+        "capability": {
+          "id": "capability2"
+        }
+      }
+    ],
+    "properties": {
+      "isWorkbenchAppCreated": true,
+      "primaryVolume": {
+        "controller_id": "ctrl-home",
+        "folderName": "sas",
+        "id": "ws-home"
+      }
+    }
+  }
+}
+`
 	expectedUpdateJobDryRunOutput = `{
     "ids": [
         "job-cli-1",
@@ -405,20 +469,21 @@ const (
 )
 
 type createInput struct {
-	endpoint    string
-	filename    string
-	fileContent string
-	dryRun      bool
-	dataplane   string
-	name        string
-	description string
-	context     string
-	command     string
-	application string
-	services    []string
-	nodepool    string
-	subPath     string
-	workspaces  []string
+	endpoint     string
+	filename     string
+	fileContent  string
+	dryRun       bool
+	dataplane    string
+	name         string
+	description  string
+	context      string
+	command      string
+	application  string
+	services     []string
+	nodepool     string
+	subPath      string
+	workspaces   []string
+	capabilities []string
 }
 
 type createExpected struct {
@@ -586,6 +651,42 @@ func TestCreateJobCommand(t *testing.T) {
 				},
 				jobConfig: stubs.StubHTTPPartialPostConfig{
 					ExpectedRequestBody: expectedCreateJobRequestBodyWithServices,
+					ResponseBody:        `{"id":"job-1"}`,
+					ResponseStatus:      http.StatusOK,
+				},
+			}),
+			expected: createExpected{
+				displays:        []string{stubs.ExpectedDeviceAuthDisplay, expectedCreateJobID},
+				createCalls:     1,
+				dataplanesCalls: 1,
+				servicesCalls:   1,
+				workspacesCalls: 2,
+			},
+		},
+		{
+			name: "create success with capabilities",
+			input: createInput{
+				dataplane:    "123e4567-e89b-12d3-a456-426614174000",
+				name:         "job-2",
+				description:  "job desc",
+				command:      "run.sh",
+				services:     []string{"service-1", "service-2"},
+				nodepool:     "np-2",
+				workspaces:   []string{"ws-home", "ws-data"},
+				capabilities: []string{"capability1", "capability2"},
+			},
+			mockEndpoints: getCreateJobEndpoints(jobEndpointsConfig{
+				dataplaneConfig: stubs.StubHTTPPartialGetConfig{
+					ExpectedQuery:  expectedDataplaneQuery,
+					ResponseBody:   `[{"id":"123e4567-e89b-12d3-a456-426614174000"}]`,
+					ResponseStatus: http.StatusOK,
+				},
+				servicesConfig: stubs.StubHTTPPartialGetConfig{
+					ResponseBody:   expectedServicesResponseBody,
+					ResponseStatus: http.StatusOK,
+				},
+				jobConfig: stubs.StubHTTPPartialPostConfig{
+					ExpectedRequestBody: expectedCreateJobRequestBodyWithCapabilities,
 					ResponseBody:        `{"id":"job-1"}`,
 					ResponseStatus:      http.StatusOK,
 				},
@@ -1302,6 +1403,9 @@ func getCreateArgs(
 	}
 	for _, workspaceID := range tt.input.workspaces {
 		args = append(args, "--"+constants.WorkspaceFlag, workspaceID)
+	}
+	for _, capabilityID := range tt.input.capabilities {
+		args = append(args, "--"+constants.CapabilityFlag, capabilityID)
 	}
 	return args
 }

@@ -6,6 +6,7 @@ Usage:
 
 Available Commands:
   <a href='wbctl get applications.md'>applications</a>     Get one or many Application resources
+  <a href='wbctl get capabilities.md'>capabilities</a>     Get one or many Capability resources
   <a href='wbctl get dataplanes.md'>dataplanes</a>       Get one or many Dataplane resources
   <a href='wbctl get events.md'>events</a>           Get one or many Event resources
   <a href='wbctl get image-builds.md'>image-builds</a>     Get one or many Image-Build resources

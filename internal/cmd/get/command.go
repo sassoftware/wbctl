@@ -31,7 +31,7 @@ func Command(
 	return &cmd
 }
 
-// nolint:funlen
+// nolint:funlen,maintidx
 func getSubcommands(
 	ctx context.Context,
 	fsys afero.Fs,
@@ -50,6 +50,20 @@ func getSubcommands(
 			Long: i18n.Format(
 				i18n.CmdGetTypeDescription,
 				i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.ApplicationType)},
+			),
+		},
+		{
+			Use:     constants.CapabilitiesCommandName,
+			Aliases: []string{constants.CapabilityCommandName},
+			Args:    cobra.ArbitraryArgs,
+			RunE:    newGetFunction(ctx, fsys, _ui, constants.CapabilityType),
+			Short: i18n.Format(
+				i18n.CmdGetTypeUsage,
+				i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.CapabilityType)},
+			),
+			Long: i18n.Format(
+				i18n.CmdGetTypeDescription,
+				i18n.A{constants.I18nArgTypeKey: types.Titler.String(constants.CapabilityType)},
 			),
 		},
 		{

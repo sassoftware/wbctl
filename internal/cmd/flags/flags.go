@@ -530,6 +530,19 @@ func AddProfileFlag(cmd *cobra.Command) {
 	)
 }
 
+// AddCapabilityFlag adds the capability flag to the command.
+func AddCapabilityFlag(
+	cmd *cobra.Command,
+	_type string,
+) {
+	key := constants.CapabilityFlag
+	cmd.Flags().StringSlice(
+		key,
+		nil,
+		i18n.Format(i18n.FlagCapabilityUsage, i18n.A{constants.I18nArgTypeKey: _type}),
+	)
+}
+
 // BindToViper binds all the flags to viper. This cannot be done when the flags
 // are created because multiple commands have the same flags and viper maintains
 // a flat list. This means that `viper.GetString("name")` will look in the last
