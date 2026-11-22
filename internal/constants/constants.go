@@ -58,9 +58,6 @@ const (
 	DefaultTokenTmpFileName                         = "token.json.*"                       // nolint:gosec
 	DeleteCommandName                               = "delete"
 	DescribeCommandName                             = "describe"
-	DescribeLabelMetadata                           = "Metadata"
-	DescribeLabelProperties                         = "Properties"
-	DescribeLabelRoles                              = "Roles"
 	DescriptionFlag                                 = "description"
 	DesiredStateFlag                                = "desired-state"
 	DesiredStateRunning                             = "RUNNING"

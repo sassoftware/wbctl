@@ -11,6 +11,7 @@ import (
 	"github.com/sassoftware/sas-ggdk/pkg/result"
 	"github.com/sassoftware/wbctl/internal/auth"
 	"github.com/sassoftware/wbctl/internal/constants"
+	"github.com/sassoftware/wbctl/internal/i18n"
 	"github.com/sassoftware/wbctl/internal/logutil"
 	"github.com/sassoftware/wbctl/internal/postgrest"
 	"github.com/sassoftware/wbctl/internal/printutil"
@@ -192,7 +193,11 @@ func DescribeWorkspaces(_ui ui.UI, resources types.Workspaces) error {
 		}
 		printutil.AppendWorkspaceDetails(&tabbedString, resource)
 		printutil.AppendStorageSpecDetails(&tabbedString, resource.StorageSpec, "")
-		printutil.AppendServiceRequestDetails(&tabbedString, "Initializers", resource.Initializers)
+		printutil.AppendServiceRequestDetails(
+			&tabbedString,
+			i18n.Format(i18n.DescribeLabelInitializers),
+			resource.Initializers,
+		)
 		printutil.AppendPropertiesDetails(&tabbedString, resource.Properties)
 		printutil.AppendPodStatusDetails(&tabbedString, resource.PodStatus)
 	}
