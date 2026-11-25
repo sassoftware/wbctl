@@ -109,32 +109,32 @@ func AppendContainerStatuses(
 		})
 		if status.Resources != nil && len(status.Resources.Limits) > 0 {
 			AppendTabbedString(w, func(w io.Writer) {
-				_, _ = fmt.Fprintf(w, "      %s:\n", i18n.Format(i18n.DescribeLabelLimits))
+				_, _ = fmt.Fprintf(w, "      %s\n", i18n.Text(i18n.DescribeLabelLimits))
 				writeDetailIfNotEmpty(w, "        ", i18n.DescribeLabelCPU, status.Resources.Limits.Cpu().String())
 				writeDetailIfNotEmpty(w, "        ", i18n.DescribeLabelMemory, status.Resources.Limits.Memory().String())
 			})
 		}
 		if status.Resources != nil && len(status.Resources.Requests) > 0 {
 			AppendTabbedString(w, func(w io.Writer) {
-				_, _ = fmt.Fprintf(w, "      %s:\n", i18n.Format(i18n.DescribeLabelRequests))
+				_, _ = fmt.Fprintf(w, "      %s\n", i18n.Text(i18n.DescribeLabelRequests))
 				writeDetailIfNotEmpty(w, "        ", i18n.DescribeLabelCPU, status.Resources.Requests.Cpu().String())
 				writeDetailIfNotEmpty(w, "        ", i18n.DescribeLabelMemory, status.Resources.Requests.Memory().String())
 			})
 		}
 		if len(status.AllocatedResources) > 0 {
 			AppendTabbedString(w, func(w io.Writer) {
-				_, _ = fmt.Fprintf(w, "      %s:\n", i18n.Format(i18n.DescribeLabelAllocated))
+				_, _ = fmt.Fprintf(w, "      %s\n", i18n.Text(i18n.DescribeLabelAllocated))
 				writeDetailIfNotEmpty(w, "        ", i18n.DescribeLabelCPU, status.AllocatedResources.Cpu())
 				writeDetailIfNotEmpty(w, "        ", i18n.DescribeLabelMemory, status.AllocatedResources.Memory())
 			})
 		}
 		if len(status.VolumeMounts) > 0 {
-			_, _ = fmt.Fprintf(w, "      %s:\n", i18n.Format(i18n.DescribeLabelVolumeMounts))
+			_, _ = fmt.Fprintf(w, "      %s\n", i18n.Text(i18n.DescribeLabelVolumeMounts))
 			mounts := []string{}
 			for _, mount := range status.VolumeMounts {
 				perms := ""
 				if mount.ReadOnly {
-					perms = i18n.Format(i18n.DescribeReadOnly)
+					perms = i18n.Text(i18n.DescribeReadOnly)
 				}
 				mounts = append(mounts, fmt.Sprintf("        %s %s", mount.MountPath, perms))
 			}
@@ -142,7 +142,7 @@ func AppendContainerStatuses(
 			_, _ = w.Write([]byte(strings.Join(mounts, "\n") + "\n"))
 		}
 		if status.User != nil && status.User.Linux != nil {
-			_, _ = fmt.Fprintf(w, "      %s:\n", i18n.Format(i18n.DescribeLabelLinuxUser))
+			_, _ = fmt.Fprintf(w, "      %s\n", i18n.Text(i18n.DescribeLabelLinuxUser))
 			AppendTabbedString(w, func(w io.Writer) {
 				writeDetail(w, "        ", i18n.DescribeLabelUID, status.User.Linux.UID)
 				writeDetail(w, "        ", i18n.DescribeLabelGID, status.User.Linux.GID)
@@ -172,7 +172,7 @@ func AppendDataplaneDetails(
 		writeDetail(w, "", i18n.DescribeLabelCreatedAt, TimePtrToStringWithAge(resource.CreatedAt))
 		writeDetail(w, "", i18n.DescribeLabelModifiedAt, TimePtrToStringWithAge(resource.ModifiedAt))
 		writeDetail(w, "", i18n.DescribeLabelState, resource.State)
-		writeDetailIfNotEmpty(w, "", i18n.DescribeLabelSpec, specAsString(resource.Spec))
+		writeDetailBlockIfNotEmpty(w, "", i18n.DescribeLabelSpec, specAsString(resource.Spec))
 		writeDetailIfNotEmpty(w, "", i18n.DescribeLabelMessage, resource.Message)
 	})
 }
@@ -184,7 +184,7 @@ func AppendEnvDetails(
 	env map[string]string,
 ) {
 	if len(env) > 0 {
-		_, _ = fmt.Fprintf(w, "%s:\n", i18n.Format(i18n.DescribeLabelEnvironment))
+		_, _ = fmt.Fprintf(w, "%s\n", i18n.Text(i18n.DescribeLabelEnvironment))
 		keys := make([]string, 0, len(env))
 		for k := range env {
 			keys = append(keys, k)
@@ -234,14 +234,14 @@ func AppendImageDetails(
 		writeDetail(w, "", i18n.DescribeLabelModifiedAt, TimePtrToStringWithAge(resource.ModifiedAt))
 		writeDetail(w, "", i18n.DescribeLabelImage, image)
 		writeDetailIfNotEmpty(w, "", i18n.DescribeLabelContext, resource.Context)
-		writeDetailIfNotEmpty(w, "", i18n.DescribeLabelSpec, specAsString(resource.Spec))
+		writeDetailBlockIfNotEmpty(w, "", i18n.DescribeLabelSpec, specAsString(resource.Spec))
 		writeDetailIfNotEmpty(w, "", i18n.DescribeLabelSubPath, resource.SubPath)
 		writeDetailIfNotEmpty(w, "", i18n.DescribeLabelLatestImageBuildID, resource.LatestImageBuildID)
 		if resource.CurrentState != "" {
-			_, _ = fmt.Fprintf(w, "%s\t%s\n", i18n.Format(i18n.DescribeLabelState), resource.CurrentState)
+			_, _ = fmt.Fprintf(w, "%s\t%s\n", i18n.Text(i18n.DescribeLabelState), resource.CurrentState)
 		}
 		if resource.Message != "" {
-			_, _ = fmt.Fprintf(w, "%s\t%s\n", i18n.Format(i18n.DescribeLabelMessage), resource.Message)
+			_, _ = fmt.Fprintf(w, "%s\t%s\n", i18n.Text(i18n.DescribeLabelMessage), resource.Message)
 		}
 	})
 }
@@ -271,7 +271,7 @@ func AppendJobDetails(
 		writeDetail(w, "", i18n.DescribeLabelNodepool, resource.Nodepool)
 		writeDetailIfNotEmpty(w, "", i18n.DescribeLabelApplication, resource.ApplicationID)
 		writeDetailIfNotEmpty(w, "", i18n.DescribeLabelContext, resource.Context)
-		writeDetailIfNotEmpty(w, "", i18n.DescribeLabelSpec, specAsString(resource.Spec))
+		writeDetailBlockIfNotEmpty(w, "", i18n.DescribeLabelSpec, specAsString(resource.Spec))
 		writeDetailIfNotEmpty(w, "", i18n.DescribeLabelSubPath, resource.SubPath)
 		writeDetailIfNotEmpty(w, "", i18n.DescribeLabelSchedule, resource.Schedule)
 	})
@@ -299,7 +299,7 @@ func AppendJobSubmissionDetails(
 		if resource.CompletedAt != nil {
 			writeDetail(w, "", i18n.DescribeLabelCompletedAt, TimePtrToStringWithAge(resource.CompletedAt))
 		}
-		_, _ = fmt.Fprintf(w, "%s:\t%f\n", i18n.Format(i18n.DescribeLabelRuntime), resource.Runtime)
+		_, _ = fmt.Fprintf(w, "%s\t%f\n", i18n.Text(i18n.DescribeLabelRuntime), resource.Runtime)
 		writeDetailIfNotEmpty(w, "", i18n.DescribeLabelNodepool, resource.Nodepool)
 		writeDetail(w, "", i18n.DescribeLabelScheduled, resource.Scheduled)
 		writeDetail(w, "", i18n.DescribeLabelState, resource.CurrentState)
@@ -317,7 +317,7 @@ func AppendLabelDetails(
 		return
 	}
 	AppendTabbedString(w, func(w io.Writer) {
-		_, _ = fmt.Fprintf(w, "%s:\n", i18n.Format(i18n.DescribeLabelLabels))
+		_, _ = fmt.Fprintf(w, "%s\n", i18n.Text(i18n.DescribeLabelLabels))
 		keys := make([]string, 0, len(labels))
 		for k := range labels {
 			keys = append(keys, k)
@@ -353,17 +353,17 @@ func AppendPodStatusDetails(
 			})
 			AppendTabbedString(w, func(w io.Writer) {
 				if len(ps.Status.Conditions) > 0 {
-					_, _ = fmt.Fprintf(w, "  %s:\n", i18n.Format(i18n.DescribeLabelConditions))
+					_, _ = fmt.Fprintf(w, "  %s\n", i18n.Text(i18n.DescribeLabelConditions))
 					for _, cond := range ps.Status.Conditions {
 						_, _ = fmt.Fprintf(w, "    %s\t%s\n", cond.Type, cond.Status)
 					}
 				}
 			})
-			AppendContainerStatuses(w, i18n.Format(i18n.DescribeLabelInitContainers)+":", ps.Status.InitContainerStatuses)
-			AppendContainerStatuses(w, i18n.Format(i18n.DescribeLabelContainers)+":", ps.Status.ContainerStatuses)
+			AppendContainerStatuses(w, i18n.Text(i18n.DescribeLabelInitContainers), ps.Status.InitContainerStatuses)
+			AppendContainerStatuses(w, i18n.Text(i18n.DescribeLabelContainers), ps.Status.ContainerStatuses)
 			AppendContainerStatuses(
 				w,
-				i18n.Format(i18n.DescribeLabelEphemeralContainers)+":",
+				i18n.Text(i18n.DescribeLabelEphemeralContainers),
 				ps.Status.EphemeralContainerStatuses,
 			)
 		}
@@ -379,7 +379,7 @@ func AppendPropertiesDetails(
 	if len(properties) == 0 {
 		return
 	}
-	_, _ = fmt.Fprintf(w, "%s:\n", i18n.Format(i18n.DescribeLabelProperties))
+	_, _ = fmt.Fprintf(w, "%s\n", i18n.Text(i18n.DescribeLabelProperties))
 	AppendTabbedString(w, func(w io.Writer) {
 		keys := make([]string, 0, len(properties))
 		for k := range properties {
@@ -399,7 +399,7 @@ func AppendRolesDetails(
 	roles []types.Role,
 ) {
 	if len(roles) > 0 {
-		_, _ = fmt.Fprintf(w, "%s:\n", i18n.Format(i18n.DescribeLabelRoles))
+		_, _ = fmt.Fprintf(w, "%s\n", i18n.Text(i18n.DescribeLabelRoles))
 		AppendTabbedString(w, func(w io.Writer) {
 			slices.SortFunc(roles, func(a, b types.Role) int {
 				return strings.Compare(a.Name, b.Name)
@@ -411,15 +411,25 @@ func AppendRolesDetails(
 	}
 }
 
-// AppendServiceRequestDetails appends the description of the given
-// types.ServiceRequest slice as a tabbed string to the given writer.
-func AppendServiceRequestDetails(
+// AppendServiceRequestsDetails appends a service section with its localized
+// heading.
+func AppendServiceRequestsDetails(w io.Writer, services []types.ServiceRequest) {
+	appendServiceRequestDetails(w, i18n.DescribeLabelServices, services)
+}
+
+// AppendInitializerRequestsDetails appends an initializer section with its
+// localized heading.
+func AppendInitializerRequestsDetails(w io.Writer, services []types.ServiceRequest) {
+	appendServiceRequestDetails(w, i18n.DescribeLabelInitializers, services)
+}
+
+func appendServiceRequestDetails(
 	w io.Writer,
-	header string,
+	headingID string,
 	services []types.ServiceRequest,
 ) {
 	if len(services) > 0 {
-		_, _ = w.Write([]byte(header + ":\n"))
+		_, _ = fmt.Fprintf(w, "%s\n", i18n.Text(headingID))
 		for i, svc := range services {
 			AppendTabbedString(w, func(w io.Writer) {
 				_, _ = fmt.Fprintf(w, "  %d:\n", i)
@@ -430,7 +440,7 @@ func AppendServiceRequestDetails(
 					writeDetail(w, "    ", i18n.DescribeLabelImage, svc.Image)
 				}
 				if len(svc.Env) > 0 {
-					_, _ = fmt.Fprintf(w, "    %s:\n", i18n.Format(i18n.DescribeLabelEnvironment))
+					_, _ = fmt.Fprintf(w, "    %s\n", i18n.Text(i18n.DescribeLabelEnvironment))
 					for k, v := range svc.Env {
 						_, _ = fmt.Fprintf(w, "      %s:\t%s\n", k, v)
 					}
@@ -447,7 +457,7 @@ func AppendMetadataDetails(
 	settings map[string]any,
 ) {
 	if len(settings) > 0 {
-		_, _ = fmt.Fprintf(w, "%s:\n", i18n.Format(i18n.DescribeLabelMetadata))
+		_, _ = fmt.Fprintf(w, "%s\n", i18n.Text(i18n.DescribeLabelMetadata))
 		AppendTabbedString(w, func(w io.Writer) {
 			keys := make([]string, 0, len(settings))
 			for k := range settings {
@@ -475,7 +485,7 @@ func AppendSnapshotDetails(
 		writeDetail(w, "", i18n.DescribeLabelCreatedBy, resource.Username+" ("+resource.Email+")")
 		writeDetail(w, "", i18n.DescribeLabelCreatedAt, TimePtrToStringWithAge(resource.CreatedAt))
 		writeDetail(w, "", i18n.DescribeLabelModifiedAt, TimePtrToStringWithAge(resource.ModifiedAt))
-		writeDetailIfNotEmpty(w, "", i18n.DescribeLabelSpec, snapshotSpecAsString(resource.Spec))
+		writeDetailBlockIfNotEmpty(w, "", i18n.DescribeLabelSpec, snapshotSpecAsString(resource.Spec))
 		writeDetailIfNotEmpty(w, "", i18n.DescribeLabelMessage, resource.Message)
 	})
 }
@@ -539,10 +549,10 @@ func AppendVolumeDetails(
 	w io.Writer,
 	volumeStatus *types.VolumeStatus,
 ) {
-	_, _ = fmt.Fprintf(w, "%s:\n", i18n.Format(i18n.DescribeLabelVolumeStatus))
+	_, _ = fmt.Fprintf(w, "%s\n", i18n.Text(i18n.DescribeLabelVolumeStatus))
 	AppendTabbedString(w, func(w io.Writer) {
 		if volumeStatus != nil {
-			restoreSize := i18n.Format(i18n.DescribeUnknown)
+			restoreSize := i18n.Text(i18n.DescribeUnknown)
 			if size := volumeStatus.Status.RestoreSize; size != nil {
 				restoreSize = size.String()
 			}
@@ -556,7 +566,7 @@ func AppendVolumeDetails(
 			)
 			writeDetail(w, "  ", i18n.DescribeLabelCreationTime, metaTimePtrToString(volumeStatus.Status.CreationTime))
 		} else {
-			unknown := i18n.Format(i18n.DescribeUnknown)
+			unknown := i18n.Text(i18n.DescribeUnknown)
 			writeDetail(w, "  ", i18n.DescribeLabelReadyToUse, false)
 			writeDetail(w, "  ", i18n.DescribeLabelRestoreSize, unknown)
 			writeDetail(w, "  ", i18n.DescribeLabelContentName, unknown)
@@ -615,7 +625,7 @@ func AppendWorkspaceRequestsDetails(
 	workspaces []types.WorkspaceRequest,
 ) {
 	if len(workspaces) > 0 {
-		_, _ = fmt.Fprintf(w, "%s:\n", i18n.Format(i18n.DescribeLabelVolumes))
+		_, _ = fmt.Fprintf(w, "%s\n", i18n.Text(i18n.DescribeLabelVolumes))
 		for i, wksp := range workspaces {
 			AppendTabbedString(w, func(w io.Writer) {
 				_, _ = fmt.Fprintf(w, "  %d:\n", i)
@@ -626,7 +636,7 @@ func AppendWorkspaceRequestsDetails(
 					writeDetail(w, "    ", i18n.DescribeLabelMountName, wksp.MountName)
 				}
 				if wksp.EphemeralPVC != nil {
-					_, _ = fmt.Fprintf(w, "    %s:\n", i18n.Format(i18n.DescribeLabelEphemeralPVC))
+					_, _ = fmt.Fprintf(w, "    %s\n", i18n.Text(i18n.DescribeLabelEphemeralPVC))
 					AppendStorageSpecDetails(w, wksp.EphemeralPVC, "      ")
 				}
 			})
@@ -668,7 +678,7 @@ func TimePtrToString(t *time.Time) string {
 // pointer with a human friendly age, or a placeholder if the pointer is nil.
 func TimePtrToStringWithAge(t *time.Time) string {
 	if t == nil || t.IsZero() {
-		return i18n.Format(i18n.DescribeUnknown)
+		return i18n.Text(i18n.DescribeUnknown)
 	}
 	return i18n.Format(i18n.DescribeTimestampWithAge, i18n.A{
 		"timestamp": t.UTC().Format(time.RFC3339),
@@ -693,13 +703,13 @@ func formatIPs(
 func formatStateName(state corev1.ContainerState) string {
 	switch {
 	case state.Waiting != nil:
-		return i18n.Format(i18n.DescribeContainerWaiting)
+		return i18n.Text(i18n.DescribeContainerWaiting)
 	case state.Terminated != nil:
-		return i18n.Format(i18n.DescribeContainerTerminated)
+		return i18n.Text(i18n.DescribeContainerTerminated)
 	case state.Running != nil:
-		return i18n.Format(i18n.DescribeContainerRunning)
+		return i18n.Text(i18n.DescribeContainerRunning)
 	default:
-		return i18n.Format(i18n.DescribeUnknown)
+		return i18n.Text(i18n.DescribeUnknown)
 	}
 }
 
@@ -716,7 +726,7 @@ func marshalIndented(
 
 func metaTimePtrToString(t *metav1.Time) string {
 	if t == nil || t.IsZero() {
-		return i18n.Format(i18n.DescribeUnknown)
+		return i18n.Text(i18n.DescribeUnknown)
 	}
 	return TimePtrToStringWithAge(&t.Time)
 }
@@ -725,7 +735,7 @@ func snapshotSpecAsString(v *snapshot1.VolumeSnapshotSpec) string {
 	if v == nil {
 		return ""
 	}
-	r, err := marshalIndented(v, "                 ")
+	r, err := marshalIndented(v, "")
 	if err != nil {
 		return i18n.Format(i18n.DescribeSpecError, i18n.A{constants.I18nArgKeyError: err.Error()})
 	}
@@ -736,20 +746,40 @@ func specAsString(v map[string]interface{}) string {
 	if len(v) == 0 {
 		return ""
 	}
-	r, err := marshalIndented(v, "               ")
+	r, err := marshalIndented(v, "")
 	if err != nil {
 		return i18n.Format(i18n.DescribeSpecError, i18n.A{constants.I18nArgKeyError: err.Error()})
 	}
 	return strings.TrimSpace(r)
 }
 
-// writeDetail writes a labeled value as a tab-separated row.
+// writeDetail writes a labeled scalar value as a tab-separated row. The
+// translated label includes its separator punctuation.
 func writeDetail(w io.Writer, prefix, label string, value any) {
-	_, _ = fmt.Fprintf(w, "%s%s:\t%v\n", prefix, i18n.Format(label), value)
+	_, _ = fmt.Fprintf(w, "%s%s\t%v\n", prefix, i18n.Text(label), value)
+}
+
+// writeDetailBlock writes a labeled multiline value on the lines below its label.
+func writeDetailBlock(w io.Writer, prefix, label, value string) {
+	if !strings.Contains(value, "\n") {
+		writeDetail(w, prefix, label, value)
+		return
+	}
+
+	_, _ = fmt.Fprintf(w, "%s%s\n", prefix, i18n.Text(label))
+	for _, line := range strings.Split(strings.TrimSuffix(value, "\n"), "\n") {
+		_, _ = fmt.Fprintf(w, "%s  %s\n", prefix, line)
+	}
 }
 
 func writeDetailIfNotEmpty(w io.Writer, prefix, label string, value any) {
 	if value != "" {
 		writeDetail(w, prefix, label, value)
+	}
+}
+
+func writeDetailBlockIfNotEmpty(w io.Writer, prefix, label, value string) {
+	if value != "" {
+		writeDetailBlock(w, prefix, label, value)
 	}
 }

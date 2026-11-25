@@ -1001,8 +1001,8 @@ func TestDescribeWorkbenches(t *testing.T) {
 func TestDescribeWorkbenchesUsesMessageBundle(t *testing.T) {
 	bundle := i18n.Bundle()
 	for key, translation := range map[string]string{
-		i18n.DescribeLabelName:     "Nom %",
-		i18n.DescribeLabelServices: "Prestations",
+		i18n.DescribeLabelName:     "Nom %:",
+		i18n.DescribeLabelServices: "Prestations:",
 		i18n.DescribePodHeading:    "{name} (pod)",
 	} {
 		original, ok := bundle.Get(key)

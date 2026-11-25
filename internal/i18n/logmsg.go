@@ -326,12 +326,11 @@ func Format(
 	id string,
 	a ...A,
 ) string {
-	once.Do(initialize)
 	var args map[string]interface{}
 	if len(a) == 1 && a[0] != nil {
 		args = a[0]
 	}
-	format, err := parser.Parse(bundle.GetString(id, id))
+	format, err := parser.Parse(Text(id))
 	if err != nil {
 		return err.Error()
 	}
@@ -340,6 +339,14 @@ func Format(
 		return err.Error()
 	}
 	return msg
+}
+
+// Text returns a translated message that has no ICU arguments. Use it for
+// labels and other literal UI text; Format is reserved for messages with
+// placeholders or ICU formatting.
+func Text(id string) string {
+	once.Do(initialize)
+	return bundle.GetString(id, id)
 }
 
 func initialize() {

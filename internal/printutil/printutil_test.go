@@ -91,13 +91,14 @@ Created By:
 Created At:    <unknown>
 Modified At:   <unknown>
 State:         Active
-Spec:          {
-                 "field1": "value1",
-                 "field2": {
-                   "sub-field1": "sub-value1",
-                   "sub-field2": "sub-value2"
-                 }
-               }
+Spec:
+  {
+    "field1": "value1",
+    "field2": {
+      "sub-field1": "sub-value1",
+      "sub-field2": "sub-value2"
+    }
+  }
 `
 	expectedAppendDataplaneDetailsEmptySpec = `ID:            dp-123
 Name:          test-dataplane
@@ -123,13 +124,14 @@ Created By:       ()
 Created At:      <unknown>
 Modified At:     <unknown>
 Image:           registry.example.com/app:latest
-Spec:            {
-                 "field1": "value1",
-                 "field2": {
-                   "sub-field1": "sub-value1",
-                   "sub-field2": "sub-value2"
-                 }
-               }
+Spec:
+  {
+    "field1": "value1",
+    "field2": {
+      "sub-field1": "sub-value1",
+      "sub-field2": "sub-value2"
+    }
+  }
 `
 	expectedAppendImageDetailsEmptySpec = `ID:              img-123
 Controller ID:   
@@ -215,13 +217,14 @@ Created At:               2024-07-15T12:00:00Z (10m ago)
 Modified At:              <unknown>
 Most Recent Job Run At:   2024-07-15T12:00:00Z
 Nodepool:                 default
-Spec:                     {
-                 "field1": "value1",
-                 "field2": {
-                   "sub-field1": "sub-value1",
-                   "sub-field2": "sub-value2"
-                 }
-               }
+Spec:
+  {
+    "field1": "value1",
+    "field2": {
+      "sub-field1": "sub-value1",
+      "sub-field2": "sub-value2"
+    }
+  }
 `
 	expectedAppendJobDetailsEmptySpec = `ID:                       job-123
 Name:                     test-job
@@ -240,13 +243,14 @@ Description:
 Created By:       ()
 Created At:      <unknown>
 Modified At:     <unknown>
-Spec:            {
-                   "source": {
-                     "persistentVolumeClaimName": "pvc-123",
-                     "volumeSnapshotContentName": "snap-123"
-                   },
-                   "volumeSnapshotClassName": "test-snapshot-class"
-                 }
+Spec:
+  {
+    "source": {
+      "persistentVolumeClaimName": "pvc-123",
+      "volumeSnapshotContentName": "snap-123"
+    },
+    "volumeSnapshotClassName": "test-snapshot-class"
+  }
 `
 	expectedAppendSnapshotDetailsEmptySpec = `ID:              snap-123
 Controller ID:   
@@ -314,15 +318,15 @@ Image ID:        img-1
 	// AppendRolesDetails expected output - empty.
 	expectedAppendRolesDetailsEmpty = ""
 
-	// AppendServiceRequestDetails expected output - with services.
-	expectedAppendServiceRequestDetailsWithServices = `Services::
+	// AppendServiceRequestsDetails expected output - with services.
+	expectedAppendServiceRequestDetailsWithServices = `Services:
   0:
     ID:      svc-1
     Image:   nginx:latest
     Environment:
       PORT:   8080
 `
-	// AppendServiceRequestDetails expected output - empty.
+	// AppendServiceRequestsDetails expected output - empty.
 	expectedAppendServiceRequestDetailsEmpty = ""
 
 	// AppendMetadataDetails expected output - with settings.
@@ -1262,16 +1266,14 @@ func TestAppendRolesDetails(t *testing.T) {
 	}
 }
 
-func TestAppendServiceRequestDetails(t *testing.T) {
+func TestAppendServiceRequestsDetails(t *testing.T) {
 	tests := []struct {
 		name     string
-		header   string
 		services []types.ServiceRequest
 		expected string
 	}{
 		{
-			name:   "appends services with header",
-			header: "Services:",
+			name: "appends services with header",
 			services: []types.ServiceRequest{
 				{
 					ID:    "svc-1",
@@ -1285,7 +1287,6 @@ func TestAppendServiceRequestDetails(t *testing.T) {
 		},
 		{
 			name:     "returns empty when no services",
-			header:   "Services:",
 			services: []types.ServiceRequest{},
 			expected: expectedAppendServiceRequestDetailsEmpty,
 		},
@@ -1294,7 +1295,7 @@ func TestAppendServiceRequestDetails(t *testing.T) {
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
 			var sb strings.Builder
-			printutil.AppendServiceRequestDetails(&sb, testCase.header, testCase.services)
+			printutil.AppendServiceRequestsDetails(&sb, testCase.services)
 			require.Equal(t, testCase.expected, sb.String())
 		})
 	}
