@@ -192,7 +192,7 @@ func DescribeWorkspaces(_ui ui.UI, resources types.Workspaces) error {
 		}
 		printutil.AppendWorkspaceDetails(&tabbedString, resource)
 		printutil.AppendStorageSpecDetails(&tabbedString, resource.StorageSpec, "")
-		printutil.AppendServiceRequestDetails(&tabbedString, "Initializers", resource.Initializers)
+		printutil.AppendInitializerRequestsDetails(&tabbedString, resource.Initializers)
 		printutil.AppendPropertiesDetails(&tabbedString, resource.Properties)
 		printutil.AppendPodStatusDetails(&tabbedString, resource.PodStatus)
 	}

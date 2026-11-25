@@ -157,7 +157,7 @@ func DescribeJobs(_ui ui.UI, resources types.Jobs) error {
 		}
 		printutil.AppendJobDetails(&tabbedString, resource)
 		printutil.AppendLabelDetails(&tabbedString, resource.Labels)
-		printutil.AppendServiceRequestDetails(&tabbedString, "Services", resource.Services)
+		printutil.AppendServiceRequestsDetails(&tabbedString, resource.Services)
 		printutil.AppendWorkspaceRequestsDetails(&tabbedString, resource.Workspaces)
 		printutil.AppendPropertiesDetails(&tabbedString, resource.Properties)
 	}

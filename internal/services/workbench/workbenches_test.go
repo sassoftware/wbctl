@@ -998,6 +998,36 @@ func TestDescribeWorkbenches(t *testing.T) {
 	}
 }
 
+func TestDescribeWorkbenchesUsesMessageBundle(t *testing.T) {
+	bundle := i18n.Bundle()
+	for key, translation := range map[string]string{
+		i18n.DescribeLabelName:     "Nom %:",
+		i18n.DescribeLabelServices: "Prestations:",
+		i18n.DescribePodHeading:    "{name} (pod)",
+	} {
+		original, ok := bundle.Get(key)
+		require.True(t, ok, "missing bundle key %s", key)
+		_, _, err := bundle.Set(key, translation)
+		require.NoError(t, err)
+		t.Cleanup(func() {
+			_, _, err := bundle.Set(key, original)
+			require.NoError(t, err)
+		})
+	}
+
+	resources := types.Workbenches{{
+		Name:      "workbench-1",
+		Services:  []types.ServiceRequest{{ID: "service-1"}},
+		PodStatus: []types.ExecuteableResourceStatus{{Name: "pod-1"}},
+	}}
+	stubUI := &stubs.StubUI{}
+	require.NoError(t, workbench.DescribeWorkbenches(stubUI, resources))
+	require.Len(t, stubUI.Displays, 1)
+	require.Regexp(t, "(?m)^Nom %: +workbench-1$", stubUI.Displays[0])
+	require.Contains(t, stubUI.Displays[0], "\nPrestations:\n")
+	require.Contains(t, stubUI.Displays[0], "\npod-1 (pod):\n")
+}
+
 func getWorkbenchesDeleteEndpoints(
 	expectedQuery string,
 	resolveResponseBody string,
